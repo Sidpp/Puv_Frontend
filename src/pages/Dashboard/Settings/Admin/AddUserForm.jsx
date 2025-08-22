@@ -3,6 +3,7 @@ import addUser from "../../../../assets/Add.png";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { register } from "../../../../services/oprations/authAPI";
+import toast from "react-hot-toast";
 
 const AddUserForm = () => {
   const navigate = useNavigate();
@@ -20,8 +21,21 @@ const AddUserForm = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const validatePassword = (password) => {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/;
+    return regex.test(password);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault(); // Prevent page reload
+
+    if (!validatePassword(form.password)) {
+      toast.error(
+        "Password must be at least 12 characters long and include lowercase, uppercase, number, and special character"
+      );
+      return;
+    }
+
     dispatch(
       register(
         form.role,

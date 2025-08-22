@@ -363,15 +363,15 @@ export function sendOtp(email, password, navigate) {
     const toastId = toast.loading("Loading...");
     dispatch(setLoading(true));
     try {
-      console.log("api", SENDOTP_API);
+      //console.log("api", SENDOTP_API);
       const response = await apiConnector("POST", SENDOTP_API, {
         email,
         password,
         checkUserPresent: true,
       });
-      console.log("SENDOTP API RESPONSE............", response);
+      //console.log("SENDOTP API RESPONSE............", response);
 
-      console.log(response.data.success);
+      //console.log(response.data.success);
 
       if (!response.data.success) {
         throw new Error(response.data.message);

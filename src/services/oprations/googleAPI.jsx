@@ -38,7 +38,7 @@ export function fetchGoogleCredentials() {
           sheetRange: data.sheetRange,
         })
       );
-      console.log("server",data)
+      console.log("google credentials server",data)
 
       toast.success("Fetched Google credentials");
     } catch (error) {

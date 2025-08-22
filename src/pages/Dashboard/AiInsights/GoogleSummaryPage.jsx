@@ -13,14 +13,14 @@ import {
   Cell,
 } from "recharts";
 import { Link } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { getAllGoogleDetails } from "../../../services/oprations/googleAPI";
 
-// --- Mock Components for Standalone Execution ---
-
-// A self-contained, reusable DoughnutChart component with custom labels
+// Doughnut Chart Component
 const DoughnutChart = ({ data }) => {
-  const COLORS = ["#84cc16", "#60a5fa", "#facc15", "#ef4444"]; // Updated colors to match image
-
+  const COLORS = ["#84cc16", "#60a5fa", "#facc15", "#ef4444"];
   const RADIAN = Math.PI / 180;
+
   const renderCustomizedLabel = ({
     cx,
     cy,
@@ -28,7 +28,6 @@ const DoughnutChart = ({ data }) => {
     innerRadius,
     outerRadius,
     percent,
-    index,
   }) => {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -73,102 +72,31 @@ const DoughnutChart = ({ data }) => {
   );
 };
 
-// --- Main Responsive Component ---
-
+// Main Component
 const GoogleSummaryPage = () => {
-  // Using useState for local state management instead of Redux for this standalone example
-  const [projectData, setProjectData] = useState(null);
-  const [activeSummaryId, setActiveSummaryId] = useState(null);
+  const [projectData, setProjectData] = useState([]);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState(null);
-  const [activeSummary, setActiveSummary] = useState(null); // To track which summary is open
+  const [activeSummaryId, setActiveSummaryId] = useState(null);
 
-  // Dummy data for tasks and financials
-  const tasks = [
-    {
-      id: 1,
-      program: "Alpha",
-      portfolio: "Growth",
-      vendor: "Vendor X",
-      projectmanager: "Cheryl28",
-      contractid: "C-344",
-      burnoutrisk: "70.98",
-      aisummary:
-        "Project Alpha is at high risk due to resource constraints and dependency conflicts.",
-    },
-    {
-      id: 2,
-      program: "Beta",
-      portfolio: "Innovation",
-      vendor: "Vendor Y",
-      projectmanager: "JohnD45",
-      contractid: "C-345",
-      burnoutrisk: "45.50",
-      aisummary:
-        "Project Beta is on track but requires monitoring of team activity.",
-    },
-    {
-      id: 3,
-      program: "Gamma",
-      portfolio: "Core",
-      vendor: "Vendor Z",
-      projectmanager: "JaneS12",
-      contractid: "C-346",
-      burnoutrisk: "20.15",
-      aisummary: "Project Gamma is performing well with low burnout risk.",
-    },
-    {
-      id: 4,
-      program: "Delta",
-      portfolio: "Growth",
-      vendor: "Vendor X",
-      projectmanager: "Cheryl28",
-      contractid: "C-347",
-      burnoutrisk: "85.20",
-      aisummary:
-        "Critical burnout risk detected for Project Delta. Immediate action recommended.",
-    },
-    {
-      id: 5,
-      program: "Epsilon",
-      portfolio: "Maintenance",
-      vendor: "Vendor Y",
-      projectmanager: "JohnD45",
-      contractid: "C-348",
-      burnoutrisk: "33.75",
-      aisummary: "Epsilon project is stable with moderate team activity.",
-    },
-  ];
+  const dispatch = useDispatch();
 
-  const monthlyFinancials = [
-    { month: "Jan", planned: 4000, forecast: 3500, actual: 3000 },
-    { month: "Feb", planned: 4200, forecast: 4000, actual: 3800 },
-    { month: "Mar", planned: 4500, forecast: 4200, actual: 3900 },
-    { month: "Apr", planned: 4600, forecast: 4300, actual: 4100 },
-    { month: "May", planned: 4800, forecast: 4700, actual: 4500 },
-    { month: "Jun", planned: 5000, forecast: 4900, actual: 4800 },
-  ];
-
-  const spendData = [
-    { name: "Planned Cost", value: 42, color: "#84cc16" },
-    { name: "Forcasted Cost", value: 30, color: "#60a5fa" },
-    { name: "Actual Cost", value: 20, color: "#facc15" },
-    { name: "Forecast Deviation", value: 10, color: "#ef4444" },
-  ];
-
-  // Simulate fetching data
   useEffect(() => {
-    setStatus("loading");
-    setTimeout(() => {
-      setProjectData({
-        name: "Google AI Summary",
-        monthlyFinancials: monthlyFinancials,
-      });
-      setStatus("succeeded");
-    }, 1000);
-  }, []);
+    const fetchGoogleData = async () => {
+      try {
+        const res = await dispatch(getAllGoogleDetails());
+        setProjectData(Array.isArray(res) ? res : []);
+        setStatus("succeeded");
+      } catch (err) {
+        console.error("Failed to fetch Google data:", err);
+        setError(err.message);
+        setStatus("failed");
+      }
+    };
+    fetchGoogleData();
+  }, [dispatch]);
 
-  if (status === "loading" || status === "idle") {
+  if (status === "loading") {
     return (
       <div className="p-6 text-center text-gray-500">
         Loading project data...
@@ -182,7 +110,7 @@ const GoogleSummaryPage = () => {
         <h2 className="text-2xl font-bold text-red-600">Error: {error}</h2>
         <Link
           to="/dashboard"
-          className="text-blue-600 hover:underline mt-4 inline-flex items-center justify-center gap-2"
+          className="text-blue-600 hover:underline mt-4 inline-flex items-center gap-2"
         >
           <ArrowLeft size={16} /> Back to Dashboard
         </Link>
@@ -190,27 +118,95 @@ const GoogleSummaryPage = () => {
     );
   }
 
-  if (!projectData) {
+  if (!projectData.length) {
     return <div className="p-6 text-center">No project data available.</div>;
   }
+
+  // Prepare charts data dynamically
+  // Aggregate projects by month
+  const monthlyTotals = {};
+
+  projectData.forEach((proj) => {
+    const rawDate = proj.source_data["Update Date"];
+    if (!rawDate) return;
+
+    const dateObj = new Date(rawDate);
+    const monthLabel = dateObj.toLocaleString("default", {
+      month: "short",
+      year: "numeric",
+    }); // e.g. "Jun 2025"
+
+    if (!monthlyTotals[monthLabel]) {
+      monthlyTotals[monthLabel] = { planned: 0, actual: 0, forecast: 0 };
+    }
+
+    monthlyTotals[monthLabel].planned += Number(
+      proj.source_data["Planned Cost"] || 0
+    );
+    monthlyTotals[monthLabel].actual += Number(
+      proj.source_data["Actual Cost"] || 0
+    );
+    monthlyTotals[monthLabel].forecast += Number(
+      proj.ai_predictions?.Forecasted_Cost || 0
+    );
+  });
+
+  // Convert to array for chart
+  const monthlyFinancials = Object.entries(monthlyTotals).map(
+    ([month, values]) => ({
+      month,
+      ...values,
+    })
+  );
+
+  const spendData = [
+    {
+      name: "Planned Cost",
+      value: Number(projectData[0].source_data["Planned Cost"] || 0),
+      color: "#84cc16",
+    },
+    {
+      name: "Forecasted Cost",
+      value: Number(projectData[0].ai_predictions?.Forecasted_Cost || 0),
+      color: "#60a5fa",
+    },
+    {
+      name: "Actual Cost",
+      value: Number(projectData[0].source_data["Actual Cost"] || 0),
+      color: "#facc15",
+    },
+    {
+      name: "Forecast Deviation",
+      value: Number(projectData[0].ai_predictions?.Forecasted_Deviation || 0),
+      color: "#ef4444",
+    },
+  ];
 
   return (
     <div className="text-[#0B2545] bg-slate-50 min-h-screen p-4 sm:p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">
-        {projectData.name || "Project Summary"}
+        Google Projects Summary
       </h1>
 
-      {/* RESPONSIVENESS FIX: Changed grid to be 2 columns on medium screens and up */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Bar Chart */}
         <div className="bg-white p-4 rounded-xl shadow-md flex flex-col">
           <h4 className="text-lg font-semibold mb-4">Monthly Financials</h4>
-          <div className="w-full flex-grow h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+
+          {/* Scroll only if more than 6 months */}
+          <div className="w-full flex-grow h-[300px] overflow-x-auto">
+            <ResponsiveContainer
+              width={
+                monthlyFinancials.length > 6
+                  ? monthlyFinancials.length * 120
+                  : "100%"
+              }
+              height="100%"
+            >
               <BarChart
-                data={projectData.monthlyFinancials}
-                margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
-                barCategoryGap="30%"
+                data={monthlyFinancials}
+                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                barCategoryGap="20%"
               >
                 <XAxis dataKey="month" fontSize={12} />
                 <YAxis fontSize={12} />
@@ -220,22 +216,24 @@ const GoogleSummaryPage = () => {
                   stackId="a"
                   fill="#00254b"
                   name="Actual"
+                  barSize={40}
                 />
                 <Bar
                   dataKey="planned"
                   stackId="a"
                   fill="#0a8e96"
                   name="Planned"
+                  barSize={40}
                 />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Doughnut Chart + Spend List */}
+        {/* Doughnut Chart */}
         <div className="bg-white p-4 rounded-xl shadow-md flex flex-col">
           <h4 className="text-lg font-semibold mb-4">Spend Analysis</h4>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 ">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <div className="w-full sm:w-1/2 h-[240px]">
               <DoughnutChart data={spendData} />
             </div>
@@ -245,7 +243,7 @@ const GoogleSummaryPage = () => {
                   <span
                     className="w-4 h-4 rounded-full"
                     style={{ backgroundColor: item.color }}
-                  ></span>
+                  />
                   <span className="font-medium">{item.name}</span>
                 </li>
               ))}
@@ -254,9 +252,8 @@ const GoogleSummaryPage = () => {
         </div>
       </div>
 
-      {/* --- RESPONSIVE TABLE --- */}
+      {/* Table */}
       <div className="mt-8">
-        {/* Desktop Table (hidden on small screens) */}
         <div className="hidden md:block overflow-x-auto shadow-lg rounded-xl border border-[#E6E9E8]">
           <table className="w-full text-left border-collapse">
             <thead className="bg-[#F0F3F2] text-[#0B2545] font-bold text-sm sticky top-0 z-10">
@@ -281,61 +278,56 @@ const GoogleSummaryPage = () => {
               </tr>
             </thead>
             <tbody className="text-[#0B2545] font-medium text-sm">
-              {tasks.map((task, index) => (
-                <tr
-                  key={task.id}
-                  className={`h-[72px] ${
-                    index % 2 === 0 ? "bg-white" : "bg-[#F9FBFA]"
-                  }`}
-                >
+              {projectData.map((task) => (
+                <tr key={task._id} className="h-[72px] bg-white">
                   <td className="py-4 px-6 border-b border-[#E6E9E8] text-gray-600">
-                    {task.program}
+                    {task.source_data.Program}
                   </td>
                   <td className="py-4 px-6 border-b border-[#E6E9E8]">
-                    {task.portfolio}
+                    {task.source_data.Portfolio}
                   </td>
                   <td className="py-4 px-6 border-b border-[#E6E9E8]">
-                    {task.vendor}
+                    {task.source_data.Vendor}
                   </td>
                   <td className="py-4 px-6 border-b border-[#E6E9E8] text-gray-600">
-                    {task.projectmanager}
+                    {task.source_data["Project Manager"]}
                   </td>
                   <td className="py-4 px-6 border-b border-[#E6E9E8]">
-                    {task.contractid}
+                    {task.source_data["Contract ID"]}
                   </td>
                   <td className="py-4 px-6 border-b border-[#E6E9E8] text-center">
-                    {task.burnoutrisk}
+                    {task.ai_predictions?.Burnout_Risk || 0}
                   </td>
                   <td className="py-4 px-6 border-b border-[#E6E9E8] text-center">
-                    {/* FIX: Eye icon is always visible. It is disabled if no summary exists. */}
                     <div className="relative flex justify-center items-center">
                       <button
-                        disabled={!task.aisummary}
+                        disabled={!task.ai_predictions?.Issues}
                         onClick={() =>
                           setActiveSummaryId(
-                            activeSummaryId === task.id ? null : task.id
+                            activeSummaryId === task._id ? null : task._id
                           )
                         }
                         className="disabled:cursor-not-allowed"
                       >
                         <FaEye
                           className={
-                            task.aisummary
+                            task.ai_predictions?.Issues
                               ? "text-[#00254D] hover:scale-110 transition-transform duration-200"
                               : "text-gray-300"
                           }
                         />
                       </button>
-                      {activeSummaryId === task.id && task.aisummary && (
-                        <div className="mt-2 text-xs text-slate-600 text-left p-3 bg-slate-100 rounded-md absolute top-full right-0 w-64 z-10 shadow-lg border border-gray-200">
-                          {task.aisummary}
-                        </div>
-                      )}
+                      {activeSummaryId === task._id &&
+                        task.ai_predictions?.Issues && (
+                          <div className="mt-2 text-xs text-slate-600 text-left p-3 bg-slate-100 rounded-md absolute top-full right-0 w-64 z-10 shadow-lg border border-gray-200">
+                            {task.ai_predictions.Issues}
+                          </div>
+                        )}
                     </div>
                   </td>
                   <td className="py-4 px-6 border-b border-[#E6E9E8] text-[#0B2545] font-semibold">
                     <Link
-                      to={`/dashboard/insights/google-details/${task.id}`}
+                      to={`/dashboard/insights/google-details/${task._id}`}
                       className="hover:underline text-[#006685]"
                     >
                       Detail View
@@ -347,20 +339,24 @@ const GoogleSummaryPage = () => {
           </table>
         </div>
 
-        {/* Mobile Card List (visible on small screens) */}
+        {/* Mobile */}
         <div className="md:hidden space-y-4">
-          {tasks.map((task) => (
+          {projectData.map((task) => (
             <div
-              key={task.id}
+              key={task._id}
               className="bg-white rounded-xl shadow-md p-4 border border-[#E6E9E8]"
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <p className="font-bold text-lg">{task.program}</p>
-                  <p className="text-sm text-gray-500">{task.portfolio}</p>
+                  <p className="font-bold text-lg">
+                    {task.source_data.Project}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {task.source_data.Portfolio}
+                  </p>
                 </div>
                 <Link
-                  to="/dashboard/insights/google-details/1"
+                  to={`/dashboard/insights/google-details/${task._id}`}
                   className="text-sm font-semibold text-[#006685] hover:underline"
                 >
                   Detail View
@@ -369,19 +365,25 @@ const GoogleSummaryPage = () => {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Vendor</span>
-                  <span className="font-medium">{task.vendor}</span>
+                  <span className="font-medium">{task.source_data.Vendor}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Project Manager</span>
-                  <span className="font-medium">{task.projectmanager}</span>
+                  <span className="font-medium">
+                    {task.source_data["Project Manager"]}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Contract ID</span>
-                  <span className="font-medium">{task.contractid}</span>
+                  <span className="font-medium">
+                    {task.source_data["Contract ID"]}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Burnout Risk</span>
-                  <span className="font-medium">{task.burnoutrisk}%</span>
+                  <span className="font-medium">
+                    {task.ai_predictions?.Burnout_Risk || 0}%
+                  </span>
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-[#E6E9E8]">
@@ -390,15 +392,15 @@ const GoogleSummaryPage = () => {
                   <FaEye
                     className="text-[#00254D] cursor-pointer"
                     onClick={() =>
-                      setActiveSummary(
-                        activeSummary === task.id ? null : task.id
+                      setActiveSummaryId(
+                        activeSummaryId === task._id ? null : task._id
                       )
                     }
                   />
                 </div>
-                {activeSummary === task.id && (
+                {activeSummaryId === task._id && (
                   <p className="mt-2 text-sm text-slate-700 bg-slate-100 p-3 rounded-md">
-                    {task.aisummary}
+                    {task.ai_predictions?.Issues}
                   </p>
                 )}
               </div>

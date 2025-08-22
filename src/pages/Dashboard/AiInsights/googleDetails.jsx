@@ -1,62 +1,36 @@
-import React, { useState } from "react";
-import {
-  FaCheck,
-  FaRegCircle,
-  FaExclamationTriangle,
-  FaCheckCircle,
-} from "react-icons/fa";
+import React, { useEffect, useState } from "react";
+import { FaTimes, FaCheckCircle } from "react-icons/fa";
+import { FaCheck, FaRegCircle, FaExclamationTriangle } from "react-icons/fa";
+import { useDispatch } from "react-redux";
+import { useParams } from "react-router-dom";
+import { getGoogleSheetById } from "../../../services/oprations/googleAPI";
 
 const GoogleDetails = () => {
-  const dummyIssue = {
-    connectionId: "688860d6566f68218cd750fd",
-    row_index: 8,
-    ai_predictions: {
-      Risk: "Tech Debt",
-      Issues: "Escalation pending",
-      Forecasted_Cost: 83031,
-      Forecasted_Deviation: -26263,
-      Burnout_Risk: 15,
-      last_processed_at: "2025-07-29T05:49:35.672Z",
-      project_identifier: "Project C",
-    },
-    source_data: {
-      Program: "AI & Automation",
-      Portfolio: "IT Infrastructure",
-      Project: "Project C",
-      "Project Manager": "Carlos Diaz",
-      Vendor: "Capgemini",
-      "Contract ID": "C-211",
-      "Contract Start Date": "2024-06-21 00:00:00",
-      "Contract End Date": "2025-05-24 00:00:00",
-      "Contract Ceiling Price": "117156",
-      "Contract Target Price": "109294",
-      "Actual Contract Spend": "101828",
-      "Expiring Soon": "TRUE",
-      "Resource Name": "John Smith",
-      Role: "Scrum Master",
-      "Allocated Hours": "191",
-      "Actual Hours": "192",
-      "Burnout Risk (%)": "50.52",
-      "EV (%)": "0.67",
-      "PV (%)": "0.74",
-      "AC ($)": "83031",
-      CPI: "0.88",
-      SPI: "0.91",
-      "Planned Cost": "109294",
-      "Forecasted Cost": "110686",
-      "Actual Cost": "83031",
-      "Forecast Deviation": "1392",
-      "Variance at Completion": "27655",
-      "Project Status (RAG)": "Green",
-      "Milestone Status": "Completed",
-      Risks: "Tech debt",
-      Issues: "Budget cut",
-      "Update Date": "2025-06-09 00:00:00",
-    },
-  };
-
   const [selectedLabel, setSelectedLabel] = useState(null);
-  const issue = dummyIssue;
+  const dispatch = useDispatch();
+  const { id } = useParams();
+  const [issue, setIssue] = useState(null);
+
+  useEffect(() => {
+    const fetchIssues = async () => {
+      try {
+        const res = await dispatch(getGoogleSheetById(id));
+        // console.log("Fetched issue1:", res);
+        console.log("res payload", res?.ai_predictions);
+        // console.log("status_transition_log", res?.status_transition);
+        setIssue(res);
+        console.log("Fetched issue:", res);
+      } catch (error) {
+        console.error("Failed to fetch Jira issues:", error);
+      }
+    };
+
+    fetchIssues();
+  }, [dispatch]);
+
+  if (!issue || Object.keys(issue).length === 0) {
+    return <p className="text-center py-10">Loading...</p>;
+  }
 
   const data = [
     { label: "Vendor", value: issue?.source_data?.["Vendor"] },
@@ -87,11 +61,11 @@ const GoogleDetails = () => {
   function getNeedleAngle(rag) {
     switch (rag) {
       case "Red":
-        return -60;
+        return -60; // left
       case "Yellow":
-        return 0;
+        return 0; // middle
       case "Green":
-        return 60;
+        return 60; // right
       default:
         return 0;
     }
@@ -156,17 +130,17 @@ const GoogleDetails = () => {
               [
                 "Contract Ceiling Price",
                 issue?.source_data?.["Contract Ceiling Price"],
-                "bg-yellow-400",
+               
               ],
               [
                 "Contract Target Price",
                 issue?.source_data?.["Contract Target Price"],
-                "bg-[#0B7B8A]",
+               
               ],
               [
                 "Actual Contract Spend",
                 issue?.source_data?.["Actual Contract Spend"],
-                "bg-[#00294D]",
+               
               ],
             ].map(([label, amount, color], i) => (
               <div key={i} className="flex items-center justify-between">
@@ -249,41 +223,8 @@ const GoogleDetails = () => {
             </div>
           </div>
 
-          {/* AI Prediction Data */}
-          {/* <div className="bg-gradient-to-br from-[#E6F7F7] to-[#F0FAFA] p-5 rounded-xl shadow border border-[#BEE3E3]">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="bg-[#0B7B8A] text-white rounded-full w-8 h-8 flex items-center justify-center">
-                🤖
-              </div>
-              <h3 className="text-[#0B2E56] font-bold text-[16px]">
-                AI Predictions
-              </h3>
-            </div>
 
-            <div className="space-y-3 max-h-20 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#BEE3E3] scrollbar-track-[#E6F7F7]">
-              {Object.entries(issue?.ai_predictions || {})
-                .filter(([label]) => label.toLowerCase() !== "id")
-                .map(([label, value], i) => (
-                  <div
-                    key={i}
-                    className="flex justify-between items-center bg-white px-4 py-2 rounded-lg shadow group hover:shadow-md transition"
-                  >
-                    <span className="text-[13px] text-[#0B2E56] font-medium capitalize">
-                      {label.replaceAll("_", " ")}
-                    </span>
-                    {typeof value === "number" ? (
-                      <span className="bg-[#0B7B8A] text-white text-[12px] px-2 py-1 rounded-full">
-                        {value.toFixed(2)}
-                      </span>
-                    ) : (
-                      <span className="text-[13px] font-semibold text-gray-700">
-                        {value}
-                      </span>
-                    )}
-                  </div>
-                ))}
-            </div>
-          </div> */}
+
         </section>
 
         {/* Right Section */}
@@ -294,7 +235,7 @@ const GoogleDetails = () => {
 
           {/* Resource and Vendor */}
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="bg-[#F7FAF9] rounded-md p-4 flex-1">
+            <div className="bg-[#F7FAF9] rounded-md p-4 flex-1 min-w-[200px]">
               <p className="text-[14px] text-gray-600 font-semibold">
                 Resource Name
               </p>
@@ -308,19 +249,21 @@ const GoogleDetails = () => {
                 {issue?.source_data?.["Role"]}
               </p>
             </div>
-
-            <div className="bg-[#F7FAF9] rounded-md px-4 py-4 space-y-2 flex-1">
+            <div className="bg-[#F7FAF9] rounded-md px-4 py-4 space-y-2">
               {data.map(({ label, value, align }, i) => {
                 const isSelected = selectedLabel === label;
+
                 return (
                   <div
                     key={i}
                     onClick={() => setSelectedLabel(label)}
                     className={`flex items-center justify-between rounded-md px-3 py-2 cursor-pointer transition-all duration-200 group
-            hover:bg-[#D9E6F0] hover:border hover:border-dashed hover:border-gray-400
-            ${
-              isSelected ? "border border-dashed border-red-600 bg-white" : ""
-            }`}
+                      hover:bg-[#D9E6F0] hover:border hover:border-dashed hover:border-gray-400
+                      ${
+                        isSelected
+                          ? "border border-dashed border-red-600 bg-white"
+                          : ""
+                      }`}
                   >
                     <span className="font-semibold text-[14px] text-gray-700 group-hover:text-[#0B7B8A]">
                       {label}
@@ -344,22 +287,22 @@ const GoogleDetails = () => {
               {
                 label: "Planned Cost",
                 amount: issue?.source_data?.["Planned Cost"],
-                color: "bg-[#9B8ABF]",
+                
               },
               {
                 label: "Forecasted Cost",
                 amount: issue?.source_data?.["Forecasted Cost"],
-                color: "bg-[#E87C7C]",
+               
               },
               {
                 label: "Actual Cost",
                 amount: issue?.source_data?.["Actual Cost"],
-                color: "bg-[#F7D130]",
+               
               },
               {
                 label: "Forecasted Deviation",
                 amount: issue?.source_data?.["Forecast Deviation"],
-                color: "bg-[#0B7B8A]",
+                
               },
             ].map(({ label, amount, color }, i) => (
               <div

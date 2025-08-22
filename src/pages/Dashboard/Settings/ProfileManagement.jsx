@@ -11,7 +11,7 @@ import {
   fetchJiraCredentials,
   jiraConnect,
 } from "../../../services/oprations/jiraAPI";
-//import { fetchGoogleCredentials } from "../../../services/oprations/googleAPI";
+import { fetchGoogleCredentials } from "../../../services/oprations/googleAPI";
 
 const ProfileSettings = () => {
   const { user } = useSelector((state) => state.profile);
@@ -56,7 +56,7 @@ const ProfileSettings = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    //dispatch(fetchGoogleCredentials());
+    dispatch(fetchGoogleCredentials());
   }, [dispatch]);
 
   useEffect(() => {
@@ -70,16 +70,15 @@ const ProfileSettings = () => {
     //console.log("credentials", credentials, jira);
   }, [credentials]);
 
-  //   useEffect(() => {
-  //   if (googleCredentials) {
-  //     setGoogleSheet({
-  //       sheetId: googleCredentials.spreadsheetId || "",
-  //       sheetRange: googleCredentials.sheetRange || "",
-
-  //     });
-  //   }
-  //   //console.log("google credentila", googleCredentials, googleSheet);
-  // }, [googleCredentials]);
+  useEffect(() => {
+    if (googleCredentials) {
+      setGoogleSheet({
+        sheetId: googleCredentials.spreadsheetId || "",
+        sheetRange: googleCredentials.sheetRange || "",
+      });
+    }
+    console.log("google credentila", googleCredentials, googleSheet);
+  }, [googleCredentials]);
 
   // Cleanup avatar preview on unmount
   useEffect(() => {
@@ -119,14 +118,30 @@ const ProfileSettings = () => {
   };
 
   const handleSave = () => {
-    if (profile.name.trim() || profile.email.trim()) {
+    // if (profile.name.trim() || profile.email.trim()) {
+    //   dispatch(
+    //     updateBasicInfo(
+    //       { name: profile.name.trim(), email: profile.email.trim() },
+    //       (updatedUser) => {
+    //         console.log("Basic info updated:", updatedUser);
+    //       }
+    //     )
+    //   );
+    // }
+
+    if (profile.name.trim()) {
       dispatch(
-        updateBasicInfo(
-          { name: profile.name.trim(), email: profile.email.trim() },
-          (updatedUser) => {
-            console.log("Basic info updated:", updatedUser);
-          }
-        )
+        updateBasicInfo({ name: profile.name.trim() }, (updatedUser) => {
+          console.log("Basic info updated:", updatedUser);
+        })
+      );
+    }
+
+    if (profile.email.trim()) {
+      dispatch(
+        updateBasicInfo({ email: profile.email.trim() }, (updatedUser) => {
+          console.log("Basic info updated:", updatedUser);
+        })
       );
     }
 
@@ -138,22 +153,22 @@ const ProfileSettings = () => {
       );
     }
 
-        if (jira.jiraEmail && jira.jiraDomain && jira.jiraApiKey) {
-      dispatch(
-        jiraConnect(
-          {
-            jira_email: jira.jiraEmail,
-            jira_domain: jira.jiraDomain,
-            jira_api_key: jira.jiraApiKey,
-          },
-          (updatedJIRA) => {
-            console.log("Jira updated:", updatedJIRA);
-          }
-        )
-      );
-    } else {
-      console.log("Please fill all Jira fields before submitting.");
-    }
+    // if (jira.jiraEmail && jira.jiraDomain && jira.jiraApiKey) {
+    //   dispatch(
+    //     jiraConnect(
+    //       {
+    //         jira_email: jira.jiraEmail,
+    //         jira_domain: jira.jiraDomain,
+    //         jira_api_key: jira.jiraApiKey,
+    //       },
+    //       (updatedJIRA) => {
+    //         console.log("Jira updated:", updatedJIRA);
+    //       }
+    //     )
+    //   );
+    // } else {
+    //   console.log("Please fill all Jira fields before submitting.");
+    // }
   };
 
   // Update Google Sheet input changes
@@ -179,7 +194,9 @@ const ProfileSettings = () => {
 
       const encodedState = encodeURIComponent(JSON.stringify(stateObj));
       console.log("encoded", encodedState);
-      window.location.href = `https://mnr-pppvue-google-backend.onrender.com/auth/google?state=${encodedState}`;
+
+      const baseUrl = process.env.REACT_APP_GOOGLE_BACKEND_URL;
+      window.location.href = `${baseUrl}/auth/google?state=${encodedState}`;
     } else {
       console.log("Please fill all Google Sheet fields before connecting.");
     }
@@ -204,9 +221,7 @@ const ProfileSettings = () => {
     }
   };
 
-  const handleVerifyEmail = () =>{
-    
-  }
+  const handleVerifyEmail = () => {};
 
   return (
     <div className="bg-white font-sans p-6 min-h-screen">

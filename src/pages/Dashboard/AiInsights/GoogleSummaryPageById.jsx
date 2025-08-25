@@ -14,8 +14,11 @@ import {
 } from "recharts";
 import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { getAllGoogleDetails } from "../../../services/oprations/googleAPI";
-
+import { useParams } from "react-router-dom";
+import {
+  getAllGoogleDetails,
+  getGoogleSheetById,
+} from "../../../services/oprations/googleAPI";
 // Doughnut Chart Component
 const DoughnutChart = ({ data }) => {
   const COLORS = ["#84cc16", "#60a5fa", "#facc15", "#ef4444"];
@@ -72,19 +75,36 @@ const DoughnutChart = ({ data }) => {
 };
 
 // Main Component
-const GoogleSummaryPage = () => {
+const GoogleSummaryPageById = () => {
+  const { id } = useParams();
   const [projectData, setProjectData] = useState([]);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState(null);
   const [activeSummaryId, setActiveSummaryId] = useState(null);
-
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const fetchGoogleData = async () => {
+    const fetchData = async () => {
       try {
-        const res = await dispatch(getAllGoogleDetails());
-        setProjectData(Array.isArray(res) ? res : []);
+        let res;
+        if (id) {
+          const ids = id.split(","); // split comma-separated ids
+          if (ids.length > 1) {
+            // Fetch multiple
+            const results = await Promise.all(
+              ids.map((singleId) => dispatch(getGoogleSheetById(singleId)))
+            );
+            setProjectData(results.filter(Boolean)); // remove null/undefined
+          } else {
+            // Fetch single
+            res = await dispatch(getGoogleSheetById(ids[0]));
+            setProjectData(res ? [res] : []);
+          }
+        } else {
+          // Fetch all projects
+          res = await dispatch(getAllGoogleDetails());
+          setProjectData(Array.isArray(res) ? res : []);
+        }
         setStatus("succeeded");
       } catch (err) {
         console.error("Failed to fetch Google data:", err);
@@ -92,8 +112,9 @@ const GoogleSummaryPage = () => {
         setStatus("failed");
       }
     };
-    fetchGoogleData();
-  }, [dispatch]);
+
+    fetchData();
+  }, [dispatch, id]);
 
   if (status === "loading") {
     return (
@@ -411,4 +432,4 @@ const GoogleSummaryPage = () => {
   );
 };
 
-export default GoogleSummaryPage;
+export default GoogleSummaryPageById;

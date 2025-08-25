@@ -71,6 +71,16 @@ const GoogleDetails = () => {
     }
   }
 
+  function formatDate(dateStr) {
+    if (!dateStr) return "N/A";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
+
   return (
     <div className="bg-white text-gray-900 max-w-[1200px] mx-auto p-6">
       {/* Header */}
@@ -102,11 +112,11 @@ const GoogleDetails = () => {
                 ["Contract ID", issue?.source_data?.["Contract ID"]],
                 [
                   "Contract Start Date",
-                  issue?.source_data?.["Contract Start Date"],
+                  formatDate(issue?.source_data?.["Contract Start Date"]),
                 ],
                 [
                   "Contract End Date",
-                  issue?.source_data?.["Contract End Date"],
+                  formatDate(issue?.source_data?.["Contract End Date"]),
                 ],
               ].map(([label, value], i) => (
                 <div
@@ -130,17 +140,14 @@ const GoogleDetails = () => {
               [
                 "Contract Ceiling Price",
                 issue?.source_data?.["Contract Ceiling Price"],
-               
               ],
               [
                 "Contract Target Price",
                 issue?.source_data?.["Contract Target Price"],
-               
               ],
               [
                 "Actual Contract Spend",
                 issue?.source_data?.["Actual Contract Spend"],
-               
               ],
             ].map(([label, amount, color], i) => (
               <div key={i} className="flex items-center justify-between">
@@ -222,9 +229,6 @@ const GoogleDetails = () => {
               </svg>
             </div>
           </div>
-
-
-
         </section>
 
         {/* Right Section */}
@@ -287,22 +291,18 @@ const GoogleDetails = () => {
               {
                 label: "Planned Cost",
                 amount: issue?.source_data?.["Planned Cost"],
-                
               },
               {
                 label: "Forecasted Cost",
                 amount: issue?.ai_predictions?.["Forecasted_Cost"],
-               
               },
               {
                 label: "Actual Cost",
                 amount: issue?.source_data?.["Actual Cost"],
-               
               },
               {
                 label: "Forecasted Deviation",
                 amount: issue?.ai_predictions?.["Forecasted_Deviation"],
-                
               },
             ].map(({ label, amount, color }, i) => (
               <div
@@ -377,7 +377,7 @@ const GoogleDetails = () => {
 
             <div className="bg-[#F7FAF9] rounded-md p-4 flex-1 min-w-[200px] space-y-3">
               {[
-                ["Updated Date", issue?.["last_processed_at"]],
+                ["Updated Date", formatDate(issue?.["last_processed_at"])],
                 ["Risk", issue?.ai_predictions?.["Risk"]],
                 ["Issues", issue?.ai_predictions?.["Issues"]],
               ].map(([label, value], i) => (

@@ -4,8 +4,10 @@ import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import Eclipse from "../../../assets/Ellipse.png";
 import Profile from "../../../assets/Profile.png";
 import {
+  sendEmailOtp,
   updateBasicInfo,
   updateImage,
+  verifyEmailOtp,
 } from "../../../services/oprations/authAPI";
 import {
   fetchJiraCredentials,
@@ -38,6 +40,10 @@ const ProfileSettings = () => {
     jiraDomain: "",
     jiraApiKey: "",
   });
+
+  // OTP modal state
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState("");
 
   // Populate name/email from user
   useEffect(() => {
@@ -152,23 +158,6 @@ const ProfileSettings = () => {
         })
       );
     }
-
-    // if (jira.jiraEmail && jira.jiraDomain && jira.jiraApiKey) {
-    //   dispatch(
-    //     jiraConnect(
-    //       {
-    //         jira_email: jira.jiraEmail,
-    //         jira_domain: jira.jiraDomain,
-    //         jira_api_key: jira.jiraApiKey,
-    //       },
-    //       (updatedJIRA) => {
-    //         console.log("Jira updated:", updatedJIRA);
-    //       }
-    //     )
-    //   );
-    // } else {
-    //   console.log("Please fill all Jira fields before submitting.");
-    // }
   };
 
   // Update Google Sheet input changes
@@ -221,7 +210,18 @@ const ProfileSettings = () => {
     }
   };
 
-  const handleVerifyEmail = () => {};
+  const handleVerifyEmail = (e) => {
+    e.preventDefault();
+    dispatch(sendEmailOtp(profile.email));
+    setShowOtpModal(true);
+  };
+
+  const handleVerifyOtp = (e) => {
+    e.preventDefault();
+    //console.log("Verifying OTP:", user?.email, profile.email,otp);
+    dispatch(verifyEmailOtp(user?.email, profile.email, otp));
+    setShowOtpModal(false);
+  };
 
   return (
     <div className="bg-white font-sans p-6 min-h-screen">
@@ -315,15 +315,20 @@ const ProfileSettings = () => {
                   className="flex-1 rounded-xl py-3 px-4 text-gray-700 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-[#001f3f]"
                 />
 
-                {profile.email && (
-                  <button
-                    type="button"
-                    onClick={handleVerifyEmail}
-                    className="bg-[#001f3f] text-white font-semibold px-5 py-3 rounded-xl hover:bg-[#0c1c5c] transition-colors"
-                  >
-                    Verify
-                  </button>
-                )}
+                {profile.email &&
+                  (profile.email === user?.email ? (
+                    <span className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-xl font-medium">
+                      <FaCheckCircle className="text-green-600" /> Verified
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleVerifyEmail}
+                      className="bg-[#001f3f] text-white font-semibold px-5 py-3 rounded-xl hover:bg-[#0c1c5c] transition-colors"
+                    >
+                      Verify
+                    </button>
+                  ))}
               </div>
             </div>
           </form>
@@ -488,6 +493,41 @@ const ProfileSettings = () => {
             Save Changes
           </button>
         </div>
+
+        {/* OTP Modal */}
+        {showOtpModal && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-200 bg-opacity-50 z-50">
+            <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
+              <h2 className="text-xl font-semibold mb-4 text-[#001f3f]">
+                Check your email
+              </h2>
+              <p className="text-gray-600 mb-4">
+                We've sent a verification code to <b>{profile.email}</b>.
+              </p>
+              <input
+                type="text"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="Enter OTP"
+                className="w-full rounded-xl py-3 px-4 text-gray-700 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-[#001f3f] mb-4"
+              />
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowOtpModal(false)}
+                  className="px-5 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleVerifyOtp}
+                  className="px-5 py-2 rounded-xl bg-[#001f3f] text-white hover:bg-[#0c1c5c] transition-colors"
+                >
+                  Verify OTP
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

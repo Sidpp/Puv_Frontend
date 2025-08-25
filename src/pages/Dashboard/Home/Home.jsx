@@ -19,7 +19,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../../../components/Dashboard/Home/Button";
 import {
   Card,
@@ -239,42 +239,106 @@ const SpendAndAccrualsView = ({ data }) => (
 );
 
 //New function
-function getPortfolioStatusData(googleData = []) {
+function mapJiraStatus(status) {
+  if (!status) return "";
+  switch (status) {
+    case "Done":
+      return "Completed";
+    case "To Do":
+      return "Delayed";
+    case "In Progress":
+      return "In Progress";
+    default:
+      return status;
+  }
+}
+
+function getPortfolioStatusData(source, googleData = [], jiraData = []) {
   let delayed = 0;
   let completed = 0;
   let onTrack = 0;
+  let inProgress = 0;
 
-  googleData.forEach((project) => {
-    const status = project.source_data?.["Milestone Status"];
+  const statusBuckets = {
+    Delayed: [],
+    Completed: [],
+    "On Track": [],
+    "In Progress": [],
+  };
 
-    if (status === "Delayed") {
-      delayed++;
-    } else if (status === "Completed") {
-      completed++;
-    } else if (status === "On Track") {
-      onTrack++;
-    }
-  });
+  if (source === "Google") {
+    googleData.forEach((project) => {
+      const status = project.source_data?.["Milestone Status"];
+      if (status === "Delayed") {
+        delayed++;
+        statusBuckets.Delayed.push(project._id);
+      } else if (status === "Completed") {
+        completed++;
+        statusBuckets.Completed.push(project._id);
+      } else if (status === "On Track") {
+        onTrack++;
+        statusBuckets["On Track"].push(project._id);
+      }
+    });
 
-  const total = googleData.length || 1;
+    const total = googleData.length || 1;
+    return [
+      {
+        name: "Delayed",
+        value: Math.round((delayed / total) * 100),
+        barColor: "#ef4444",
+        ids: statusBuckets.Delayed,
+      },
+      {
+        name: "Completed",
+        value: Math.round((completed / total) * 100),
+        barColor: "#3b82f6",
+        ids: statusBuckets.Completed,
+      },
+      {
+        name: "On Track",
+        value: Math.round((onTrack / total) * 100),
+        barColor: "#22c55e",
+        ids: statusBuckets["On Track"],
+      },
+    ];
+  } else {
+    jiraData.forEach((issue) => {
+      const mapped = mapJiraStatus(issue.status);
+      if (mapped === "Delayed") {
+        delayed++;
+        statusBuckets.Delayed.push(issue._id);
+      } else if (mapped === "Completed") {
+        completed++;
+        statusBuckets.Completed.push(issue._id);
+      } else if (mapped === "In Progress") {
+        inProgress++;
+        statusBuckets["In Progress"].push(issue._id);
+      }
+    });
 
-  return [
-    {
-      name: "Delayed",
-      value: Math.round((delayed / total) * 100),
-      barColor: "#ef4444",
-    },
-    {
-      name: "Completed",
-      value: Math.round((completed / total) * 100),
-      barColor: "#3b82f6",
-    }, // blue for completed
-    {
-      name: "On Track",
-      value: Math.round((onTrack / total) * 100),
-      barColor: "#22c55e",
-    },
-  ];
+    const total = jiraData.length || 1;
+    return [
+      {
+        name: "Delayed",
+        value: Math.round((delayed / total) * 100),
+        barColor: "#ef4444",
+        ids: statusBuckets.Delayed,
+      },
+      {
+        name: "Completed",
+        value: Math.round((completed / total) * 100),
+        barColor: "#3b82f6",
+        ids: statusBuckets.Completed,
+      },
+      {
+        name: "In Progress",
+        value: Math.round((inProgress / total) * 100),
+        barColor: "#f59e0b",
+        ids: statusBuckets["In Progress"],
+      },
+    ];
+  }
 }
 
 function getBudgetBarsData(googleData = []) {
@@ -357,38 +421,42 @@ function getForecastsData(googleData = []) {
 }
 
 function getRiskFactors(googleData = []) {
-  let taskDelay = 0;
-  let teamInactivity = 0;
-  let dependencyConflict = 0;
-  let burnoutRisk = 0;
+  let taskDelay = { count: 0, ids: [] };
+  let teamInactivity = { count: 0, ids: [] };
+  let dependencyConflict = { count: 0, ids: [] };
+  let burnoutRisk = { count: 0, ids: [] };
 
   googleData.forEach((project) => {
     const data = project.source_data || {};
 
-    // Task Delay → check Milestone Status
+    // Task Delay
     if (data["Milestone Status"]?.toLowerCase().includes("delay")) {
-      taskDelay++;
+      taskDelay.count++;
+      taskDelay.ids.push(project._id);
     }
 
-    // Team Inactivity → if Actual Hours < Allocated Hours significantly
+    // Team Inactivity
     if (
       Number(data["Actual Hours"] || 0) <
       0.5 * Number(data["Allocated Hours"] || 0)
     ) {
-      teamInactivity++;
+      teamInactivity.count++;
+      teamInactivity.ids.push(project._id);
     }
 
-    // Dependency Conflict → if Dependency Type exists & is not "None"
+    // Dependency Conflict
     if (
       data["Dependency Type"] &&
       data["Dependency Type"].toLowerCase() !== "none"
     ) {
-      dependencyConflict++;
+      dependencyConflict.count++;
+      dependencyConflict.ids.push(project._id);
     }
 
-    // Burnout Risk → check Burnout Risk (%) > threshold
+    // Burnout Risk
     if (Number(data["Burnout Risk (%)"] || 0) > 50) {
-      burnoutRisk++;
+      burnoutRisk.count++;
+      burnoutRisk.ids.push(project._id);
     }
   });
 
@@ -396,12 +464,14 @@ function getRiskFactors(googleData = []) {
     {
       icon: CheckSquare,
       label: "Task Delay",
-      sublabel: taskDelay > 3 ? "High" : taskDelay > 1 ? "Moderate" : "Low",
-      count: taskDelay,
+      sublabel:
+        taskDelay.count > 3 ? "High" : taskDelay.count > 1 ? "Moderate" : "Low",
+      count: taskDelay.count,
+      ids: taskDelay.ids,
       color:
-        taskDelay > 3
+        taskDelay.count > 3
           ? "text-red-500"
-          : taskDelay > 1
+          : taskDelay.count > 1
           ? "text-amber-500"
           : "text-green-500",
     },
@@ -409,12 +479,17 @@ function getRiskFactors(googleData = []) {
       icon: Users,
       label: "Team Inactivity",
       sublabel:
-        teamInactivity > 3 ? "High" : teamInactivity > 1 ? "Moderate" : "Low",
-      count: teamInactivity,
+        teamInactivity.count > 3
+          ? "High"
+          : teamInactivity.count > 1
+          ? "Moderate"
+          : "Low",
+      count: teamInactivity.count,
+      ids: teamInactivity.ids,
       color:
-        teamInactivity > 3
+        teamInactivity.count > 3
           ? "text-red-500"
-          : teamInactivity > 1
+          : teamInactivity.count > 1
           ? "text-amber-500"
           : "text-green-500",
     },
@@ -422,28 +497,35 @@ function getRiskFactors(googleData = []) {
       icon: GitPullRequestArrow,
       label: "Dependency Conflict",
       sublabel:
-        dependencyConflict > 3
+        dependencyConflict.count > 3
           ? "Critical"
-          : dependencyConflict > 1
+          : dependencyConflict.count > 1
           ? "Moderate"
           : "Low",
-      count: dependencyConflict,
+      count: dependencyConflict.count,
+      ids: dependencyConflict.ids,
       color:
-        dependencyConflict > 3
+        dependencyConflict.count > 3
           ? "text-red-600"
-          : dependencyConflict > 1
+          : dependencyConflict.count > 1
           ? "text-amber-500"
           : "text-green-500",
     },
     {
       icon: Flame,
       label: "Burnout Risk",
-      sublabel: burnoutRisk > 3 ? "High" : burnoutRisk > 1 ? "Moderate" : "Low",
-      count: burnoutRisk,
+      sublabel:
+        burnoutRisk.count > 3
+          ? "High"
+          : burnoutRisk.count > 1
+          ? "Moderate"
+          : "Low",
+      count: burnoutRisk.count,
+      ids: burnoutRisk.ids,
       color:
-        burnoutRisk > 3
+        burnoutRisk.count > 3
           ? "text-red-500"
-          : burnoutRisk > 1
+          : burnoutRisk.count > 1
           ? "text-amber-500"
           : "text-green-500",
     },
@@ -521,7 +603,6 @@ function getRagPieData(googleData = []) {
     }
   });
 
-
   const labelMap = {
     Red: "High",
     Yellow: "Medium",
@@ -529,18 +610,17 @@ function getRagPieData(googleData = []) {
   };
 
   const colorMap = {
-    Red: "#ef4444",    // Tailwind red-500
+    Red: "#ef4444", // Tailwind red-500
     Yellow: "#facc15", // Tailwind yellow-400
-    Green: "#22c55e",  // Tailwind green-500
+    Green: "#22c55e", // Tailwind green-500
   };
 
   return Object.keys(statusCounts).map((key) => ({
     name: `Open Issues (${statusCounts[key]} - ${labelMap[key]})`,
     value: statusCounts[key],
-    fill: colorMap[key], 
+    fill: colorMap[key],
   }));
 }
-
 
 const aggregateFinancials = (projects) => {
   return projects.reduce(
@@ -589,6 +669,9 @@ const aggregateFinancials = (projects) => {
 // --- Main Dashboard Component ---
 
 const Home = () => {
+  const [portfolioSource, setPortfolioSource] = useState("Google");
+  const [isPortfolioDropdownOpen, setIsPortfolioDropdownOpen] = useState(false);
+
   const [selectedProject, setSelectedProject] = useState("Project A");
   const [aiSource, setAiSource] = useState("Google");
   const [isAiDropdownOpen, setIsAiDropdownOpen] = useState(false);
@@ -596,8 +679,9 @@ const Home = () => {
   const [googleData, setGoogleData] = useState([]);
   const [jiraData, setJiraData] = useState([]);
   const [financialData, setFinancialData] = useState(null);
-
+  const [currentPage, setCurrentPage] = React.useState(1);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchGoogle = async () => {
@@ -648,7 +732,11 @@ const Home = () => {
   );
 
   // Data for charts and tables
-  const portfolioStatusData = getPortfolioStatusData(googleData);
+  const portfolioStatusData = getPortfolioStatusData(
+    portfolioSource,
+    googleData,
+    jiraData
+  );
 
   const budgetBarsData = getBudgetBarsData(googleData);
 
@@ -749,12 +837,75 @@ const Home = () => {
               {/* Projects On Track/Delayed/At Risk */}
               <Card className="bg-[#f3f7f6]">
                 <CardHeader>
-                  <CardTitle>% of Projects On Track/Delayed/At Risk</CardTitle>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>
+                      % of Projects On Track/Delayed/At Risk
+                    </CardTitle>
+                    <div className="relative">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-28 justify-between"
+                        onClick={() =>
+                          setIsPortfolioDropdownOpen(!isPortfolioDropdownOpen)
+                        }
+                      >
+                        <span>{portfolioSource}</span>
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform ${
+                            isPortfolioDropdownOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </Button>
+                      {isPortfolioDropdownOpen && (
+                        <div className="absolute top-full right-0 mt-1 w-28 bg-white border rounded-md shadow-lg z-10">
+                          <ul className="py-1">
+                            <li
+                              className="px-3 py-1 text-sm hover:bg-slate-100 cursor-pointer"
+                              onClick={() => {
+                                setPortfolioSource("Google");
+                                setIsPortfolioDropdownOpen(false);
+                              }}
+                            >
+                              Google
+                            </li>
+                            <li
+                              className="px-3 py-1 text-sm hover:bg-slate-100 cursor-pointer"
+                              onClick={() => {
+                                setPortfolioSource("Jira");
+                                setIsPortfolioDropdownOpen(false);
+                              }}
+                            >
+                              Jira
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </CardHeader>
+
                 <CardContent>
                   <div className="space-y-3 mb-4">
                     {portfolioStatusData.map((item) => (
-                      <div key={item.name}>
+                      <div
+                        key={item.name}
+                        onClick={() => {
+                          if (item.ids.length > 0) {
+                            const joinedIds = item.ids.join(",");
+                            if (portfolioSource === "Google") {
+                              navigate(
+                                `/dashboard/insights/google-summary/${joinedIds}`
+                              );
+                            } else {
+                              navigate(
+                                `/dashboard/insights/jira-summary/${joinedIds}`
+                              );
+                            }
+                          }
+                        }}
+                        className="cursor-pointer"
+                      >
                         <div
                           className="h-10 flex items-center rounded-sm px-3"
                           style={{
@@ -770,8 +921,10 @@ const Home = () => {
                     ))}
                   </div>
                   <div className="relative h-4 mt-8">
-                    <div className="absolute inset-0 border-t border-gray-300 mt-2"></div>
+                    {" "}
+                    <div className="absolute inset-0 border-t border-gray-300 mt-2"></div>{" "}
                     <div className="absolute inset-0 flex justify-between text-xs text-gray-500">
+                      {" "}
                       {[
                         "0",
                         "10",
@@ -786,23 +939,26 @@ const Home = () => {
                         "100",
                       ].map((val) => (
                         <div key={val} className="flex flex-col items-center">
-                          <span className="h-1 w-px bg-gray-300"></span>
-                          <span>{val}</span>
+                          {" "}
+                          <span className="h-1 w-px bg-gray-300"></span>{" "}
+                          <span>{val}</span>{" "}
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      ))}{" "}
+                    </div>{" "}
+                  </div>{" "}
                   <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-12 md:gap-24 text-sm text-gray-600 mt-6">
+                    {" "}
                     {portfolioStatusData.map((item) => (
                       <div key={item.name} className="flex items-center">
+                        {" "}
                         <span
                           className="w-3 h-3 rounded-sm mr-2"
                           style={{ backgroundColor: item.barColor }}
-                        ></span>
-                        <span>{item.name}</span>
+                        ></span>{" "}
+                        <span>{item.name}</span>{" "}
                       </div>
-                    ))}
-                  </div>
+                    ))}{" "}
+                  </div>{" "}
                 </CardContent>
               </Card>
 
@@ -853,133 +1009,134 @@ const Home = () => {
                   </div>
                 </CardHeader>
 
-                <CardContent className="flex-1 overflow-hidden">
-                  {/* Scrollable wrapper */}
-                  <div className="h-full overflow-y-auto pr-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {(aiSource === "Google" ? googleData : jiraData).length >
-                      0 ? (
-                        (aiSource === "Google" ? googleData : jiraData).map(
-                          (project) => {
-                            const ai = project.ai_predictions || {};
-                            const s = project.source_data || {};
-                            const isGoogle = aiSource === "Google";
+                <CardContent className="flex-1 flex flex-col">
+                  {/* Pagination Logic */}
+                  {(() => {
+                    const data = aiSource === "Google" ? googleData : jiraData;
 
-                            // Predicted Delay calculation
-                            const predictedDelay = isGoogle
-                              ? ((Number(ai.Forecasted_Deviation) || 0) /
-                                  (Number(s?.["Planned Cost"]) || 1)) *
-                                100
-                              : (project.ai_delay_score ?? 0) * 100;
+                    const itemsPerPage = 4;
+                    const totalPages = Math.ceil(data.length / itemsPerPage);
 
-                            /* // Confidence calculation (Google only)
-                                const confidence = isGoogle
-                                  ? ((Number(s.CPI) || 0) + (Number(s.SPI) || 0)) / 2 * 100
-                                  : null; */
+                    const paginatedData = data.slice(
+                      (currentPage - 1) * itemsPerPage,
+                      currentPage * itemsPerPage
+                    );
 
-                            const rawConfidence = isGoogle
-                              ? (((Number(s.CPI) || 0) + (Number(s.SPI) || 0)) /
-                                  2) *
-                                100
-                              : null;
+                    return (
+                      <div className="flex flex-col h-full">
+                        {/* Project Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-y-auto pb-2">
+                          {paginatedData.length > 0 ? (
+                            paginatedData.map((project) => {
+                              const ai = project.ai_predictions || {};
+                              const s = project.source_data || {};
+                              const isGoogle = aiSource === "Google";
 
-                            const confidence =
-                              rawConfidence != null
-                                ? Math.min(100, Math.max(0, rawConfidence))
+                              const predictedDelay = isGoogle
+                                ? ((Number(ai.Forecasted_Deviation) || 0) /
+                                    (Number(s?.["Planned Cost"]) || 1)) *
+                                  100
+                                : (project.ai_delay_score ?? 0) * 100;
+
+                              const rawConfidence = isGoogle
+                                ? (((Number(s.CPI) || 0) +
+                                    (Number(s.SPI) || 0)) /
+                                    2) *
+                                  100
                                 : null;
 
-                            return (
-                              <div
-                                key={project._id}
-                                className="border rounded-lg p-3 flex flex-col bg-slate-50/50 shadow-sm"
-                              >
-                                <h3 className="font-semibold mb-4 text-left w-fit text-slate-800">
-                                  {project.project_identifier ||
-                                    project.project_name ||
-                                    "Untitled Project"}
-                                </h3>
+                              const confidence =
+                                rawConfidence != null
+                                  ? Math.min(100, Math.max(0, rawConfidence))
+                                  : null;
 
-                                <div className="space-y-5 text-sm flex-grow flex flex-col">
-                                  {/* Predicted Delay% */}
-                                  <div className="flex flex-col gap-2">
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-slate-600">
-                                        Predicted Delay%
-                                      </span>
-                                      <span className="font-medium text-slate-800">
-                                        {`${Math.abs(predictedDelay).toFixed(
-                                          1
-                                        )}%`}
-                                      </span>
-                                    </div>
-                                    <div className="relative w-full h-1.5 bg-slate-200 rounded-full">
-                                      <div
-                                        className="absolute top-0 left-0 h-full bg-[#00254D] rounded-full"
-                                        style={{
-                                          width: `${Math.min(
-                                            Math.abs(predictedDelay),
-                                            100
-                                          )}%`,
-                                        }}
-                                      >
-                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-4 h-4 bg-[#00254D] border-2 border-white rounded-full shadow"></div>
+                              return (
+                                <div
+                                  key={project._id}
+                                  className="border rounded-lg p-3 flex flex-col bg-slate-50/50 shadow-sm h-[220px] max-h-[220px]" // fixed height
+                                >
+                                  <h3 className="font-semibold mb-2 text-left w-fit text-slate-800 text-sm truncate">
+                                    {project.project_identifier ||
+                                      project.project_name ||
+                                      "Untitled Project"}
+                                  </h3>
+
+                                  <div className="space-y-3 text-xs flex-grow overflow-hidden">
+                                    {/* Predicted Delay% */}
+                                    <div className="flex flex-col gap-1">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-slate-600">
+                                          Predicted Delay%
+                                        </span>
+                                        <span className="font-medium text-slate-800">
+                                          {`${Math.abs(predictedDelay).toFixed(
+                                            1
+                                          )}%`}
+                                        </span>
+                                      </div>
+                                      <div className="relative w-full h-1.5 bg-slate-200 rounded-full">
+                                        <div
+                                          className="absolute top-0 left-0 h-full bg-[#00254D] rounded-full"
+                                          style={{
+                                            width: `${Math.min(
+                                              Math.abs(predictedDelay),
+                                              100
+                                            )}%`,
+                                          }}
+                                        >
+                                          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-3 bg-[#00254D] border-2 border-white rounded-full shadow"></div>
+                                        </div>
                                       </div>
                                     </div>
+
+                                    {/* Source-specific fields */}
+                                    {isGoogle ? (
+                                      <>
+                                        <div className="grid grid-cols-3 items-center">
+                                          <span className="text-slate-600">
+                                            Confidence
+                                          </span>
+                                          <span className="col-span-2 font-medium text-slate-800">
+                                            {confidence != null
+                                              ? `${confidence.toFixed(1)}%`
+                                              : "N/A"}
+                                          </span>
+                                        </div>
+                                        <div className="grid grid-cols-3 items-center">
+                                          <span className="text-slate-600">
+                                            Risk
+                                          </span>
+                                          <span className="col-span-2 font-medium text-slate-800">
+                                            {ai.Risk || "N/A"}
+                                          </span>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="grid grid-cols-3 items-center">
+                                          <span className="text-slate-600">
+                                            Delay Label
+                                          </span>
+                                          <span className="col-span-2 font-medium text-slate-800">
+                                            {project.ai_delay_label || "N/A"}
+                                          </span>
+                                        </div>
+                                        <div className="grid grid-cols-3 items-center">
+                                          <span className="text-slate-600">
+                                            Priority Score
+                                          </span>
+                                          <span className="col-span-2 font-medium text-slate-800">
+                                            {project.ai_priority_score != null
+                                              ? `${(
+                                                  project.ai_priority_score *
+                                                  100
+                                                ).toFixed(0)}%`
+                                              : "N/A"}
+                                          </span>
+                                        </div>
+                                      </>
+                                    )}
                                   </div>
-
-                                  {/* Show different fields based on source */}
-                                  {isGoogle ? (
-                                    <>
-                                      {/* Confidence */}
-                                      <div className="grid grid-cols-3 items-center">
-                                        <span className="text-slate-600">
-                                          Confidence
-                                        </span>
-                                        <span className="col-span-2 font-medium text-slate-800">
-                                          {confidence != null
-                                            ? `${confidence.toFixed(1)}%`
-                                            : "N/A"}
-                                        </span>
-                                      </div>
-
-                                      {/* Risk */}
-                                      <div className="grid grid-cols-3 items-center">
-                                        <span className="text-slate-600">
-                                          Risk
-                                        </span>
-                                        <span className="col-span-2 font-medium text-slate-800">
-                                          {ai.Risk || "N/A"}
-                                        </span>
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <>
-                                      {/* Jira-specific fields */}
-                                      <div className="grid grid-cols-3 items-center">
-                                        <span className="text-slate-600">
-                                          Delay Label
-                                        </span>
-                                        <span className="col-span-2 font-medium text-slate-800">
-                                          {project.ai_delay_label || "N/A"}
-                                        </span>
-                                      </div>
-
-                                      <div className="grid grid-cols-3 items-center">
-                                        <span className="text-slate-600">
-                                          Priority Score
-                                        </span>
-                                        <span className="col-span-2 font-medium text-slate-800">
-                                          {project.ai_priority_score != null
-                                            ? `${(
-                                                project.ai_priority_score * 100
-                                              ).toFixed(0)}%`
-                                            : "N/A"}
-                                        </span>
-                                      </div>
-                                    </>
-                                  )}
-
-                                  <div className="flex-grow"></div>
 
                                   <Link
                                     to={
@@ -987,22 +1144,47 @@ const Home = () => {
                                         ? `/dashboard/insights/google-summary`
                                         : `/dashboard/insights/jira-summary`
                                     }
-                                    className="inline-block w-full mt-auto px-4 py-2 rounded-md bg-[#00254D] text-white text-center font-semibold transition hover:bg-opacity-90"
+                                    className="mt-auto px-3 py-1.5 rounded-md bg-[#00254D] text-white text-center text-xs font-semibold transition hover:bg-opacity-90"
                                   >
                                     Show Summary
                                   </Link>
                                 </div>
-                              </div>
-                            );
-                          }
-                        )
-                      ) : (
-                        <p className="text-center text-slate-500 col-span-2">
-                          No project data available
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                              );
+                            })
+                          ) : (
+                            <p className="text-center text-slate-500 col-span-2">
+                              No project data available
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                          <div className="flex justify-center items-center gap-3 mt-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={currentPage === 1}
+                              onClick={() => setCurrentPage((p) => p - 1)}
+                            >
+                              Prev
+                            </Button>
+                            <span className="text-sm text-slate-600">
+                              Page {currentPage} of {totalPages}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={currentPage === totalPages}
+                              onClick={() => setCurrentPage((p) => p + 1)}
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </div>
@@ -1059,7 +1241,14 @@ const Home = () => {
                       return (
                         <div
                           key={factor.label}
-                          className="flex items-center justify-between p-3 border rounded-lg bg-gray-50/50"
+                          className="flex items-center justify-between p-3 border rounded-lg bg-gray-50/50 cursor-pointer hover:bg-gray-100"
+                          onClick={() =>
+                            navigate(
+                              `/dashboard/insights/google-summary/${factor.ids.join(
+                                ","
+                              )}`
+                            )
+                          }
                         >
                           <div className="flex items-center space-x-3">
                             <Icon className={`w-6 h-6 ${factor.color}`} />

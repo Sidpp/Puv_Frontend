@@ -18,7 +18,8 @@ const {
   CHANGE_PASSWORD_API,
   UPDATE_IMAGE_API,
   UPDATE_INFO_API,
-  RESETEMAILTOKEN_API,
+  SEND_EMAIL_OTP_API,
+  VERIFY_EMAIL_OTP_API
 } = endpoints;
 
 export function updateImage(displayPicture, onSuccess) {
@@ -388,6 +389,67 @@ export function sendOtp(email, password, navigate) {
     toast.dismiss(toastId);
   };
 }
+
+export function sendEmailOtp(email) {
+  return async (dispatch) => {
+    const toastId = toast.loading("Loading...");
+    //dispatch(setLoading(true));
+    try {
+      //console.log("api", SENDOTP_API);
+      const response = await apiConnector("POST", SEND_EMAIL_OTP_API, {
+        email,
+        checkUserPresent: true,
+      });
+      //console.log("SENDOTP API RESPONSE............", response);
+
+      //console.log(response.data.success);
+
+      if (!response.data.success) {
+        throw new Error(response.data.message);
+      }
+
+      toast.success("OTP Sent Successfully");
+  
+    } catch (error) {
+      console.log("SENDOTP API ERROR............", error);
+      toast.error(error.response.data.message);
+    }
+    //dispatch(setLoading(false));
+    toast.dismiss(toastId);
+  };
+}
+
+export function verifyEmailOtp(oldEmail, newEmail, otp) {
+  return async (dispatch) => {
+    const toastId = toast.loading("Loading...");
+    dispatch(setLoading(true));
+    try {
+      const response = await apiConnector("POST", VERIFY_EMAIL_OTP_API, {
+        oldEmail,
+        newEmail,
+        otp,
+      });
+
+      console.log("VERIFICATION API RESPONSE............", response);
+
+      if (!response.data.success) {
+        throw new Error(response.data.message);
+      }
+
+      toast.success("Email verified & updated successfully");
+
+      console.log("verify for setUser",response.data.updatedUser)
+      dispatch(setUser({ ...response.data.updatedUser }));
+
+    } catch (error) {
+      console.log("verification ERROR............", error);
+      toast.error(error.response?.data?.message || "Verification Failed");
+    }
+    dispatch(setLoading(false));
+    toast.dismiss(toastId);
+  };
+}
+
 
 export function signin(email, password, otp, navigate) {
   return async (dispatch) => {

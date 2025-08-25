@@ -25,6 +25,8 @@ import GoogleDetails from "./pages/Dashboard/AiInsights/googleDetails";
 import JiraDetails from "./pages/Dashboard/AiInsights/jiraDetails"
 import GoogleSummaryPage from "./pages/Dashboard/AiInsights/GoogleSummaryPage";
 import JiraSummary from "./pages/Dashboard/AiInsights/JiraSummary";
+import JiraSummaryById from "./pages/Dashboard/AiInsights/JiraSummaryById";
+import GoogleSummaryPageById from "./pages/Dashboard/AiInsights/GoogleSummaryPageById";
 
 const RedirectIfLoggedIn = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -84,7 +86,9 @@ const App = () => {
         <Route path="insights/jira-details/:id" element={<JiraDetails/>} />
         <Route path="insights/google-details/:id" element={<GoogleDetails/>} />
         <Route path="insights/jira-summary" element={<JiraSummary/>} />
+        <Route path="insights/jira-summary/:id" element={<JiraSummaryById/>} />
         <Route path="insights/google-summary" element={<GoogleSummaryPage/>} />
+        <Route path="insights/google-summary/:id" element={<GoogleSummaryPageById/>} />
 
         <Route path="workstream">
           <Route path="portfolio" element={<Health/>} />

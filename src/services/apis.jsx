@@ -16,8 +16,8 @@ export const endpoints = {
   RESETPASSTOKEN_API: BASE_URL + "/auth/reset-password-token",
   RESETPASSWORD_API: BASE_URL + "/auth/reset-password",
 
-  RESETEMAILTOKEN_API: BASE_URL + "/auth/reset-email-token",
-  RESETEMAIL_API: BASE_URL + "/auth/reset-email",
+  SEND_EMAIL_OTP_API: BASE_URL + "/auth/sendotp-email",
+  VERIFY_EMAIL_OTP_API: BASE_URL + "/auth/verifyotp-email",
 
   GET_USER_DETAILS_API: BASE_URL + "/auth/get-user-details",
   GET_ALL_USERS_API: BASE_URL + "/auth/get-all-user-details", 

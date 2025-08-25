@@ -32,6 +32,16 @@ const GoogleCard = (props) => {
     return "gray-500";
   }
 
+  function formatDate(dateStr) {
+  if (!dateStr) return "N/A";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
   function progressValue(progress) {
     if (!progress) return 0;
 
@@ -65,15 +75,15 @@ const GoogleCard = (props) => {
     return name.trim().charAt(0).toUpperCase();
   }
 
-  console.log("gog", props);
+  //console.log("gog", props);
 
   return (
     <div className="bg-[#F9FAFB] rounded-xl shadow-sm p-5 border border-transparent hover:border-gray-200">
       <div className="flex justify-between items-center mb-3">
         <div className="text-xs text-gray-400 font-semibold">
-          <span>{startDate}</span>
+          <span>{formatDate(startDate)}</span>
           <span className="mx-2">to</span>
-          <span>{endDate}</span>
+          <span>{formatDate(endDate)}</span>
         </div>
         <div
           className={clsx("text-xs font-bold rounded-lg px-3 py-1", {

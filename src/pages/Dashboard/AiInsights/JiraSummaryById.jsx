@@ -3,6 +3,8 @@ import { FaEye } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { FaExclamationTriangle } from "react-icons/fa";
+import { useParams } from "react-router-dom";
+import { getJiraIssueById } from "../../../services/oprations/jiraAPI";
 
 import {
   PieChart,
@@ -27,49 +29,55 @@ const formatDate = (dateStr) => {
   });
 };
 
-const JiraSummary = () => {
+const JiraSummaryById = () => {
   const [activeSummaryId, setActiveSummaryId] = useState(null);
   const dispatch = useDispatch();
   const [jiraData, setJiraData] = useState([]);
+  const { id } = useParams(); // e.g. "68ac0baf2c38b5e0514eedf0,68ac0bb12c38b5e0514eedf1"
 
   useEffect(() => {
-    const fetchIssues = async () => {
+    const fetchIssuesByIds = async () => {
       try {
-        const issues = await dispatch(getAllJiraIssues());
-
-        const mappedIssues = (Array.isArray(issues) ? issues : []).map(
-          (issue) => ({
-            _id: issue._id,
-            id: issue.key,
-            status: issue.status || "Unknown",
-            priority: issue.priority || "Medium",
-            assignee: issue.assignee || "Unassigned",
-            dueDate: issue.due_date ? formatDate(issue.due_date) : "N/A",
-            lastInteraction: issue.last_ai_interaction_day
-              ? formatDate(issue.last_ai_interaction_day)
-              : "N/A",
-            aisummary: issue.ai_summary || null,
-            originalEstimate: issue.original_estimate || 0,
-            timeSpent: issue.time_logged
-              ? parseInt(issue.time_logged.replace("h", ""), 10)
-              : 0,
-            remainingEstimate: issue.remaining_estimate || 0,
-            summary: issue.summary,
-            labels: issue.labels || [],
-            projectName: issue.project_name,
-            ai_marker: issue.ai_marker,
+        const ids = id.split(","); // split into array
+        const results = await Promise.all(
+          ids.map(async (issueId) => {
+            const res = await dispatch(getJiraIssueById(issueId.trim()));
+            if (res) {
+              return {
+                _id: res._id,
+                id: res.key,
+                status: res.status || "Unknown",
+                priority: res.priority || "Medium",
+                assignee: res.assignee || "Unassigned",
+                dueDate: res.due_date ? formatDate(res.due_date) : "N/A",
+                lastInteraction: res.last_ai_interaction_day
+                  ? formatDate(res.last_ai_interaction_day)
+                  : "N/A",
+                aisummary: res.ai_summary || null,
+                originalEstimate: res.original_estimate || 0,
+                timeSpent: res.time_logged
+                  ? parseInt(res.time_logged.replace("h", ""), 10)
+                  : 0,
+                remainingEstimate: res.remaining_estimate || 0,
+                summary: res.summary,
+                labels: res.labels || [],
+                projectName: res.project_name,
+                ai_marker: res.ai_marker,
+              };
+            }
+            return null;
           })
         );
 
-        setJiraData(mappedIssues);
+        setJiraData(results.filter(Boolean)); // only valid issues
       } catch (error) {
-        console.error("Failed to fetch Jira issues:", error);
+        console.error("Failed to fetch Jira issues by IDs:", error);
         setJiraData([]);
       }
     };
 
-    fetchIssues();
-  }, [dispatch]);
+    if (id) fetchIssuesByIds();
+  }, [dispatch, id]);
 
   // --- Derived Data from API ---
   const statusData = [
@@ -453,4 +461,4 @@ const JiraSummary = () => {
   );
 };
 
-export default JiraSummary;
+export default JiraSummaryById;

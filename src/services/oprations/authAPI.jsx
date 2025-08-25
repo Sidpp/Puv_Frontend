@@ -17,7 +17,8 @@ const {
   DELETE_USER_API,
   CHANGE_PASSWORD_API,
   UPDATE_IMAGE_API,
-  UPDATE_INFO_API
+  UPDATE_INFO_API,
+  RESETEMAILTOKEN_API,
 } = endpoints;
 
 export function updateImage(displayPicture, onSuccess) {

@@ -16,6 +16,9 @@ export const endpoints = {
   RESETPASSTOKEN_API: BASE_URL + "/auth/reset-password-token",
   RESETPASSWORD_API: BASE_URL + "/auth/reset-password",
 
+  RESETEMAILTOKEN_API: BASE_URL + "/auth/reset-email-token",
+  RESETEMAIL_API: BASE_URL + "/auth/reset-email",
+
   GET_USER_DETAILS_API: BASE_URL + "/auth/get-user-details",
   GET_ALL_USERS_API: BASE_URL + "/auth/get-all-user-details", 
   EDIT_USER_API: (userId) => `${BASE_URL}/auth/edit-user/${userId}`, 
@@ -38,9 +41,3 @@ export const googleendpoints = {
   // JIRA_CONNECT_API: BASE_URL + "/jira/connect",
   GET_GOOGLE_CREDENTIALS_API: BASE_URL + "/google/credentials",
 }
-
-
-//CHATBOT ENDPOINTS
-export const chatbotendpoints = {
-  CHATBOT_API: BASE_URL + "/chatbot",
-};

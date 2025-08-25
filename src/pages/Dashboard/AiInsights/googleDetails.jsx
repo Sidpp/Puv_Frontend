@@ -176,7 +176,7 @@ const GoogleDetails = () => {
                   Burnout Risk (%)
                 </p>
                 <p className="text-red-700 font-bold text-[20px] mt-1">
-                  {issue?.source_data?.["Burnout Risk (%)"]}
+                  {issue?.ai_predictions?.["Burnout_Risk"]}
                 </p>
               </div>
             </div>
@@ -291,7 +291,7 @@ const GoogleDetails = () => {
               },
               {
                 label: "Forecasted Cost",
-                amount: issue?.source_data?.["Forecasted Cost"],
+                amount: issue?.ai_predictions?.["Forecasted_Cost"],
                
               },
               {
@@ -301,7 +301,7 @@ const GoogleDetails = () => {
               },
               {
                 label: "Forecasted Deviation",
-                amount: issue?.source_data?.["Forecast Deviation"],
+                amount: issue?.ai_predictions?.["Forecasted_Deviation"],
                 
               },
             ].map(({ label, amount, color }, i) => (
@@ -377,9 +377,9 @@ const GoogleDetails = () => {
 
             <div className="bg-[#F7FAF9] rounded-md p-4 flex-1 min-w-[200px] space-y-3">
               {[
-                ["Updated Date", issue?.source_data?.["Update Date"]],
-                ["Risk", issue?.source_data?.["Risks"]],
-                ["Issues", issue?.source_data?.["Issues"]],
+                ["Updated Date", issue?.["last_processed_at"]],
+                ["Risk", issue?.ai_predictions?.["Risk"]],
+                ["Issues", issue?.ai_predictions?.["Issues"]],
               ].map(([label, value], i) => (
                 <div
                   key={i}

@@ -477,7 +477,7 @@ export function signin(email, password, otp, navigate) {
     } catch (error) {
       console.log("SIGNin API ERROR............", error);
       toast.error("Signin Failed");
-      navigate("/signup");
+      navigate("/");
     }
     dispatch(setLoading(false));
     toast.dismiss(toastId);

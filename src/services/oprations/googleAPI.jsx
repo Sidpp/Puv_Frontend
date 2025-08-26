@@ -1,4 +1,4 @@
-import { toast } from "react-hot-toast";
+//import { toast } from "react-hot-toast";
 import { setLoading } from "../../slices/authSlice";
 import { apiConnector } from "../apiConnector";
 import { googleendpoints } from "../apis";
@@ -13,7 +13,7 @@ const {
 //get jira credentials
 export function fetchGoogleCredentials() {
   return async (dispatch) => {
-    const toastId = toast.loading("Fetching Google credentials...");
+    //const toastId = toast.loading("Fetching Google credentials...");
     try {
       const token = JSON.parse(localStorage.getItem("token"));
 
@@ -38,14 +38,14 @@ export function fetchGoogleCredentials() {
           sheetRange: data.sheetRange,
         })
       );
-      console.log("google credentials server",data)
+      //console.log("google credentials server",data)
 
-      toast.success("Fetched Google credentials");
+      //toast.success("Fetched Google credentials");
     } catch (error) {
       console.error("Fetch Google credentials error:", error);
-      toast.error(error.response.data.message);
+      //toast.error(error.response.data.message);
     } finally {
-      toast.dismiss(toastId);
+      //toast.dismiss(toastId);
     }
   };
 }
@@ -53,7 +53,7 @@ export function fetchGoogleCredentials() {
 //get sheet by id
 export function getGoogleSheetById(sheetId) {
   return async (dispatch) => {
-    const toastId = toast.loading("Fetching Google Sheet details...");
+    //const toastId = toast.loading("Fetching Google Sheet details...");
 
     try {
       if (!sheetId) {
@@ -73,16 +73,16 @@ export function getGoogleSheetById(sheetId) {
         throw new Error("Google Sheet not found");
       }
 
-      toast.success("Google Sheet fetched successfully");
+     // toast.success("Google Sheet fetched successfully");
       return sheet;
     } catch (error) {
       console.error("GET_GOOGLE_SHEET_BY_ID ERROR:", error);
-      toast.error(
-        error?.response?.data?.error || "Failed to fetch Google Sheet"
-      );
+      // toast.error(
+      //   error?.response?.data?.error || "Failed to fetch Google Sheet"
+      // );
     } finally {
       dispatch(setLoading(false));
-      toast.dismiss(toastId);
+      //toast.dismiss(toastId);
     }
   };
 }
@@ -115,13 +115,13 @@ export function getAllGoogleDetails() {
       // Optional: dispatch to store it in Redux
       // dispatch(setGoogleDetails(projects));
 
-      toast.success("Google Sheet details loaded successfully");
+     // toast.success("Google Sheet details loaded successfully");
       return projects;
     } catch (error) {
       console.error("GET_GOOGLE_DETAILS ERROR:", error);
-      toast.error(
-        error?.response?.data?.message || "Failed to fetch Google Sheet details"
-      );
+      // toast.error(
+      //   error?.response?.data?.message || "Failed to fetch Google Sheet details"
+      // );
     } finally {
       //dispatch(setLoading(false));
       //toast.dismiss(toastId);

@@ -9,7 +9,7 @@ const { GET_ISSUES_API, GET_ISSUES_BY_ID_API, JIRA_CONNECT_API ,GET_JIRA_CREDENT
 // 🔁 GET JIRA ISSUE BY ID
 export function getJiraIssueById(issueId) {
   return async (dispatch) => {
-    const toastId = toast.loading("Fetching Jira issue...");
+    //const toastId = toast.loading("Fetching Jira issue...");
     try {
 
       const token = JSON.parse(localStorage.getItem("token"));
@@ -31,14 +31,14 @@ export function getJiraIssueById(issueId) {
         throw new Error("Invalid response format: issue not found");
       }
 
-      toast.success("Jira issue loaded successfully");
+      //toast.success("Jira issue loaded successfully");
       return issue;
     } catch (error) {
       console.error("GET_JIRA_ISSUE_BY_ID ERROR:", error);
-      toast.error(error?.response?.data?.message || "Failed to fetch Jira issue");
+      //toast.error(error?.response?.data?.message || "Failed to fetch Jira issue");
     } finally {
       dispatch(setLoading(false));
-     toast.dismiss(toastId);
+    // toast.dismiss(toastId);
     }
   };
 }
@@ -46,7 +46,7 @@ export function getJiraIssueById(issueId) {
 //get jira credentials
 export function fetchJiraCredentials() {
   return async (dispatch) => {
-    const toastId = toast.loading("Fetching Jira credentials...");
+    //const toastId = toast.loading("Fetching Jira credentials...");
     try {
       const token = JSON.parse(localStorage.getItem("token"));
 
@@ -74,12 +74,12 @@ export function fetchJiraCredentials() {
         })
       );
 
-      toast.success("Fetched Jira credentials");
+      //toast.success("Fetched Jira credentials");
     } catch (error) {
       console.error("Fetch Jira credentials error:", error);
-      toast.error(error.response.data.message);
+     // toast.error(error.response.data.message);
     } finally {
-      toast.dismiss(toastId);
+     // toast.dismiss(toastId);
     }
   };
 }
@@ -90,7 +90,7 @@ export function jiraConnect(
   onSuccess
 ) {
   return async (dispatch) => {
-    const toastId = toast.loading("Updating Jira ");
+    //const toastId = toast.loading("Updating Jira ");
     try {
       const token = JSON.parse(localStorage.getItem("token"));
 
@@ -115,13 +115,13 @@ export function jiraConnect(
         })
       );
 
-      toast.success("Jira Details updated successfully");
+     toast.success("Jira Details updated successfully");
       onSuccess && onSuccess(response.data.data);
     } catch (error) {
       console.error("JIRA_INFO ERROR:", error);
-      toast.error(error?.response?.data?.message || "Failed to update jira");
+     // toast.error(error?.response?.data?.message || "Failed to update jira");
     } finally {
-      toast.dismiss(toastId);
+     // toast.dismiss(toastId);
     }
   };
 }
@@ -143,7 +143,7 @@ export function getAllJiraIssues() {
         }
       );
 
-      console.log("GET_ISSUES_API RESPONSE:", response);
+     // console.log("GET_ISSUES_API RESPONSE:", response);
 
       const issues = response.data?.issues;
 
@@ -154,11 +154,11 @@ export function getAllJiraIssues() {
       // Optionally store in Redux
       // dispatch(setIssues(issues));
 
-      toast.success("Jira issues loaded successfully");
+     // toast.success("Jira issues loaded successfully");
       return issues;
     } catch (error) {
       console.error("GET_ISSUES_API ERROR:", error);
-      toast.error(error?.response?.data?.message || "Failed to fetch Jira issues");
+     // toast.error(error?.response?.data?.message || "Failed to fetch Jira issues");
     } finally {
      // dispatch(setLoading(false));
      // toast.dismiss(toastId);

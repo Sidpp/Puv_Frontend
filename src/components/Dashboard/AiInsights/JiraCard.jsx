@@ -48,7 +48,7 @@ const JiraCard = ({
       </div>
 
       <Link
-        to={`/dashboard/insights/jira-details/${_id}`}
+        to={`/dashboard/insights/jira-summary`}
         className="text-[#004C8C] text-xs font-semibold hover:underline"
       >
         Detail view

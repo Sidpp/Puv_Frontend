@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { FaEye } from "react-icons/fa";
+import { FaExclamationTriangle } from "react-icons/fa";
 import {
   BarChart,
   Bar,
@@ -41,7 +42,7 @@ const DoughnutChart = ({ data }) => {
         dominantBaseline="central"
         className="text-xs font-semibold"
       >
-        {percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ""} 
+        {percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ""}
         {/* show only if >5% */}
       </text>
     );
@@ -281,6 +282,12 @@ const GoogleSummaryPage = () => {
                 <tr key={task._id} className="h-[72px] bg-white">
                   <td className="py-4 px-6 border-b border-[#E6E9E8] text-gray-600">
                     {task.source_data.Program}
+                    {(task.ai_predictions.marker === true ||
+                      task.ai_predictions.marker === "true" ||
+                      task.ai_predictions.marker === "True" ||
+                      task.ai_predictions.marker === 1) && (
+                      <FaExclamationTriangle className="inline text-red-500 ml-1" />
+                    )}
                   </td>
                   <td className="py-4 px-6 border-b border-[#E6E9E8]">
                     {task.source_data.Portfolio}
@@ -300,7 +307,7 @@ const GoogleSummaryPage = () => {
                   <td className="py-4 px-6 border-b border-[#E6E9E8] text-center">
                     <div className="relative flex justify-center items-center">
                       <button
-                        disabled={!task.ai_predictions?.Issues}
+                        disabled={!task.ai_predictions?.ai_summary}
                         onClick={() =>
                           setActiveSummaryId(
                             activeSummaryId === task._id ? null : task._id
@@ -310,16 +317,16 @@ const GoogleSummaryPage = () => {
                       >
                         <FaEye
                           className={
-                            task.ai_predictions?.Issues
+                            task.ai_predictions?.ai_summary
                               ? "text-[#00254D] hover:scale-110 transition-transform duration-200"
                               : "text-gray-300"
                           }
                         />
                       </button>
                       {activeSummaryId === task._id &&
-                        task.ai_predictions?.Issues && (
+                        task.ai_predictions?.ai_summary && (
                           <div className="mt-2 text-xs text-slate-600 text-left p-3 bg-slate-100 rounded-md absolute top-full right-0 w-64 z-10 shadow-lg border border-gray-200">
-                            {task.ai_predictions.Issues}
+                            {task.ai_predictions.ai_summary}
                           </div>
                         )}
                     </div>

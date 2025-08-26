@@ -229,6 +229,23 @@ const GoogleDetails = () => {
               </svg>
             </div>
           </div>
+
+          {/* AI Prediction Data */}
+          <div className="bg-gradient-to-br from-[#E6F7F7] to-[#F0FAFA] p-5 rounded-xl shadow border border-[#BEE3E3]">
+            <div className="items-center mb-4">
+              <h3 className="text-[#0B2E56] font-bold text-[16px]">
+                AI Summary
+              </h3>
+            </div>
+
+            {issue?.ai_predictions?.ai_summary && (
+              
+                <span className="text-[13px] font-semibold text-gray-700">
+                  {issue.ai_predictions.ai_summary}
+                </span>
+              
+            )}
+          </div>
         </section>
 
         {/* Right Section */}

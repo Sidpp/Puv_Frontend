@@ -46,7 +46,7 @@ const JiraDetails = () => {
     remaining_estimate,
     time_logged,
     worklog_enterie,
-    status_transition,
+    status_transition_log,
     project_name,
     reporter,
     executive_summary,
@@ -224,7 +224,7 @@ const JiraDetails = () => {
               Status Transition Log
             </p>
             <div className="overflow-y-auto max-h-[140px] pr-2 scrollbar-thin text-[14px]">
-              {(status_transition || []).map((log, idx) => (
+              {(status_transition_log || []).map((log, idx) => (
                 <p key={idx} className="mb-2 font-semibold">
                   From {log.fromString} → {log.toString} on{" "}
                   {new Date(log.created).toLocaleDateString()}

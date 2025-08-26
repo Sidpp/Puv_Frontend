@@ -318,6 +318,7 @@ function getPortfolioStatusData(source, googleData = [], jiraData = []) {
     });
 
     const total = jiraData.length || 1;
+    
     return [
       {
         name: "Delayed",

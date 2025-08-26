@@ -1,9 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  FaFlag,
-  FaThumbsUp,
-  FaExclamationCircle,
-} from "react-icons/fa";
+import { FaFlag, FaThumbsUp, FaExclamationCircle } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 
 import { getJiraIssueById } from "../../../services/oprations/jiraAPI";
@@ -17,10 +13,8 @@ const JiraDetails = () => {
   useEffect(() => {
     const fetchIssue = async () => {
       try {
-
         const res = await dispatch(getJiraIssueById(id));
         setIssue(res);
-
       } catch (error) {
         console.error("Failed to fetch Jira issue:", error);
       }
@@ -62,7 +56,9 @@ const JiraDetails = () => {
   return (
     <div className="bg-white text-gray-900 max-w-[1200px] mx-auto p-6">
       <header className="flex items-center justify-between border-b border-gray-300 pb-3 mb-6">
-        <h1 className="text-[17px] font-normal text-[#0B2E56]">{project_name}</h1>
+        <h1 className="text-[17px] font-normal text-[#0B2E56]">
+          {project_name}
+        </h1>
       </header>
 
       <div className="space-y-4">
@@ -102,7 +98,7 @@ const JiraDetails = () => {
             <div className="flex justify-between">
               <p className="font-semibold text-[14px]">Assignee</p>
               <p className="font-semibold text-[#0B2E56] text-[15px]">
-                {assignee}
+                {assignee || "N/A"}
               </p>
             </div>
             <div className="flex justify-between">
@@ -126,7 +122,7 @@ const JiraDetails = () => {
               Executive Summary <FaFlag className="text-red-600 text-[14px]" />
             </p>
             <p className="font-bold text-[#D31B2B] text-[16px]">
-              {executive_summary}
+              {executive_summary || "N/A"}
             </p>
           </div>
         </section>
@@ -158,8 +154,8 @@ const JiraDetails = () => {
               className="flex-1 bg-[#F7FAF9] rounded-lg px-4 py-4 text-center"
             >
               <p className="font-semibold text-[14px] mb-1">{label}</p>
-              <time dateTime={value} className="font-bold text-[15px]">
-                {new Date(value).toLocaleDateString()}
+              <time dateTime={value || ""} className="font-bold text-[15px]">
+                {value ? new Date(value).toLocaleDateString() : "N/A"}
               </time>
             </div>
           ))}
@@ -170,8 +166,16 @@ const JiraDetails = () => {
           {/* AI Scores */}
           <div className="flex-1 bg-[#F7FAF9] rounded-lg flex justify-around items-center py-6">
             {[
-              { label: "AI Priority Score", value: ai_priority_score, stroke: "#4A6B8A" },
-              { label: "AI Delay Score", value: ai_delay_score, stroke: "#3B9B2F" },
+              {
+                label: "AI Priority Score",
+                value: ai_priority_score,
+                stroke: "#4A6B8A",
+              },
+              {
+                label: "AI Delay Score",
+                value: ai_delay_score,
+                stroke: "#3B9B2F",
+              },
             ].map((item, idx) => {
               const circleLength = 276.46;
               const offset = circleLength - item.value * circleLength;
@@ -216,7 +220,9 @@ const JiraDetails = () => {
 
           {/* Status Log */}
           <div className="flex-1 bg-[#F7FAF9] rounded-lg p-4">
-            <p className="font-semibold text-[14px] mb-2">Status Transition Log</p>
+            <p className="font-semibold text-[14px] mb-2">
+              Status Transition Log
+            </p>
             <div className="overflow-y-auto max-h-[140px] pr-2 scrollbar-thin text-[14px]">
               {(status_transition || []).map((log, idx) => (
                 <p key={idx} className="mb-2 font-semibold">

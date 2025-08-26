@@ -43,7 +43,7 @@ const AiInsights = () => {
     const value = e.target.value;
     if (value === "jira" || value === "google") {
       setSelectedView(value);
-      setSelectedFilter("All"); 
+      setSelectedFilter("All");
     }
   };
 
@@ -77,7 +77,91 @@ const AiInsights = () => {
     });
   };
 
-  const filteredJira = applyFilter(jiraData);
+  const applyFilterAndJiraGrouped = (data) => {
+    // 1. First filter issues normally
+    let filteredIssues = data;
+
+    if (selectedFilter !== "All") {
+      filteredIssues = data.filter((item) => {
+        if (selectedView === "jira") {
+          const mapped = mapJiraStatus(item.status);
+          return mapped.toLowerCase() === selectedFilter.toLowerCase();
+        } else {
+          const status = item.source_data?.["Milestone Status"] || "";
+          return status.toLowerCase() === selectedFilter.toLowerCase();
+        }
+      });
+    }
+
+    // 2. Group issues by project_name
+    const grouped = {};
+
+    filteredIssues.forEach((item) => {
+      const projectName = item.project_name || "Unknown";
+
+      if (!grouped[projectName]) {
+        grouped[projectName] = {
+          project_name: projectName,
+          ai_delay_scores: [],
+          ai_summary: [],
+          ids: [],
+          priority: item.priority || "Default", // can decide priority rule later
+          issueKey: item.key || "",
+        };
+      }
+
+      if (item.ai_delay_score !== undefined) {
+        grouped[projectName].ai_delay_scores.push(item.ai_delay_score);
+      }
+      if (item.ai_summary) {
+        grouped[projectName].ai_summary.push(item.ai_summary);
+      }
+      if (item._id) {
+        grouped[projectName].ids.push(item._id);
+      }
+    });
+
+    // 3. Convert grouped object → array
+    return Object.values(grouped);
+  };
+
+  const filteredJira = applyFilterAndJiraGrouped(jiraData);
+
+  // const groupByProject = (data) => {
+  //   const grouped = {};
+
+  //   data.forEach((item) => {
+  //     const projectName = item.project_name || "Unknown";
+
+  //     if (!grouped[projectName]) {
+  //       grouped[projectName] = {
+  //         project_name: projectName,
+  //         ai_delay_scores: [],
+  //         ai_summary: [],
+  //         ids: [],
+  //       };
+  //     }
+
+  //     // Collect scores and ids
+  //     if (item.ai_delay_score !== undefined) {
+  //       grouped[projectName].ai_delay_scores.push(item.ai_delay_score);
+  //     }
+  //     if (item.ai_summary !== undefined) {
+  //       grouped[projectName].ai_summary.push(item.ai_summary);
+  //     }
+  //     if (item._id) {
+  //       grouped[projectName].ids.push(item._id);
+  //     }
+  //   });
+
+  //   // Convert back to array
+  //   return Object.values(grouped);
+  // };
+  // // Usage
+  // const filteredJira = applyFilter(jiraData);
+  // const groupedJiraData = groupByProject(filteredJira);
+
+  //console.log("group data ", groupedJiraData);
   const filteredGoogle = applyFilter(googleData);
 
   const isGoogleEmpty = !filteredGoogle || filteredGoogle.length === 0;
@@ -85,7 +169,13 @@ const AiInsights = () => {
 
   // --- Count calculation ---
   const getCounts = (data, source) => {
-    const counts = { All: data.length, "In Progress": 0, Completed: 0, Delayed: 0, "On Track": 0 };
+    const counts = {
+      All: data.length,
+      "In Progress": 0,
+      Completed: 0,
+      Delayed: 0,
+      "On Track": 0,
+    };
 
     data.forEach((item) => {
       if (source === "jira") {
@@ -104,7 +194,10 @@ const AiInsights = () => {
     return counts;
   };
 
-  const counts = selectedView === "jira" ? getCounts(jiraData, "jira") : getCounts(googleData, "google");
+  const counts =
+    selectedView === "jira"
+      ? getCounts(jiraData, "jira")
+      : getCounts(googleData, "google");
 
   return (
     <div className="max-w-[1200px] mx-auto p-6">
@@ -202,7 +295,9 @@ const AiInsights = () => {
         >
           {selectedView === "jira"
             ? filteredJira.map((item) => <JiraCard key={item._id} {...item} />)
-            : filteredGoogle.map((item) => <GoogleCard key={item._id} {...item} />)}
+            : filteredGoogle.map((item) => (
+                <GoogleCard key={item._id} {...item} />
+              ))}
         </div>
       )}
     </div>

@@ -666,6 +666,79 @@ const aggregateFinancials = (projects) => {
   );
 };
 
+const groupByJiraProject = (data) => {
+  const grouped = {};
+
+  data.forEach((item) => {
+    const projectName = item.project_name || "Unknown";
+
+    if (!grouped[projectName]) {
+      grouped[projectName] = {
+        project_name: projectName,
+        ai_delay_scores: [],
+        ai_summaries: [],
+        ai_delay_labels: [],
+        ai_priority_scores: [],
+        ids: [],
+      };
+    }
+
+    // Collect fields
+    if (item.ai_delay_score !== undefined) {
+      grouped[projectName].ai_delay_scores.push(item.ai_delay_score);
+    }
+    if (item.ai_summary !== undefined) {
+      grouped[projectName].ai_summaries.push(item.ai_summary);
+    }
+    if (item.ai_delay_label !== undefined) {
+      grouped[projectName].ai_delay_labels.push(item.ai_delay_label);
+    }
+    if (item.ai_priority_score !== undefined) {
+      grouped[projectName].ai_priority_scores.push(item.ai_priority_score);
+    }
+    if (item._id) {
+      grouped[projectName].ids.push(item._id);
+    }
+  });
+
+  // Convert to array & compute averages for numeric fields + most common label
+  return Object.values(grouped).map((proj) => {
+    // --- Average scores ---
+    const avg_delay_score =
+      proj.ai_delay_scores.length > 0
+        ? proj.ai_delay_scores.reduce((a, b) => a + b, 0) /
+          proj.ai_delay_scores.length
+        : null;
+
+    const avg_priority_score =
+      proj.ai_priority_scores.length > 0
+        ? proj.ai_priority_scores.reduce((a, b) => a + b, 0) /
+          proj.ai_priority_scores.length
+        : null;
+
+    // --- Most frequent delay label ---
+    let avg_delay_label = null;
+    if (proj.ai_delay_labels.length > 0) {
+      const counts = proj.ai_delay_labels.reduce((acc, label) => {
+        acc[label] = (acc[label] || 0) + 1;
+        return acc;
+      }, {});
+
+      // pick the label with max count
+      avg_delay_label = Object.entries(counts).sort(
+        (a, b) => b[1] - a[1]
+      )[0][0];
+    }
+
+    return {
+      ...proj,
+      avg_delay_score,
+      avg_priority_score,
+      avg_delay_label,
+    };
+  });
+};
+
 // --- Main Dashboard Component ---
 
 const Home = () => {
@@ -821,6 +894,9 @@ const Home = () => {
         return <BudgetUtilizationView data={financialData} />;
     }
   };
+
+  const jiraProjectGroupedData = groupByJiraProject(jiraData);
+  //console.log("databnn",jiraProjectGroupedData)
 
   return (
     <div className="flex min-h-screen font-sans">
@@ -1012,7 +1088,10 @@ const Home = () => {
                 <CardContent className="flex-1 flex flex-col">
                   {/* Pagination Logic */}
                   {(() => {
-                    const data = aiSource === "Google" ? googleData : jiraData;
+                    const data =
+                      aiSource === "Google"
+                        ? googleData
+                        : jiraProjectGroupedData;
 
                     const itemsPerPage = 4;
                     const totalPages = Math.ceil(data.length / itemsPerPage);
@@ -1036,7 +1115,7 @@ const Home = () => {
                                 ? ((Number(ai.Forecasted_Deviation) || 0) /
                                     (Number(s?.["Planned Cost"]) || 1)) *
                                   100
-                                : (project.ai_delay_score ?? 0) * 100;
+                                : (project.avg_delay_score ?? 0) * 100;
 
                               const rawConfidence = isGoogle
                                 ? (((Number(s.CPI) || 0) +
@@ -1118,7 +1197,7 @@ const Home = () => {
                                             Delay Label
                                           </span>
                                           <span className="col-span-2 font-medium text-slate-800">
-                                            {project.ai_delay_label || "N/A"}
+                                            {project.avg_delay_label || "N/A"}
                                           </span>
                                         </div>
                                         <div className="grid grid-cols-3 items-center">
@@ -1126,9 +1205,9 @@ const Home = () => {
                                             Priority Score
                                           </span>
                                           <span className="col-span-2 font-medium text-slate-800">
-                                            {project.ai_priority_score != null
+                                            {project.avg_priority_score != null
                                               ? `${(
-                                                  project.ai_priority_score *
+                                                  project.avg_priority_score *
                                                   100
                                                 ).toFixed(0)}%`
                                               : "N/A"}
@@ -1142,7 +1221,9 @@ const Home = () => {
                                     to={
                                       isGoogle
                                         ? `/dashboard/insights/google-summary`
-                                        : `/dashboard/insights/jira-summary`
+                                        : `/dashboard/insights/jira-summary/${project.ids.join(
+                                            ","
+                                          )}`
                                     }
                                     className="mt-auto px-3 py-1.5 rounded-md bg-[#00254D] text-white text-center text-xs font-semibold transition hover:bg-opacity-90"
                                   >

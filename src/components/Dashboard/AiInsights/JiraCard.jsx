@@ -6,8 +6,9 @@ const JiraCard = ({
   priority,
   issueKey,
   project_name,
-  summary,
-  ai_delay_score,
+  ai_summary,
+  ai_delay_scores,
+  ids,
 }) => {
   const priorityStyles = {
     Highest: "bg-red-200 text-red-800",
@@ -17,14 +18,36 @@ const JiraCard = ({
     Lowest: "bg-blue-200 text-blue-800",
     Default: "bg-gray-200 text-gray-800",
   };
-  //console.log("jiracard",id, priority, key, project_name, summary, ai_delay_score)
+  console.log("jiracard", project_name, ai_summary, ai_delay_scores, ids);
+  const ai_delay_score =
+    ai_delay_scores.length > 0
+      ? ai_delay_scores.reduce((sum, val) => sum + val, 0) /
+        ai_delay_scores.length
+      : 0;
+
+  const fullSummary =
+    ai_summary.length > 0 ? ai_summary[0] : "No summary available";
+
+  // helper: truncate summary by word count
+  const truncateSummary = (text, wordLimit = 20) => {
+    const words = text.split(" ");
+    if (words.length <= wordLimit) return text;
+    return words.slice(0, wordLimit).join(" ") + "...";
+  };
+
+  const summary = truncateSummary(fullSummary);
+  
+  const getProjectCode = () => {
+    if (!issueKey) return "";
+    return issueKey.split("-")[0];
+  };
 
   return (
     <div className="bg-[#F9FAFB] rounded-lg p-4 shadow-sm max-w-[280px]">
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-1 text-xs text-gray-400 font-semibold">
           <span className="text-red-500">🦠</span>
-          <span>{issueKey}</span>
+          <span>{getProjectCode(issueKey)}</span>
         </div>
         <div
           className={`${priorityStyles[priority]} text-xs font-semibold rounded-md px-2 py-0.5`}
@@ -48,7 +71,7 @@ const JiraCard = ({
       </div>
 
       <Link
-        to={`/dashboard/insights/jira-summary`}
+        to={`/dashboard/insights/jira-summary/${ids.join(",")}`}
         className="text-[#004C8C] text-xs font-semibold hover:underline"
       >
         Detail view

@@ -191,41 +191,57 @@ const GoogleDetails = () => {
             {/* Circular Progress */}
             <div className="bg-[#F7FAF9] rounded-md p-4 flex items-center justify-center w-[180px] h-[180px]">
               <svg viewBox="0 0 120 120" className="w-full h-full">
-                {/* White inner circle */}
-                <circle cx="60" cy="60" r="42" fill="white" />
+                {(() => {
+                  const risk = issue?.ai_predictions?.["Burnout_Risk"] || 0;
+                  const radius = 54;
+                  const circumference = 2 * Math.PI * radius;
+                  const progress = (risk / 100) * circumference;
 
-                {/* Outer circular track */}
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="54"
-                  stroke="#F7D130"
-                  strokeWidth="12"
-                  strokeLinecap="round"
-                  fill="none"
-                />
+                  return (
+                    <>
+                      {/* White inner circle */}
+                      <circle cx="60" cy="60" r="42" fill="white" />
 
-                {/* Progress path */}
-                <path
-                  d="M114 60a54 54 0 0 1-54 54"
-                  stroke="#F47E2B"
-                  strokeWidth="12"
-                  strokeLinecap="round"
-                  fill="none"
-                />
+                      {/* Outer circular track (gray) */}
+                      <circle
+                        cx="60"
+                        cy="60"
+                        r={radius}
+                        stroke="#F7D130"
+                        strokeWidth="12"
+                        fill="none"
+                        strokeLinecap="round"
+                      />
 
-                {/* Center value */}
-                <text
-                  x="50%"
-                  y="50%"
-                  dominantBaseline="middle"
-                  textAnchor="middle"
-                  fontSize="20"
-                  fontWeight="700"
-                  fill="#7B8FA4"
-                >
-                  70.98
-                </text>
+                      {/* Progress circle */}
+                      <circle
+                        cx="60"
+                        cy="60"
+                        r={radius}
+                        stroke="#F47E2B"
+                        strokeWidth="12"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={circumference - progress}
+                        transform="rotate(-90 60 60)" // start progress from top
+                      />
+
+                      {/* Center value */}
+                      <text
+                        x="50%"
+                        y="50%"
+                        dominantBaseline="middle"
+                        textAnchor="middle"
+                        fontSize="20"
+                        fontWeight="700"
+                        fill="#7B8FA4"
+                      >
+                        {risk}%
+                      </text>
+                    </>
+                  );
+                })()}
               </svg>
             </div>
           </div>
@@ -239,11 +255,9 @@ const GoogleDetails = () => {
             </div>
 
             {issue?.ai_predictions?.ai_summary && (
-              
-                <span className="text-[13px] font-semibold text-gray-700">
-                  {issue.ai_predictions.ai_summary}
-                </span>
-              
+              <span className="text-[13px] font-semibold text-gray-700">
+                {issue.ai_predictions.ai_summary}
+              </span>
             )}
           </div>
         </section>

@@ -432,7 +432,7 @@ function getRiskFactors(googleData = []) {
     const ai = project.ai_predictions || {};
 
     // ✅ Task Delay (from ai.Milestone_Status)
-    if (ai["Milestone_Status"]?.toLowerCase().includes("delay")) {
+    if (ai["Milestone_Status"]?.toLowerCase().includes("delayed")) {
       taskDelay.count++;
       taskDelay.ids.push(project._id);
     }

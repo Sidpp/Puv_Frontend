@@ -127,14 +127,14 @@ const GoogleSummaryPage = () => {
   const monthlyTotals = {};
 
   projectData.forEach((proj) => {
-    const rawDate = proj.source_data["Update Date"];
+    const rawDate = proj.sync_timestamp;
     if (!rawDate) return;
 
     const dateObj = new Date(rawDate);
     const monthLabel = dateObj.toLocaleString("default", {
       month: "short",
       year: "numeric",
-    }); // e.g. "Jun 2025"
+    }); 
 
     if (!monthlyTotals[monthLabel]) {
       monthlyTotals[monthLabel] = { planned: 0, actual: 0, forecast: 0 };

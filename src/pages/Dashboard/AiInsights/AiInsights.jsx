@@ -71,7 +71,7 @@ const AiInsights = () => {
         const mapped = mapJiraStatus(item.status);
         return mapped.toLowerCase() === selectedFilter.toLowerCase();
       } else {
-        const status = item.source_data?.["Milestone Status"] || "";
+        const status = item.ai_predictions?.["Milestone_Status"] || "";
         return status.toLowerCase() === selectedFilter.toLowerCase();
       }
     });
@@ -184,7 +184,7 @@ const AiInsights = () => {
           counts[mapped]++;
         }
       } else {
-        const status = item.source_data?.["Milestone Status"];
+        const status = item.ai_predictions?.["Milestone_Status"];
         if (status && counts[status] !== undefined) {
           counts[status]++;
         }

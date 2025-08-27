@@ -132,7 +132,7 @@ const SummaryBanner = ({ label, value, valueColor = "text-[#006685]" }) => (
     <div className="text-sm md:text-md font-semibold text-slate-700 text-left">
       {label}
     </div>
-    <div className={`text-2xl md:text-4xl font-bold ${valueColor}`}>
+    <div className={`text-xl md:text-xl  ${valueColor}`}>
       {value}
     </div>
   </div>
@@ -268,7 +268,7 @@ function getPortfolioStatusData(source, googleData = [], jiraData = []) {
 
   if (source === "Google") {
     googleData.forEach((project) => {
-      const status = project.source_data?.["Milestone Status"];
+      const status = project.ai_predictions?.["Milestone_Status"];
       if (status === "Delayed") {
         delayed++;
         statusBuckets.Delayed.push(project._id);
@@ -429,14 +429,15 @@ function getRiskFactors(googleData = []) {
 
   googleData.forEach((project) => {
     const data = project.source_data || {};
+    const ai = project.ai_predictions || {};
 
-    // Task Delay
-    if (data["Milestone Status"]?.toLowerCase().includes("delay")) {
+    // ✅ Task Delay (from ai.Milestone_Status)
+    if (ai["Milestone_Status"]?.toLowerCase().includes("delay")) {
       taskDelay.count++;
       taskDelay.ids.push(project._id);
     }
 
-    // Team Inactivity
+    // ✅ Team Inactivity (from source_data)
     if (
       Number(data["Actual Hours"] || 0) <
       0.5 * Number(data["Allocated Hours"] || 0)
@@ -445,7 +446,7 @@ function getRiskFactors(googleData = []) {
       teamInactivity.ids.push(project._id);
     }
 
-    // Dependency Conflict
+    // ✅ Dependency Conflict (from source_data)
     if (
       data["Dependency Type"] &&
       data["Dependency Type"].toLowerCase() !== "none"
@@ -454,12 +455,14 @@ function getRiskFactors(googleData = []) {
       dependencyConflict.ids.push(project._id);
     }
 
-    // Burnout Risk
-    if (Number(data["Burnout Risk (%)"] || 0) > 50) {
+    // ✅ Burnout Risk (from ai.Burnout_Risk)
+    if (Number(ai["Burnout_Risk"] || 0) > 50) {
       burnoutRisk.count++;
       burnoutRisk.ids.push(project._id);
     }
   });
+
+  //console.log("risk factor",taskDelay,teamInactivity,dependencyConflict,burnoutRisk)
 
   return [
     {
@@ -533,32 +536,33 @@ function getRiskFactors(googleData = []) {
   ];
 }
 
-function getSlippageData(googleData = []) {
+
+function getSlippageData(projects = []) {
   const monthMap = {};
 
-  googleData.forEach((project) => {
+  projects.forEach((project) => {
     const ai = project.ai_predictions || {};
     const src = project.source_data || {};
 
-    // --- Get month (from Update Date, fallback Contract Start Date) ---
-    const rawDate = src["Update Date"] || src["Contract Start Date"];
+    // --- Pick month (from Contract Start Date or fallback) ---
+    const rawDate = src["Contract Start Date"] || src["Contract End Date"];
     const date = rawDate ? new Date(rawDate) : null;
     const month =
       date && !isNaN(date)
         ? date.toLocaleString("default", { month: "short" })
         : "Unknown";
 
-    // --- Planned, Actual, Forecast completion values ---
-    const planned = Number(src["EV (%)"] || 0); // Planned
-    const actual = Number(src["PV (%)"] || 0); // Actual
-    const forecast = Number(src["Forecast Completion (%)"] || 0);
+    // --- Planned, Actual, Forecast values ---
+    const planned = Number(src["Planned Cost"] || 0);
+    const actual = Number(src["Actual Cost"] || 0);
+    const forecast = Number(ai.Forecasted_Cost || src["Forecasted Cost"] || 0);
 
-    // --- Forecast Deviation (prefer ai_predictions) ---
+    // --- Forecast Deviation ---
     let deviation = null;
     if (ai.Forecasted_Deviation !== undefined) {
       deviation = Number(ai.Forecasted_Deviation);
-    } else if (src["Forecasted Cost"] && src["Planned Cost"]) {
-      deviation = Number(src["Forecasted Cost"]) - Number(src["Planned Cost"]);
+    } else if (forecast && planned) {
+      deviation = forecast - planned;
     }
 
     // --- Aggregate by month ---
@@ -580,7 +584,7 @@ function getSlippageData(googleData = []) {
     monthMap[month].count += 1;
   });
 
-  // --- Average values per month across all projects ---
+  // --- Average values per month across projects ---
   return Object.values(monthMap).map((m) => ({
     month: m.month,
     plan: m.count ? Math.round(m.plan / m.count) : 0,
@@ -598,7 +602,7 @@ function getRagPieData(googleData = []) {
   };
 
   googleData.forEach((project) => {
-    const status = project.source_data?.["Project Status (RAG)"]?.trim();
+    const status = project.ai_predictions?.["Project_Status"]?.trim();
     if (status && statusCounts[status] !== undefined) {
       statusCounts[status] += 1;
     }
@@ -633,14 +637,14 @@ const aggregateFinancials = (projects) => {
       acc.actualContractSpend += Number(s["Actual Contract Spend"]) || 0;
       acc.contractCeilingPrice += Number(s["Contract Ceiling Price"]) || 0;
 
-      acc.forecastedCost += Number(s["Forecasted Cost"]) || 0;
+      acc.forecastedCost += Number(a["Forecasted_Cost"]) || 0;
       acc.actualCost += Number(s["Actual Cost"]) || 0;
       acc.plannedCost += Number(s["Planned Cost"]) || 0;
 
       acc.forecastDeviation +=
         Number(s["Forecast Deviation"]) || Number(a.Forecasted_Deviation) || 0;
 
-      acc.varianceAtCompletion += Number(s["Variance at Completion"]) || 0;
+      acc.varianceAtCompletion += Number(a["Variance_At_Completion"]) || 0;
 
       // latest update date
       const updateDate = s["Update Date"];
@@ -739,6 +743,31 @@ const groupByJiraProject = (data) => {
     };
   });
 };
+
+function calculateConfidence(doc) {
+  let score = 1.0; // start at 100%
+
+  // If Project_Status is Red → reduce confidence
+  if (doc.Project_Status === "Red") score -= 0.3;
+  if (doc.Project_Status === "Yellow") score -= 0.15;
+
+  // Burnout_Risk: higher means lower confidence in success
+  score -= (doc.Burnout_Risk / 100) * 0.2;
+
+  // Variance at completion very negative → reduce confidence
+  if (doc.Variance_At_Completion < 0) {
+    score -= Math.min(Math.abs(doc.Variance_At_Completion) / 10_000_000, 0.3);
+  }
+
+  // Deviation > 0 → reduce confidence
+  if (doc.Forecasted_Deviation > 0) {
+    score -= Math.min(doc.Forecasted_Deviation / 100_000, 0.2);
+  }
+
+  // Keep score between 0–1
+  return Math.max(0, Math.min(1, score));
+}
+
 
 // --- Main Dashboard Component ---
 
@@ -1118,17 +1147,10 @@ const Home = () => {
                                   100
                                 : (project.avg_delay_score ?? 0) * 100;
 
-                              const rawConfidence = isGoogle
-                                ? (((Number(s.CPI) || 0) +
-                                    (Number(s.SPI) || 0)) /
-                                    2) *
-                                  100
-                                : null;
+            
 
-                              const confidence =
-                                rawConfidence != null
-                                  ? Math.min(100, Math.max(0, rawConfidence))
-                                  : null;
+
+                                  const confidence = calculateConfidence(ai);
 
                               return (
                                 <div

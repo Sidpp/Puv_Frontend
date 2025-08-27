@@ -1,28 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import NotificationPopup from "./NotificationPopup";
-import { useSelector, useDispatch } from "react-redux";
-import { useLocation, Link, useNavigate } from "react-router-dom";
-import {
-  Search,
-  Bell,
-  Sparkles,
-  ChevronDown,
-  LogOut,
-  Settings,
-  UserCircle,
-} from "lucide-react";
+import { useDispatch } from "react-redux";
+import { useLocation } from "react-router-dom";
+import { Search, Bell } from "lucide-react";
 import logo from "../../../assets/PortfolioVue_logo.png";
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../../ui/drop-down";
-import { Avatar, AvatarFallback, AvatarImage } from "../../ui/Avatar";
-// import { logout } from "../../../services/oprations/authAPI";
+import SearchComponent from "./SearchComponent";
 
 const Navbar = () => {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -105,7 +87,7 @@ const Navbar = () => {
       {/* Right: Search + Notification + Profile + Logout */}
       <div className="flex items-center space-x-2">
         {/* Search */}
-        <div className="relative hidden md:block mr-3">
+        {/* <div className="relative hidden md:block mr-3">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
             <Search className="w-5 h-5" />
           </div>
@@ -114,7 +96,12 @@ const Navbar = () => {
             placeholder="Search Here......"
             className="pl-10 pr-4 py-2 rounded-full border bg-gray-50 w-64 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
           />
+        </div> */}
+
+        <div className="hidden md:block mr-3">
+          <SearchComponent />
         </div>
+
         {/* Notification Icon with Popup */}
         <div className="relative">
           <button

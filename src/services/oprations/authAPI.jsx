@@ -5,6 +5,7 @@ import { apiConnector } from "../apiConnector";
 import { endpoints } from "../apis";
 
 const {
+  SEARCH_API,
   SENDOTP_API,
   SIGNIN_API,
   RESETPASSTOKEN_API,
@@ -21,6 +22,37 @@ const {
   SEND_EMAIL_OTP_API,
   VERIFY_EMAIL_OTP_API
 } = endpoints;
+
+export function globalSearch(query) {
+  return async (dispatch) => {
+    try {
+     // dispatch(setLoading(true));
+
+      const response = await apiConnector(
+        "POST",
+        SEARCH_API,
+        { query }
+      );
+
+      console.log("SEARCH RESPONSE:", response);
+
+      // Our backend returns { query, jira: [...], google: [...] }
+      const { jira, google } = response.data;
+
+      if (!jira && !google) {
+        throw new Error("Invalid response format: no results found");
+      }
+
+      return { jira, google };  // return both sets of results
+    } catch (error) {
+      console.error("GLOBAL_SEARCH ERROR:", error);
+      return null;
+    } finally {
+     // dispatch(setLoading(false));
+    }
+  };
+}
+
 
 export function updateImage(displayPicture, onSuccess) {
   return async (dispatch) => {

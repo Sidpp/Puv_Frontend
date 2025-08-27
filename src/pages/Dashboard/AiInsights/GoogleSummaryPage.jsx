@@ -149,7 +149,9 @@ const GoogleSummaryPage = () => {
     monthlyTotals[monthLabel].forecast += Number(
       proj.ai_predictions?.Forecasted_Cost || 0
     );
+   
   });
+  
 
   // Convert to array for chart
   const monthlyFinancials = Object.entries(monthlyTotals).map(

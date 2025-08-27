@@ -13,11 +13,13 @@ const GoogleCard = (props) => {
     ["Project Manager"]: assigneeName,
     ["Contract Start Date"]: startDate,
     ["Contract End Date"]: endDate,
-    ["Burnout Risk (%)"]: burnoutRisk,
+
     ["Resource Name"]: projectmanager,
     ["Contract ID"]: contractId,
-    ["Milestone Status"]: progress,
   } = props.source_data || {};
+
+  const { ["Milestone_Status"]: progress, ["Burnout_Risk"]: burnoutRisk } =
+    props.ai_predictions || {};
 
   const phaseColor = ["red", "sky", "pink"][index % 3];
   const borderColor = ["red", "sky", "pink"][index % 3];
@@ -33,14 +35,14 @@ const GoogleCard = (props) => {
   }
 
   function formatDate(dateStr) {
-  if (!dateStr) return "N/A";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
+    if (!dateStr) return "N/A";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
 
   function progressValue(progress) {
     if (!progress) return 0;
@@ -131,7 +133,7 @@ const GoogleCard = (props) => {
         </span>
         <span>{Issues}</span>
       </div>
-      
+
       <div className="flex items-center justify-between gap-2 text-xs text-gray-500">
         <div className="flex gap-1">
           <div

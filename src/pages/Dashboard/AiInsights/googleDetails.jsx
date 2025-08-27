@@ -341,7 +341,7 @@ const GoogleDetails = () => {
 
           {/* Project Status + Gauge */}
           <div className="flex flex-wrap gap-4">
-            {issue?.source_data?.["Project Status (RAG)"] && (
+            {issue?.ai_predictions?.["Project_Status"] && (
               <div className="bg-[#F7FAF9] rounded-md flex flex-col items-center justify-center p-4 w-[200px]">
                 <svg width="200" height="120" viewBox="0 0 200 120">
                   {/* Red arc: left */}
@@ -369,7 +369,7 @@ const GoogleDetails = () => {
                   {/* Needle (rotating) */}
                   <g
                     transform={`rotate(${getNeedleAngle(
-                      issue?.source_data?.["Project Status (RAG)"]
+                      issue?.ai_predictions?.["Project_Status"]
                     )}, 100, 100)`}
                   >
                     <line
@@ -413,9 +413,9 @@ const GoogleDetails = () => {
           <div className="bg-[#D4F0C0] rounded-md px-4 py-3 h-24 flex items-center justify-between font-semibold text-[#3CA52B] text-[15px]">
             <span>Milestone Status</span>
             <div className="flex items-center">
-              {getStatusIcon(issue?.source_data?.["Milestone Status"])}
+              {getStatusIcon(issue?.ai_predictions?.["Milestone_Status"])}
               <span className="ml-2">
-                {issue?.source_data?.["Milestone Status"] || "N/A"}
+                {issue?.ai_predictions?.["Milestone_Status"] || "N/A"}
               </span>
             </div>
           </div>

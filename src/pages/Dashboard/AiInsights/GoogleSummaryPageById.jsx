@@ -148,7 +148,7 @@ const GoogleSummaryPageById = () => {
   const monthlyTotals = {};
 
   projectData.forEach((proj) => {
-    const rawDate = proj.source_data["Update Date"];
+    const rawDate = proj.sync_timestamp;
     if (!rawDate) return;
 
     const dateObj = new Date(rawDate);

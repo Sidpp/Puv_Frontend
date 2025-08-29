@@ -384,7 +384,7 @@ function getForecastsData(googleData = []) {
 
   googleData.forEach((project) => {
     const data = project.source_data || {};
-     const ai =project. ai_predictions || {};
+     const ai = project.ai_predictions || {};
 
     const planned = Number(data["Planned Cost"] || 0);
     const forecasted = Number(ai["Forecasted Cost"] || 0);

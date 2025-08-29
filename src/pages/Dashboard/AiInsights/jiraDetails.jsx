@@ -1,14 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { FaFlag, FaThumbsUp, FaExclamationCircle } from "react-icons/fa";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { getJiraIssueById } from "../../../services/oprations/jiraAPI";
 import { useParams } from "react-router-dom";
+import toast from "react-hot-toast";
+import { createFeedback } from "../../../services/oprations/feedbackAPI";
 
 const JiraDetails = () => {
   const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.profile)
   const { id } = useParams();
   const [issue, setIssue] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false); // modal state
+  const [feedbackText, setFeedbackText] = useState("");
 
   useEffect(() => {
     const fetchIssue = async () => {
@@ -26,6 +31,29 @@ const JiraDetails = () => {
   if (!issue) {
     return <p className="text-center py-10">Loading...</p>;
   }
+
+const handleSubmitFeedback = async () => {
+  if (!feedbackText.trim()) {
+    toast.error("Feedback cannot be empty");
+    return;
+  }
+
+  const res = await dispatch(
+    createFeedback({
+      userid: user._id,
+      feedback: feedbackText,
+      for: `Jira AI Predective Summary - id ${id}`
+    })
+  );
+
+  if (res.success) {
+    toast.success("Feedback submitted successfully!");
+    setFeedbackText("");
+    setIsModalOpen(false); // close modal
+  } else {
+    toast.error("Failed to submit feedback");
+  }
+};
 
   const {
     key,
@@ -136,11 +164,11 @@ const JiraDetails = () => {
               </p>
               <p className="font-bold text-[15px]">{update_inactivity_days}</p>
             </div>
-            <div className="flex justify-between mt-2">
-              <p className="font-semibold text-[14px]">
-                Days in Current Status
+            <div className="flex justify-between items-center mr-4 mt-2">
+              <p className="font-semibold text-sm">Days in Current Status</p>
+              <p className="font-bold text-base ml-3">
+                {days_in_current_status}
               </p>
-              <p className="font-bold text-[15px]">{days_in_current_status}</p>
             </div>
           </div>
 
@@ -169,20 +197,42 @@ const JiraDetails = () => {
               {
                 label: "AI Priority Score",
                 value: ai_priority_score,
-                stroke: "#4A6B8A",
+                stroke: "",
               },
               {
                 label: "AI Delay Score",
                 value: ai_delay_score,
-                stroke: "#3B9B2F",
+                stroke: "",
               },
             ].map((item, idx) => {
               const circleLength = 276.46;
+
+              // ✅ Dynamic color logic
+              let strokeColor = item.stroke;
+
+              if (item.label === "AI Priority Score") {
+                if (item.value < 0.4) strokeColor = "#A7C7E7"; // Light Blue
+                else if (item.value < 0.7)
+                  strokeColor = "#4A6B8A"; // Medium Blue
+                else strokeColor = "#1E3A5F"; // Dark Blue
+              }
+
+              if (item.label === "AI Delay Score") {
+                if (item.value < 0.4) strokeColor = "#3B9B2F"; // Green
+                else if (item.value < 0.7) strokeColor = "#FFA500"; // Orange
+                else strokeColor = "#FF0000"; // Red
+              }
+
               const offset = circleLength - item.value * circleLength;
 
               return (
                 <div key={idx} className="text-center">
-                  <p className="font-semibold text-[14px] mb-2">{item.label}</p>
+                  {/* Label stays neutral */}
+                  <p className="font-semibold text-[14px] mb-2 text-gray-700">
+                    {item.label}
+                  </p>
+
+                  {/* Circle + Value */}
                   <div className="relative w-24 h-24 sm:w-28 sm:h-28 mx-auto">
                     <svg className="w-full h-full" viewBox="0 0 100 100">
                       <circle
@@ -197,7 +247,7 @@ const JiraDetails = () => {
                         cx="50"
                         cy="50"
                         r="44"
-                        stroke={item.stroke}
+                        stroke={strokeColor}
                         strokeWidth="12"
                         fill="none"
                         strokeDasharray={circleLength}
@@ -208,7 +258,7 @@ const JiraDetails = () => {
                     </svg>
                     <div
                       className="absolute inset-0 flex items-center justify-center font-semibold text-[22px] sm:text-[28px]"
-                      style={{ color: item.stroke }}
+                      style={{ color: strokeColor }}
                     >
                       {item.value.toFixed(2)}
                     </div>
@@ -226,8 +276,8 @@ const JiraDetails = () => {
             <div className="overflow-y-auto max-h-[140px] pr-2 scrollbar-thin text-[14px]">
               {(status_transition_log || []).map((log, idx) => (
                 <p key={idx} className="mb-2 font-semibold">
-                  From {log.fromString} → {log.toString} on{" "}
-                  {new Date(log.created).toLocaleDateString()}
+                  From {log.from_status} → {log.to_status} on{" "}
+                  {new Date(log.transition_time).toLocaleDateString()}
                 </p>
               ))}
             </div>
@@ -253,11 +303,48 @@ const JiraDetails = () => {
         </section>
 
         {/* AI Summary */}
-        <section className="bg-[#F7FAF9] rounded-lg p-6">
-          <p className="font-bold text-[14px] mb-2">AI Summary</p>
-          <p className="text-[16px] leading-relaxed">{ai_summary}</p>
-        </section>
-      </div>
+      <section className="bg-[#F7FAF9] rounded-lg p-6 relative">
+        <p className="font-bold text-[14px] mb-2">AI Predictive Summary</p>
+        <p className="text-[16px] leading-relaxed">{ai_summary}</p>
+
+        {/* Feedback button */}
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="absolute bottom-4 right-4 bg-[#00254D] text-white text-xs px-3 py-1 rounded"
+        >
+          Feedback
+        </button>
+      </section>
+
+      {/* Feedback Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg w-[400px] p-6 relative">
+            <h2 className="text-lg font-bold mb-4">Submit Feedback</h2>
+            <textarea
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="Write your feedback here..."
+              className="w-full h-32 p-2 border border-gray-300 rounded mb-4 resize-none"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitFeedback}
+                className="px-4 py-2 rounded bg-[#00254D] text-white hover:bg-blue-600"
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
     </div>
   );
 };

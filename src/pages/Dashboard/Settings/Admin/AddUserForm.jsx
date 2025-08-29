@@ -13,6 +13,7 @@ const AddUserForm = () => {
     name: "",
     email: "",
     role: "",
+    projectrole: "",
     password: "",
     confirmPassword: "",
   });
@@ -39,6 +40,7 @@ const AddUserForm = () => {
     dispatch(
       register(
         form.role,
+        form.projectrole,
         form.name,
         form.email,
         form.password,
@@ -112,6 +114,27 @@ const AddUserForm = () => {
             </div>
             <div>
               <label className="text-sm font-semibold text-gray-700">
+                Project Role
+              </label>
+              <select
+                name="projectrole"
+                value={form.projectrole}
+                onChange={handleChange}
+                className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300 bg-white"
+              >
+                <option value="" disabled>
+                  Select Project Role
+                </option>
+                <option value="Project Manager">Project Manager(Jira)</option>
+                <option value="Team Leader">Team Leader(Jira & Google)</option>
+                <option value="Executive">Executive(Google)</option>
+                <option value="Portfolio Manager">Portfolio Manager(Google)</option>
+           
+              </select>
+            </div>
+            
+            <div>
+              <label className="text-sm font-semibold text-gray-700">
                 Password
               </label>
               <input
@@ -136,7 +159,6 @@ const AddUserForm = () => {
                 placeholder="Confirm password"
               />
             </div>
-
             {/* Buttons */}
             <div className="flex justify-end gap-4 pt-2">
               <button

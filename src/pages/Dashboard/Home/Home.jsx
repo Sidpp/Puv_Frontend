@@ -27,9 +27,12 @@ import {
   CardTitle,
   CardContent,
 } from "../../../components/Dashboard/Home/Card";
-import { useDispatch } from "react-redux";
-import { getAllGoogleDetails } from "../../../services/oprations/googleAPI";
-import { getAllJiraIssues } from "../../../services/oprations/jiraAPI";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  getAllGoogleDetails,
+  getGoogleSheetById,
+} from "../../../services/oprations/googleAPI";
+import { getAllJiraIssues,getJiraIssueById } from "../../../services/oprations/jiraAPI";
 
 const BudgetUtilizationView = ({ data }) => {
   const utilization =
@@ -132,9 +135,7 @@ const SummaryBanner = ({ label, value, valueColor = "text-[#006685]" }) => (
     <div className="text-sm md:text-md font-semibold text-slate-700 text-left">
       {label}
     </div>
-    <div className={`text-xl md:text-xl  ${valueColor}`}>
-      {value}
-    </div>
+    <div className={`text-xl md:text-xl  ${valueColor}`}>{value}</div>
   </div>
 );
 
@@ -318,7 +319,7 @@ function getPortfolioStatusData(source, googleData = [], jiraData = []) {
     });
 
     const total = jiraData.length || 1;
-    
+
     return [
       {
         name: "Delayed",
@@ -535,7 +536,6 @@ function getRiskFactors(googleData = []) {
     },
   ];
 }
-
 
 function getSlippageData(projects = []) {
   const monthMap = {};
@@ -768,7 +768,6 @@ function calculateConfidence(doc) {
   return Math.max(0, Math.min(1, score));
 }
 
-
 // --- Main Dashboard Component ---
 
 const Home = () => {
@@ -785,35 +784,74 @@ const Home = () => {
   const [currentPage, setCurrentPage] = React.useState(1);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.profile);
 
   useEffect(() => {
     const fetchGoogle = async () => {
-      try {
-        const res = await dispatch(getAllGoogleDetails());
-        setGoogleData(Array.isArray(res) ? res : []);
-        // console.log("response ", res);
-        // console.log("Google data",googleData);
-      } catch (error) {
-        console.error("Failed to fetch Google data:", error);
+      if (user?.projectrole === "Team Leader") {
+        try {
+          const ids = user?.assignGoogleProjects || [];
+          let allData = [];
+
+          for (const id of ids) {
+            const res = await dispatch(getGoogleSheetById(id));
+            if (res) {
+              allData.push(res); 
+            }
+            console.log("allData", allData);
+          }
+
+          setGoogleData(allData);
+        } catch (error) {
+          console.error("Failed to fetch Google data:", error);
+        }
+      } else {
+        try {
+          const res = await dispatch(getAllGoogleDetails());
+          setGoogleData(Array.isArray(res) ? res : []);
+        } catch (error) {
+          console.error("Failed to fetch Google data:", error);
+        }
       }
     };
+
     fetchGoogle();
-  }, [dispatch]);
+    console.log("GoogleData", googleData);
+  }, [dispatch, user]);
+
 
   useEffect(() => {
-    const fetchIssues = async () => {
-      try {
-        const issues = await dispatch(getAllJiraIssues());
-        setJiraData(Array.isArray(issues) ? issues : []);
-        console.log("jiraData:", issues);
-      } catch (error) {
-        console.error("Failed to fetch Jira issues:", error);
-        setJiraData([]);
+    const fetchJira = async () => {
+      if (user?.projectrole === "Team Leader") {
+        try {
+          const ids = user?.assignJiraProjects || [];
+          let allData = [];
+                  
+          for (const id of ids) {
+            const res = await dispatch(getJiraIssueById(id));
+            if (res) {
+              allData.push(res);
+            }
+           // console.log("allData", allData);
+          }
+
+          setJiraData(allData);
+        } catch (error) {
+          console.error("Failed to fetch Jira issues:", error);
+        }
+      } else {
+        try {
+          const issues = await dispatch(getAllJiraIssues());
+          setJiraData(Array.isArray(issues) ? issues : []);
+        } catch (error) {
+          console.error("Failed to fetch Jira issues:", error);
+          setJiraData([]);
+        }
       }
     };
 
-    fetchIssues();
-  }, [dispatch]);
+    fetchJira();
+  }, [dispatch, user]);
 
   useEffect(() => {
     //console.log("Google data", googleData);
@@ -1147,10 +1185,7 @@ const Home = () => {
                                   100
                                 : (project.avg_delay_score ?? 0) * 100;
 
-            
-
-
-                                  const confidence = calculateConfidence(ai);
+                              const confidence = calculateConfidence(ai);
 
                               return (
                                 <div
@@ -1243,7 +1278,7 @@ const Home = () => {
                                   <Link
                                     to={
                                       isGoogle
-                                        ? `/dashboard/insights/google-summary`
+                                        ? `/dashboard/insights/google-details/${project._id}`
                                         : `/dashboard/insights/jira-summary/${project.ids.join(
                                             ","
                                           )}`

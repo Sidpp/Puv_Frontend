@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import Select from "react-select";
 import {
   getAllUsers,
   editUser,
@@ -14,16 +15,23 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { getAllGoogleDetails } from "../../../../services/oprations/googleAPI";
+import { getAllJiraIssues } from "../../../../services/oprations/jiraAPI";
 
 const accessStyles = {
   Admin: "bg-green-100 text-green-600",
-  "Data Export": "bg-blue-100 text-blue-600",
-  "Data Import": "bg-purple-100 text-purple-600",
+  "Portfolio Manager": "bg-blue-100 text-blue-600",
+  "Team Leader": "bg-purple-100 text-purple-600",
+  Executive: "bg-yellow-100 text-yellow-700",
+  "Project Manager": "bg-orange-100 text-orange-600",
 };
 
 export default function UserManagement() {
+  const { user } = useSelector((state) => state.profile);
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
+  const [googleData, setGoogleData] = useState([]);
+  const [jiraData, setJiraData] = useState([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
 
@@ -33,6 +41,7 @@ export default function UserManagement() {
     name: "",
     email: "",
     role: "",
+    projectrole: "",
   });
 
   const dispatch = useDispatch();
@@ -44,6 +53,35 @@ export default function UserManagement() {
   };
 
   useEffect(() => {
+    const fetchGoogle = async () => {
+      try {
+        const res = await dispatch(getAllGoogleDetails());
+        setGoogleData(Array.isArray(res) ? res : []);
+        // console.log("response ", res);
+        // console.log("Google data",googleData);
+      } catch (error) {
+        console.error("Failed to fetch Google data:", error);
+      }
+    };
+    fetchGoogle();
+  }, [dispatch]);
+
+  useEffect(() => {
+    const fetchIssues = async () => {
+      try {
+        const issues = await dispatch(getAllJiraIssues());
+        setJiraData(Array.isArray(issues) ? issues : []);
+        console.log("jiraData:", issues);
+      } catch (error) {
+        console.error("Failed to fetch Jira issues:", error);
+        setJiraData([]);
+      }
+    };
+
+    fetchIssues();
+  }, [dispatch]);
+
+  useEffect(() => {
     fetchUsers();
   }, []);
 
@@ -53,6 +91,9 @@ export default function UserManagement() {
       name: user.name,
       email: user.email,
       role: user.role,
+      projectrole: user.projectrole || "",
+      assignJiraProjects: user.assignJiraProjects || [],
+      assignGoogleProjects: user.assignGoogleProjects || [],
     });
     setIsEditModalOpen(true);
   };
@@ -157,6 +198,14 @@ export default function UserManagement() {
                 >
                   {user.role}
                 </span>
+                <span
+                  className={`px-2 py-1 ml-2 rounded-full text-xs font-medium ${
+                    accessStyles[user.projectrole] ||
+                    "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {user.projectrole}
+                </span>
               </div>
               <div className="text-xs text-gray-500">
                 <p>
@@ -227,6 +276,14 @@ export default function UserManagement() {
                       }`}
                     >
                       {user.role}
+                    </span>
+                    <span
+                      className={`px-2 py-1 ml-2 rounded-full text-xs font-medium ${
+                        accessStyles[user.projectrole] ||
+                        "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {user.projectrole}
                     </span>
                   </td>
                   <td className="p-3 text-sm">
@@ -326,6 +383,113 @@ export default function UserManagement() {
                   <option value="User">User</option>
                 </select>
               </div>
+
+            { user?.projectrole !== "Team Leader" && (              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Project Role
+                </label>
+                <select
+                  value={editUserData.projectrole}
+                  onChange={(e) =>
+                    setEditUserData({
+                      ...editUserData,
+                      projectrole: e.target.value,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="">Select Project Role</option>
+                  <option value="Project Manager">Project Manager(Jira)</option>
+                  <option value="Team Leader">
+                    Team Leader(Jira & Google)
+                  </option>
+                  <option value="Executive">Executive(Google)</option>
+                  <option value="Portfolio Manager">
+                    Portfolio Manager(Google)
+                  </option>
+                </select>
+              </div>)}
+
+              {["Portfolio Manager", "Project Manager", "Executive"].includes(
+                user.projectrole
+              ) && (
+                <>
+                  {/* Assign Jira Projects */}
+                  {user?.projectrole !== "Team Leader" && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Assign Jira Projects
+                      </label>
+                      <Select
+                        isMulti
+                        value={jiraData
+                          .filter((proj) =>
+                            (editUserData.assignJiraProjects || []).includes(
+                              proj._id
+                            )
+                          )
+                          .map((proj) => ({
+                            value: proj._id,
+                            label: proj.key || proj.issueKey,
+                          }))}
+                        options={jiraData.map((proj) => ({
+                          value: proj._id,
+                          label: proj.key || proj.issueKey,
+                        }))}
+                        onChange={(selected) =>
+                          setEditUserData({
+                            ...editUserData,
+                            assignJiraProjects: selected.map((s) => s.value),
+                          })
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {/* Assign Google Projects */}
+                  {user?.projectrole !== "Team Leader" && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Assign Google Projects
+                      </label>
+                      <Select
+                        isMulti
+                        value={googleData
+                          .filter((proj) =>
+                            (editUserData.assignGoogleProjects || []).includes(
+                              proj._id
+                            )
+                          )
+                          .map((proj) => ({
+                            value: proj._id,
+                            label:
+                              proj.project_identifier ||
+                              proj.project_name ||
+                              "Unnamed Google Project",
+                          }))}
+                        options={googleData.map((proj) => ({
+                          value: proj._id,
+                          label:
+                            proj.project_identifier ||
+                            proj.project_name ||
+                            "Unnamed Google Project",
+                        }))}
+                        onChange={(selected) =>
+                          setEditUserData({
+                            ...editUserData,
+                            assignGoogleProjects: selected.map((s) => s.value),
+                          })
+                        }
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        styles={{
+                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                        }}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
@@ -344,6 +508,11 @@ export default function UserManagement() {
                         name: editUserData.name,
                         email: editUserData.email,
                         role: editUserData.role,
+                        projectrole: editUserData.projectrole,
+                        assignJiraProjects:
+                          editUserData.assignJiraProjects || [],
+                        assignGoogleProjects:
+                          editUserData.assignGoogleProjects || [],
                       },
                       fetchUsers
                     )

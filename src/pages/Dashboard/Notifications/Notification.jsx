@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBullhorn,
@@ -6,94 +6,143 @@ import {
   faThumbtack,
   faCheckSquare,
 } from "@fortawesome/free-solid-svg-icons";
-import { faClock as farClock } from "@fortawesome/free-regular-svg-icons";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  deleteNotification,
+  getNotification,
+} from "../../../services/oprations/authAPI";
+import { useNavigate } from "react-router-dom";
+import { createFeedback } from "../../../services/oprations/feedbackAPI"; // import your Redux action
+import toast from "react-hot-toast";
 
-const notifications = [
-  {
-    id: 1,
-    type: "critical",
-    title: "Critical Task Alert",
-    icon: faBullhorn,
-    iconColor: "text-red-600",
-    badgeColor: "bg-red-600",
-    task: "PV -101",
-    message: "Task PV -101 is in critical state.",
-    details: [
-      "It has been 2 Days since any activity was logged by the assigned resource.",
-      "Last update : 24th June",
-      "Action Required : Please resume progress and update the task status.",
-    ],
-  },
-  {
-    id: 2,
-    type: "warning",
-    title: "Inactivity Alert Before Deadline",
-    icon: faExclamationTriangle,
-    iconColor: "text-orange-500",
-    badgeColor: "bg-orange-500",
-    task: "PV -102",
-    message: "Task PV -102 is scheduled for delivery on 2nd August.",
-    details: [
-      "It has been 2 Days since any activity was logged by the assigned resource.",
-      "Action Required : Please resume progress and update the task status.",
-    ],
-  },
-  {
-    id: 3,
-    type: "deadline",
-    title: "Deadline Approaching",
-    icon: null,
-    iconSVG: (
-      <svg
-        className="w-4 h-4 text-yellow-400 flex-shrink-0"
-        fill="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path d="M6 2a1 1 0 0 0-1 1v2a3 3 0 0 0 2 2.83V15a5 5 0 0 0 3 4.58V21H8v2h8v-2h-2v-1.42A5 5 0 0 0 16 15V7.83A3 3 0 0 0 18 5V3a1 1 0 0 0-1-1H6zM7 5V4h10v1a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z" />
-      </svg>
-    ),
-    badgeColor: "bg-yellow-400",
-    task: "PV -103",
-    message: "Task PV -103 is due in 2 days (29th June).",
-    details: [
-      "Progress appears to be slow, and the completion rate is below 50%.",
-      "Action Required : Review current blocker and ensure delivery is on track",
-    ],
-  },
-  {
-    id: 4,
-    type: "stalled",
-    title: "Task Stalled - No Assigned Resource",
-    icon: faThumbtack,
-    iconColor: "text-red-600",
-    badgeColor: "bg-blue-900",
-    task: "PV -104",
-    message: "Task PV -104 is pending assignment.",
-    details: [
-      "No resource is currently assigned, and due date is 1st July.",
-      "Action Required : Please assign a team member to avoid timeline slippage.",
-    ],
-  },
-  {
-    id: 5,
-    type: "completed",
-    title: "Task Completed Late",
-    icon: faCheckSquare,
-    iconColor: "text-green-600",
-    badgeColor: "bg-green-600",
-    task: "PV -105",
-    message:
-      "Task PV -105 has been completed, but after the deadline (Delivered on 25th June; Due : 22nd June).",
-    details: [
-      "Note : Please update retrospective logs and adjust planning buffers accordingly.",
-    ],
-  },
-];
+const sourceStyles = {
+  Jira: "bg-red-100 text-red-600",
+  Google: "bg-blue-100 text-blue-600",
+};
 
 export default function Notifications() {
   const { user } = useSelector((state) => state.profile);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [alerts, setAlerts] = useState([]);
+
+  // Modal state for per-notification feedback
+  const [feedbackModal, setFeedbackModal] = useState({
+    isOpen: false,
+    notifId: null,
+  });
+  const [feedbackText, setFeedbackText] = useState("");
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
+
+  const handleSubmitFeedback = async () => {
+    if (!feedbackText.trim()) return;
+    try {
+      setLoadingFeedback(true);
+      await dispatch(
+        createFeedback({
+          userid: user?._id,
+          feedback: feedbackText,
+          for:`Notification - ${feedbackModal.notifId}` ,
+           
+        })
+      );
+      toast.success("Feedback submitted successfully!");
+      setFeedbackText("");
+      setFeedbackModal({ isOpen: false, notifId: null });
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      toast.error("Failed to submit feedback. Try again.");
+    } finally {
+      setLoadingFeedback(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await dispatch(getNotification());
+        if (res) {
+          const { jiraData, googleData } = res;
+
+          const flatJira = Object.entries(jiraData || {}).flatMap(
+            ([project, alerts]) =>
+              alerts.map((alert, i) => ({
+                id: `jira-${project}-${i}`,
+                project,
+                source: "Jira",
+                ...alert,
+              }))
+          );
+
+          const flatGoogle = Object.entries(googleData || {}).flatMap(
+            ([project, alerts]) =>
+              alerts.map((alert, i) => ({
+                id: `google-${project}-${i}`,
+                project,
+                source: "Google",
+                ...alert,
+              }))
+          );
+
+          let combined = [...flatJira, ...flatGoogle];
+
+          if (user?.projectrole === "Team Leader") {
+            let filtered = combined.filter(
+              (notif) => notif.role?.toLowerCase().trim() === "team leader"
+            );
+
+            const googleIds = user?.assignGoogleProjects || [];
+            const jiraIds = user?.assignJiraProjects || [];
+
+            filtered = filtered.filter((notif) => {
+              if (notif.source === "Google") {
+                return (
+                  googleIds.includes(notif.project) ||
+                  googleIds.includes(notif._id)
+                );
+              }
+              if (notif.source === "Jira") {
+                return (
+                  jiraIds.includes(notif.project) || jiraIds.includes(notif._id)
+                );
+              }
+              return false;
+            });
+
+            setAlerts(filtered);
+          } else {
+            setAlerts(combined);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load notifications", error);
+      }
+    };
+    if (user) fetchNotifications();
+  }, [dispatch, user]);
+
+  const handleDelete = async (notif) => {
+    const res = await dispatch(
+      deleteNotification({
+        id: notif._id,
+        source: notif.source,
+        message: notif.message,
+      })
+    );
+
+    if (res.success) {
+      setAlerts((prev) => prev.filter((a) => a.alertId !== notif.alertId));
+    }
+  };
+
+  const handleClick = async (notif) => {
+    if (notif.source === "Google") {
+      navigate(`/dashboard/insights/google-details/${notif._id || notif.id}`);
+    } else {
+      navigate(`/dashboard/insights/jira-details/${notif._id || notif.id}`);
+    }
+    await handleDelete(notif);
+  };
 
   return (
     <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white font-sans text-gray-800">
@@ -103,83 +152,117 @@ export default function Notifications() {
 
       <section className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-lg font-semibold text-gray-700">Notifications</span>
-          <button
-            className="flex items-center space-x-1 bg-gray-100 text-gray-600 text-sm rounded-md px-3 py-1 hover:bg-gray-200 transition"
-            type="button"
-          >
-            <span>All</span>
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 5l7 7-7 7"
-              ></path>
-            </svg>
-          </button>
+          <span className="text-lg font-semibold text-gray-700">
+            Notifications
+          </span>
         </div>
       </section>
 
       <section className="divide-y divide-gray-300">
-        {notifications.map((notif) => (
-          <article key={notif.id} className="py-4">
-            <div className="flex items-start sm:items-center flex-col sm:flex-row gap-2 mb-1">
-              <span
-                className={`w-3 h-3 rounded-full ${notif.badgeColor} flex-shrink-0 mt-1`}
-                aria-hidden="true"
-              ></span>
-              <h2 className="text-blue-900 text-base font-medium">
-                {notif.id}.{" "}
-                <a href="#" className="underline">
-                  {notif.title}
-                </a>
-              </h2>
-            </div>
+        {alerts.length === 0 ? (
+          <p className="text-gray-500 text-sm">No notifications found.</p>
+        ) : (
+          alerts.map((notif) => (
+            <article
+              key={notif.id}
+              className="py-4 hover:bg-gray-50 transition rounded-md px-2 relative"
+            >
+              {/* Main clickable content */}
+              <div onClick={() => handleClick(notif)}>
+                <div className="flex items-start sm:items-center flex-col sm:flex-row gap-2 mb-1">
+                  <span
+                    className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0 mt-1"
+                    aria-hidden="true"
+                  ></span>
+                  <h2 className="text-blue-900 text-base font-medium">
+                    {notif.alert_type}
+                  </h2>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      sourceStyles[notif.source] || "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {notif.source}
+                  </span>
+                </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2 text-[15px]">
-              {notif.icon ? (
-                <FontAwesomeIcon icon={notif.icon} className={`${notif.iconColor}`} />
-              ) : (
-                notif.iconSVG
-              )}
-              <p className="text-gray-900 font-semibold">
-                Task{" "}
-                <span className="inline-block bg-gray-100 border border-gray-300 rounded px-2 py-[2px] mx-1 font-mono text-sm font-semibold">
-                  {notif.task}
-                </span>
-                {notif.message.replace(`Task ${notif.task}`, "")}
-              </p>
-            </div>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2 text-[15px]">
+                  <FontAwesomeIcon
+                    icon={
+                      notif.alert_type === "Critical"
+                        ? faBullhorn
+                        : notif.alert_type === "Warning"
+                        ? faExclamationTriangle
+                        : notif.alert_type === "Stalled"
+                        ? faThumbtack
+                        : notif.alert_type === "Completed"
+                        ? faCheckSquare
+                        : faExclamationTriangle
+                    }
+                    className="text-red-600"
+                  />
+                  <p className="text-gray-900 font-semibold">{notif.message}</p>
+                </div>
 
-            {notif.details.map((detail, i) => (
-              <p
-                key={i}
-                className={`text-sm ${
-                  i === notif.details.length - 1
-                    ? "text-gray-700 mb-2"
-                    : "text-gray-500 mb-1"
-                }`}
+                {notif.action_required && (
+                  <p className="text-sm text-gray-700 mb-2">
+                    <strong>Action Required:</strong> {notif.action_required}
+                  </p>
+                )}
+              </div>
+
+              {/* Feedback button per notification */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // prevent triggering handleClick
+                  setFeedbackModal({ isOpen: true, notifId: notif.id });
+                }}
+                className="absolute top-2 right-2 bg-[#00254D] text-white px-2 py-1 rounded text-xs"
               >
-                <strong>{detail.split(":")[0]}:</strong>{" "}
-                {detail.split(":").slice(1).join(":").trim()}
-              </p>
-            ))}
-
-            <div className="flex items-center justify-end space-x-2 text-gray-400 text-sm">
-              <FontAwesomeIcon icon={farClock} />
-              <span>9 hours ago</span>
-            </div>
-          </article>
-        ))}
+                Feedback
+              </button>
+            </article>
+          ))
+        )}
       </section>
+
+      {/* Feedback Modal */}
+      {feedbackModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg w-[400px] p-6 relative">
+            <h2 className="text-lg font-bold mb-4">
+              Submit Feedback for {feedbackModal.notifId}
+            </h2>
+            <textarea
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="Write your feedback here..."
+              className="w-full h-32 p-2 border border-gray-300 rounded mb-4 resize-none"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() =>
+                  setFeedbackModal({ isOpen: false, notifId: null })
+                }
+                className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitFeedback}
+                className={`px-4 py-2 rounded text-white ${
+                  loadingFeedback
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-[#00254D] hover:bg-blue-600"
+                }`}
+                disabled={loadingFeedback}
+              >
+                {loadingFeedback ? "Submitting..." : "Submit"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

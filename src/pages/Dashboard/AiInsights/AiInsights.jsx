@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import JiraCard from "../../../components/Dashboard/AiInsights/JiraCard";
 import GoogleCard from "../../../components/Dashboard/AiInsights/GoogleCard";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import FilterTab from "../../../components/Dashboard/AiInsights/FilterTab";
-import { getAllJiraIssues } from "../../../services/oprations/jiraAPI";
-import { getAllGoogleDetails } from "../../../services/oprations/googleAPI";
+import { getAllJiraIssues,getJiraIssueById } from "../../../services/oprations/jiraAPI";
+import {
+  getAllGoogleDetails,
+  getGoogleSheetById,
+} from "../../../services/oprations/googleAPI";
 
 const AiInsights = () => {
   const dispatch = useDispatch();
@@ -12,32 +15,74 @@ const AiInsights = () => {
   const [googleData, setGoogleData] = useState([]);
   const [selectedView, setSelectedView] = useState("google");
   const [selectedFilter, setSelectedFilter] = useState("All");
+  const { user } = useSelector((state) => state.profile);
 
   useEffect(() => {
     const fetchGoogle = async () => {
-      try {
-        const res = await dispatch(getAllGoogleDetails());
-        setGoogleData(Array.isArray(res) ? res : []);
-      } catch (error) {
-        console.error("Failed to fetch google issues:", error);
-        setGoogleData([]);
+      if (user?.projectrole === "Team Leader") {
+        try {
+          const ids = user?.assignGoogleProjects || [];
+          let allData = [];
+
+          for (const id of ids) {
+            const res = await dispatch(getGoogleSheetById(id));
+            if (res) {
+              allData.push(res);
+            }
+            // console.log("allData", allData);
+          }
+
+          setGoogleData(allData);
+        } catch (error) {
+          //console.error("Failed to fetch Google data:", error);
+        }
+      } else {
+        try {
+          const res = await dispatch(getAllGoogleDetails());
+          setGoogleData(Array.isArray(res) ? res : []);
+        } catch (error) {
+          console.error("Failed to fetch Google data:", error);
+        }
       }
     };
+
     fetchGoogle();
-  }, [dispatch]);
+    console.log("GoogleData", googleData);
+  }, [dispatch, user]);
 
   useEffect(() => {
-    const fetchIssues = async () => {
-      try {
-        const issues = await dispatch(getAllJiraIssues());
-        setJiraData(Array.isArray(issues) ? issues : []);
-      } catch (error) {
-        console.error("Failed to fetch Jira issues:", error);
-        setJiraData([]);
+    const fetchJira = async () => {
+      if (user?.projectrole === "Team Leader") {
+        try {
+          const ids = user?.assignJiraProjects || [];
+          let allData = [];
+                  
+          for (const id of ids) {
+            const res = await dispatch(getJiraIssueById(id));
+            if (res) {
+              allData.push(res);
+            }
+           // console.log("allData", allData);
+          }
+
+          setJiraData(allData);
+        } catch (error) {
+          console.error("Failed to fetch Jira issues:", error);
+        }
+      } else {
+        try {
+          const issues = await dispatch(getAllJiraIssues());
+          setJiraData(Array.isArray(issues) ? issues : []);
+        } catch (error) {
+          console.error("Failed to fetch Jira issues:", error);
+          setJiraData([]);
+        }
       }
     };
-    fetchIssues();
-  }, [dispatch]);
+
+    fetchJira();
+  }, [dispatch, user]);
+
 
   const handleViewChange = (e) => {
     const value = e.target.value;

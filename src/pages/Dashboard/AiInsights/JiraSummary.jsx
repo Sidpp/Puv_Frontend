@@ -31,6 +31,8 @@ const JiraSummary = () => {
   const [activeSummaryId, setActiveSummaryId] = useState(null);
   const dispatch = useDispatch();
   const [jiraData, setJiraData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     const fetchIssues = async () => {
@@ -57,7 +59,7 @@ const JiraSummary = () => {
             summary: issue.summary,
             labels: issue.labels || [],
             projectName: issue.project_name,
-            ai_marker: issue.ai_marker,
+            marker: issue.marker,
           })
         );
 
@@ -65,11 +67,21 @@ const JiraSummary = () => {
       } catch (error) {
         console.error("Failed to fetch Jira issues:", error);
         setJiraData([]);
-      }
+      }finally {
+      setLoading(false);
+    }
     };
 
     fetchIssues();
   }, [dispatch]);
+
+    if (loading) {
+    return <p className="text-center py-10">Loading...</p>;
+  }
+
+  if (!jiraData.length) {
+    return <p className="text-center py-10">No Jira issues found.</p>;
+  }
 
   // --- Derived Data from API ---
   const statusData = [
@@ -295,9 +307,9 @@ const JiraSummary = () => {
               >
                 <td className="py-4 px-6 border-b border-[#E6E9E8] text-gray-600">
                   {task.id}{" "}
-                  {(task.ai_marker === true ||
-                    task.ai_marker === "true" ||
-                    task.ai_marker === 1) && (
+                  {(task.marker === true ||
+                    task.marker === "true" ||
+                    task.marker === 1) && (
                     <FaExclamationTriangle className="inline text-red-500 ml-1" />
                   )}
                 </td>

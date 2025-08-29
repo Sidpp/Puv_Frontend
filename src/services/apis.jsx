@@ -4,6 +4,8 @@ const BASE_URL = process.env.REACT_APP_BASE_URL;
 export const endpoints = {
 
   SEARCH_API: BASE_URL + "/search",
+  NOTIFICATION_API: BASE_URL + "/alerts",
+  FEEDBACK_API: BASE_URL + "/feedback",
 
   SENDOTP_API: BASE_URL + "/auth/sendotp",
   REGISTER_API: BASE_URL + "/auth/register",

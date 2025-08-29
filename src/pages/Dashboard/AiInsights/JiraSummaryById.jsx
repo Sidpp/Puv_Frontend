@@ -33,7 +33,9 @@ const JiraSummaryById = () => {
   const [activeSummaryId, setActiveSummaryId] = useState(null);
   const dispatch = useDispatch();
   const [jiraData, setJiraData] = useState([]);
-  const { id } = useParams(); // e.g. "68ac0baf2c38b5e0514eedf0,68ac0bb12c38b5e0514eedf1"
+  const { id } = useParams(); 
+  const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     const fetchIssuesByIds = async () => {
@@ -62,7 +64,7 @@ const JiraSummaryById = () => {
                 summary: res.summary,
                 labels: res.labels || [],
                 projectName: res.project_name,
-                ai_marker: res.ai_marker,
+                marker: res.marker,
               };
             }
             return null;
@@ -73,11 +75,21 @@ const JiraSummaryById = () => {
       } catch (error) {
         console.error("Failed to fetch Jira issues by IDs:", error);
         setJiraData([]);
-      }
+      }finally {
+      setLoading(false);
+    }
     };
 
     if (id) fetchIssuesByIds();
   }, [dispatch, id]);
+
+  if (loading) {
+    return <p className="text-center py-10">Loading...</p>;
+  }
+
+  if (!jiraData.length) {
+    return <p className="text-center py-10">No Jira issues found.</p>;
+  }
 
   // --- Derived Data from API ---
   const statusData = [
@@ -303,9 +315,9 @@ const JiraSummaryById = () => {
               >
                 <td className="py-4 px-6 border-b border-[#E6E9E8] text-gray-600">
                   {task.id}{" "}
-                  {(task.ai_marker === true ||
-                    task.ai_marker === "true" ||
-                    task.ai_marker === 1) && (
+                  {(task.marker === true ||
+                    task.marker === "true" ||
+                    task.marker === 1) && (
                     <FaExclamationTriangle className="inline text-red-500 ml-1" />
                   )}
                 </td>

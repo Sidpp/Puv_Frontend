@@ -1,14 +1,95 @@
 import React, { useState, useRef, useEffect } from "react";
 import NotificationPopup from "./NotificationPopup";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { Search, Bell } from "lucide-react";
 import logo from "../../../assets/PortfolioVue_logo.png";
 import SearchComponent from "./SearchComponent";
+import { getNotification } from "../../../services/oprations/authAPI";
 
 const Navbar = () => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [alerts, setAlerts] = useState([]);
+  const { user } = useSelector((state) => state.profile);
   const notificationRef = useRef();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await dispatch(getNotification());
+        if (res) {
+          const { jiraData, googleData } = res;
+
+          // Flatten Jira alerts
+          const flatJira = Object.entries(jiraData || {}).flatMap(
+            ([project, alerts]) =>
+              alerts.map((alert, i) => ({
+                id: `jira-${project}-${i}`,
+                project,
+                source: "Jira",
+                ...alert,
+              }))
+          );
+
+          // Flatten Google alerts
+          const flatGoogle = Object.entries(googleData || {}).flatMap(
+            ([project, alerts]) =>
+              alerts.map((alert, i) => ({
+                id: `google-${project}-${i}`,
+                project,
+                source: "Google",
+                ...alert,
+              }))
+          );
+
+          let combined = [...flatJira, ...flatGoogle];
+
+          if (user?.projectrole === "Team Leader") {
+            // Step 1: filter by role
+            let filtered = combined.filter(
+              (notif) => notif.role?.toLowerCase().trim() === "team leader"
+            );
+
+            // Step 2: filter by assigned projects
+            const googleIds = user?.assignGoogleProjects || [];
+            const jiraIds = user?.assignJiraProjects || [];
+
+            filtered = filtered.filter((notif) => {
+              if (notif.source === "Google") {
+                return (
+                  googleIds.includes(notif.project) ||
+                  googleIds.includes(notif._id)
+                );
+              }
+              if (notif.source === "Jira") {
+                return (
+                  jiraIds.includes(notif.project) || jiraIds.includes(notif._id)
+                );
+              }
+              return false;
+            });
+
+            console.log(
+              "Filtered notifications (Team Leader + assigned projects):",
+              filtered
+            );
+
+            setAlerts(filtered);
+            setNotificationCount(filtered.length);
+          } else {
+            // Other roles see all
+            setAlerts(combined);
+            setNotificationCount(combined.length);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load notifications", error);
+      }
+    };
+    if (user) fetchNotifications();
+  }, [dispatch, user]);
 
   const handleClickOutside = (e) => {
     if (
@@ -110,13 +191,17 @@ const Navbar = () => {
           >
             <Bell className="text-[#012950] w-6 h-6" />
             <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-semibold w-4 h-4 flex items-center justify-center rounded-full">
-              1
+              {notificationCount}
             </span>
           </button>
 
           {showNotifications && (
             <div ref={notificationRef} className="absolute right-0 mt-2 z-50">
-              <NotificationPopup onClose={() => setShowNotifications(false)} />
+              <NotificationPopup
+                onClose={() => setShowNotifications(false)}
+                alerts={alerts}
+                setAlerts={setAlerts}
+              />
             </div>
           )}
         </div>

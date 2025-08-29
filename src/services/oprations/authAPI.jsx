@@ -3,6 +3,8 @@ import { setLoading, setToken } from "../../slices/authSlice";
 import { setUser } from "../../slices/profileSlice";
 import { apiConnector } from "../apiConnector";
 import { endpoints } from "../apis";
+import { setJiraCredentials } from "../../slices/jiraDetailSlice";
+import { setGoogleCredentials } from "../../slices/googleSlice";
 
 const {
   SEARCH_API,
@@ -20,7 +22,8 @@ const {
   UPDATE_IMAGE_API,
   UPDATE_INFO_API,
   SEND_EMAIL_OTP_API,
-  VERIFY_EMAIL_OTP_API
+  VERIFY_EMAIL_OTP_API,
+  NOTIFICATION_API
 } = endpoints;
 
 export function globalSearch(query) {
@@ -49,6 +52,53 @@ export function globalSearch(query) {
       return null;
     } finally {
      // dispatch(setLoading(false));
+    }
+  };
+}
+
+export function getNotification() {
+  return async (dispatch) => {
+    try {
+      const response = await apiConnector("GET", NOTIFICATION_API);
+
+      console.log("NOTIFICATION RESPONSE:", response);
+
+      const { success, jiraData, googleData } = response.data;
+
+      if (!success) {
+        throw new Error("Invalid response format: no alerts found");
+      }
+
+      // return both jira and google alerts
+      return { jiraData: jiraData || {}, googleData: googleData || {} };
+    } catch (error) {
+      console.error("NOTIFICATION ERROR:", error);
+      return { jiraData: {}, googleData: {} };
+    } finally {
+      // dispatch(setLoading(false));
+    }
+  };
+}
+
+export function deleteNotification(data) {
+  return async (dispatch) => {
+    try {
+      const response = await apiConnector("DELETE", NOTIFICATION_API, data);
+
+      console.log("DELETE NOTIFICATION RESPONSE:", response);
+
+      const { success, message } = response.data;
+
+      if (!success) {
+        throw new Error(message || "Failed to delete notification");
+      }
+
+      return { success: true, message };
+    } catch (error) {
+      console.error("DELETE NOTIFICATION ERROR:", error);
+      return { success: false, message: error.message || "Server error" };
+    } finally {
+      // dispatch(setLoading(false));
     }
   };
 }
@@ -268,7 +318,7 @@ export function signUp(role, name, email, password, confirmPassword, navigate) {
 
 
 //register
-export function register(role, name, email, password, confirmPassword, navigate) {
+export function register(role, projectrole,name, email, password, confirmPassword, navigate) {
   return async (dispatch) => {
     const toastId = toast.loading("Loading...");
     // dispatch(setLoading(true));
@@ -283,6 +333,7 @@ export function register(role, name, email, password, confirmPassword, navigate)
         REGISTER_API,
         {
           role,
+          projectrole,
           name,
           email,
           password,
@@ -520,6 +571,8 @@ export function logout(navigate) {
   return (dispatch) => {
     dispatch(setToken(null));
     dispatch(setUser(null));
+    dispatch(setJiraCredentials(null));
+    dispatch(setGoogleCredentials(null));
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     toast.success("Logged Out");

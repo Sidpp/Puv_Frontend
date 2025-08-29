@@ -1,15 +1,46 @@
 import React, { useEffect, useState } from "react";
 import { FaTimes, FaCheckCircle } from "react-icons/fa";
 import { FaCheck, FaRegCircle, FaExclamationTriangle } from "react-icons/fa";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { getGoogleSheetById } from "../../../services/oprations/googleAPI";
+import { createFeedback } from "../../../services/oprations/feedbackAPI";
+import toast from "react-hot-toast";
 
 const GoogleDetails = () => {
   const [selectedLabel, setSelectedLabel] = useState(null);
+   const { user } = useSelector((state) => state.profile)
   const dispatch = useDispatch();
   const { id } = useParams();
   const [issue, setIssue] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+
+
+const handleSubmitFeedback = async () => {
+  if (!feedbackText.trim()) {
+    toast.error("Feedback cannot be empty");
+    return;
+  }
+
+  const res = await dispatch(
+    createFeedback({
+      userid: user._id,
+      feedback: feedbackText,
+      for: `Google AI Predective Summary - id ${id}`
+    })
+  );
+
+  if (res.success) {
+    toast.success("Feedback submitted successfully!");
+    setFeedbackText("");
+    setIsModalOpen(false); // close modal
+  } else {
+    toast.error("Failed to submit feedback");
+  }
+};
+
+
 
   useEffect(() => {
     const fetchIssues = async () => {
@@ -90,52 +121,43 @@ const GoogleDetails = () => {
         </h1>
       </header>
 
-      <main className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start w-full">
+      <main className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch w-full">
         {/* Left Section */}
-        <section className="space-y-6">
+        <section className="space-y-6 flex flex-col">
           <h2 className="bg-[#00294D] text-white text-[18px] font-semibold rounded-md px-6 py-3">
             Program - {issue?.source_data?.Program}
           </h2>
 
           {/* Project Manager */}
-          <div className="bg-[#F7FAF9] p-4 space-y-4 rounded-md">
-            <div className="flex justify-between items-center px-4 py-2 rounded-md transition group hover:bg-[#D9E6F0] hover:border hover:border-dashed hover:border-gray-400">
-              <span className="font-semibold text-[14px] text-gray-700 group-hover:text-[#0B7B8A]">
-                Project Manager
-              </span>
-              <span className="font-semibold text-[14px] text-[#0B2E56] group-hover:text-[#0B7B8A]">
-                {issue?.source_data?.["Project Manager"]}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {[
-                ["Contract ID", issue?.source_data?.["Contract ID"]],
-                [
-                  "Contract Start Date",
-                  formatDate(issue?.source_data?.["Contract Start Date"]),
-                ],
-                [
-                  "Contract End Date",
-                  formatDate(issue?.source_data?.["Contract End Date"]),
-                ],
-              ].map(([label, value], i) => (
-                <div
-                  key={i}
-                  className="flex justify-between items-center px-4 py-2 rounded-md transition group hover:bg-[#D9E6F0] hover:border hover:border-dashed hover:border-gray-400"
-                >
-                  <span className="font-semibold text-[14px] text-gray-700 group-hover:text-[#0B7B8A]">
-                    {label}
-                  </span>
-                  <span className="font-semibold text-[14px] text-[#0B2E56] group-hover:text-[#0B7B8A]">
-                    {value}
-                  </span>
-                </div>
-              ))}
-            </div>
+          <div className="bg-[#F7FAF9] p-4 rounded-md space-y-2">
+            {[
+              ["Project Manager", issue?.source_data?.["Project Manager"]],
+              ["Contract ID", issue?.source_data?.["Contract ID"]],
+              [
+                "Contract Start Date",
+                formatDate(issue?.source_data?.["Contract Start Date"]),
+              ],
+              [
+                "Contract End Date",
+                formatDate(issue?.source_data?.["Contract End Date"]),
+              ],
+            ].map(([label, value], i) => (
+              <div
+                key={i}
+                className="flex justify-between items-center px-4 py-2 rounded-md transition group hover:bg-[#D9E6F0] hover:border hover:border-dashed hover:border-gray-400"
+              >
+                <span className="font-semibold text-[14px] text-gray-700 group-hover:text-[#0B7B8A]">
+                  {label}
+                </span>
+                <span className="font-semibold text-[14px] text-[#0B2E56] group-hover:text-[#0B7B8A]">
+                  {value}
+                </span>
+              </div>
+            ))}
           </div>
 
           {/* Price Bars */}
-          <div className="bg-[#F7FAF9] p-4 rounded-md space-y-4">
+          <div className="bg-[#F7FAF9] p-4 rounded-md space-y-6">
             {[
               [
                 "Contract Ceiling Price",
@@ -149,14 +171,12 @@ const GoogleDetails = () => {
                 "Actual Contract Spend",
                 issue?.source_data?.["Actual Contract Spend"],
               ],
-            ].map(([label, amount, color], i) => (
+            ].map(([label, amount], i) => (
               <div key={i} className="flex items-center justify-between">
                 <span className="font-semibold text-[14px] w-40 text-gray-700">
                   {label}
                 </span>
-                <div className="flex-1 mx-4">
-                  <div className={`h-3 rounded-full ${color} w-full`}></div>
-                </div>
+                <div className="flex-1 mx-4"></div>
                 <span className="font-bold text-[15px] text-[#0B2E56]">
                   {amount}
                 </span>
@@ -164,32 +184,34 @@ const GoogleDetails = () => {
             ))}
           </div>
 
-          {/* Expiry and Burnout with Circular Chart */}
-          <div className="flex flex-wrap justify-between gap-4">
-            {/* Expiry & Burnout */}
-            <div className="space-y-4 flex-1 min-w-[240px] max-w-[520px]">
-              <div className="bg-yellow-300 rounded-md px-6 py-3 flex justify-between items-center">
+          {/* Expiry & Burnout + Circular Chart */}
+          <div className="flex gap-6 items-stretch">
+            {/* Left Column: Expiry and Burnout stacked */}
+            <div className="flex flex-col gap-4 flex-1">
+              {/* Expiry */}
+              <div className="bg-yellow-300 rounded-md p-6 flex flex-col justify-center items-center flex-1">
                 <div className="flex items-center gap-2 font-semibold text-[14px] text-yellow-900">
                   <FaCheckCircle />
                   <span>Expiring soon</span>
                 </div>
-                <span className="font-bold text-[15px]">
+                <span className="font-bold text-[20px] mt-2">
                   {issue?.source_data?.["Expiring Soon"]}
                 </span>
               </div>
 
-              <div className="bg-[#FDEDED] rounded-md px-6 py-6 text-center">
-                <p className="text-red-700 font-semibold text-[15px]">
+              {/* Burnout */}
+              <div className="bg-[#FDEDED] rounded-md p-6 flex flex-col justify-center items-center flex-1">
+                <p className="text-red-700 font-semibold text-[16px]">
                   Burnout Risk (%)
                 </p>
-                <p className="text-red-700 font-bold text-[20px] mt-1">
+                <p className="text-red-700 font-bold text-[28px] mt-2">
                   {issue?.ai_predictions?.["Burnout_Risk"]}
                 </p>
               </div>
             </div>
 
-            {/* Circular Progress */}
-            <div className="bg-[#F7FAF9] rounded-md p-4 flex items-center justify-center w-[180px] h-[180px]">
+            {/* Right Column: Circular Progress */}
+            <div className="bg-[#F7FAF9] rounded-md p-4 flex items-center justify-center w-56 h-full">
               <svg viewBox="0 0 120 120" className="w-full h-full">
                 {(() => {
                   const risk = issue?.ai_predictions?.["Burnout_Risk"] || 0;
@@ -199,10 +221,7 @@ const GoogleDetails = () => {
 
                   return (
                     <>
-                      {/* White inner circle */}
                       <circle cx="60" cy="60" r="42" fill="white" />
-
-                      {/* Outer circular track (gray) */}
                       <circle
                         cx="60"
                         cy="60"
@@ -212,8 +231,6 @@ const GoogleDetails = () => {
                         fill="none"
                         strokeLinecap="round"
                       />
-
-                      {/* Progress circle */}
                       <circle
                         cx="60"
                         cy="60"
@@ -224,16 +241,14 @@ const GoogleDetails = () => {
                         strokeLinecap="round"
                         strokeDasharray={circumference}
                         strokeDashoffset={circumference - progress}
-                        transform="rotate(-90 60 60)" // start progress from top
+                        transform="rotate(-90 60 60)"
                       />
-
-                      {/* Center value */}
                       <text
                         x="50%"
                         y="50%"
                         dominantBaseline="middle"
                         textAnchor="middle"
-                        fontSize="20"
+                        fontSize="22"
                         fontWeight="700"
                         fill="#7B8FA4"
                       >
@@ -245,31 +260,16 @@ const GoogleDetails = () => {
               </svg>
             </div>
           </div>
-
-          {/* AI Prediction Data */}
-          <div className="bg-gradient-to-br from-[#E6F7F7] to-[#F0FAFA] p-5 rounded-xl shadow border border-[#BEE3E3]">
-            <div className="items-center mb-4">
-              <h3 className="text-[#0B2E56] font-bold text-[16px]">
-                AI Summary
-              </h3>
-            </div>
-
-            {issue?.ai_predictions?.ai_summary && (
-              <span className="text-[13px] font-semibold text-gray-700">
-                {issue.ai_predictions.ai_summary}
-              </span>
-            )}
-          </div>
         </section>
 
         {/* Right Section */}
-        <section className="space-y-6 w-full min-w-0">
+        <section className="space-y-6 w-full min-w-0 flex flex-col">
           <h2 className="bg-[#0B7B8A] text-white text-[18px] font-semibold rounded-md px-6 py-3">
             Portfolio - Growth
           </h2>
 
           {/* Resource and Vendor */}
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 flex-1">
             <div className="bg-[#F7FAF9] rounded-md p-4 flex-1 min-w-[200px]">
               <p className="text-[14px] text-gray-600 font-semibold">
                 Resource Name
@@ -284,7 +284,8 @@ const GoogleDetails = () => {
                 {issue?.source_data?.["Role"]}
               </p>
             </div>
-            <div className="bg-[#F7FAF9] rounded-md px-4 py-4 space-y-2">
+
+            <div className="bg-[#F7FAF9] rounded-md px-4 py-4 space-y-2 flex-1 min-w-[200px]">
               {data.map(({ label, value, align }, i) => {
                 const isSelected = selectedLabel === label;
 
@@ -293,19 +294,19 @@ const GoogleDetails = () => {
                     key={i}
                     onClick={() => setSelectedLabel(label)}
                     className={`flex items-center justify-between rounded-md px-3 py-2 cursor-pointer transition-all duration-200 group
-                      hover:bg-[#D9E6F0] hover:border hover:border-dashed hover:border-gray-400
-                      ${
-                        isSelected
-                          ? "border border-dashed border-red-600 bg-white"
-                          : ""
-                      }`}
+                hover:bg-[#D9E6F0] hover:border hover:border-dashed hover:border-gray-400
+                ${
+                  isSelected
+                    ? "border border-dashed border-red-600 bg-white"
+                    : ""
+                }`}
                   >
                     <span className="font-semibold text-[14px] text-gray-700 group-hover:text-[#0B7B8A]">
                       {label}
                     </span>
                     <span
                       className={`text-[14px] text-[#0B2E56] group-hover:text-[#0B7B8A] ${
-                        isSelected ? "font-bold text-[15px]" : "font-semibold"
+                        isSelected ? "font-bold text-[15px]" : "font-bold"
                       } ${align || ""}`}
                     >
                       {value}
@@ -317,7 +318,7 @@ const GoogleDetails = () => {
           </div>
 
           {/* Cost Breakdown */}
-          <div className="bg-[#F7FAF9] rounded-md px-4 py-4 space-y-2">
+          <div className="bg-[#F7FAF9] rounded-md px-4 py-4 space-y-2 flex-1">
             {[
               {
                 label: "Planned Cost",
@@ -334,6 +335,10 @@ const GoogleDetails = () => {
               {
                 label: "Forecasted Deviation",
                 amount: issue?.ai_predictions?.["Forecasted_Deviation"],
+              },
+              {
+                label: "Variance At Completion",
+                amount: issue?.ai_predictions?.["Variance_At_Completion"],
               },
             ].map(({ label, amount, color }, i) => (
               <div
@@ -354,33 +359,28 @@ const GoogleDetails = () => {
           </div>
 
           {/* Project Status + Gauge */}
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-4 flex-1">
             {issue?.ai_predictions?.["Project_Status"] && (
               <div className="bg-[#F7FAF9] rounded-md flex flex-col items-center justify-center p-4 w-[200px]">
                 <svg width="200" height="120" viewBox="0 0 200 120">
-                  {/* Red arc: left */}
                   <path
                     d="M40 100 A60 60 0 0 1 100 40"
                     fill="none"
                     stroke="#E52E2E"
                     strokeWidth="20"
                   />
-                  {/* Yellow arc: middle */}
                   <path
                     d="M100 40 A60 60 0 0 1 160 100"
                     fill="none"
                     stroke="#F7D130"
                     strokeWidth="20"
                   />
-                  {/* Green arc: right */}
                   <path
                     d="M160 100 A60 60 0 0 1 40 100"
                     fill="none"
                     stroke="#3ED400"
                     strokeWidth="20"
                   />
-
-                  {/* Needle (rotating) */}
                   <g
                     transform={`rotate(${getNeedleAngle(
                       issue?.ai_predictions?.["Project_Status"]
@@ -395,11 +395,8 @@ const GoogleDetails = () => {
                       strokeWidth="4"
                     />
                   </g>
-
-                  {/* Needle pivot */}
                   <circle cx="100" cy="100" r="5" fill="#2F2F2F" />
                 </svg>
-
                 <p className="font-semibold mt-2 text-[14px]">
                   Project Status (RAG)
                 </p>
@@ -422,19 +419,74 @@ const GoogleDetails = () => {
               ))}
             </div>
           </div>
-
-          {/* Milestone */}
-          <div className="bg-[#D4F0C0] rounded-md px-4 py-3 h-24 flex items-center justify-between font-semibold text-[#3CA52B] text-[15px]">
-            <span>Milestone Status</span>
-            <div className="flex items-center">
-              {getStatusIcon(issue?.ai_predictions?.["Milestone_Status"])}
-              <span className="ml-2">
-                {issue?.ai_predictions?.["Milestone_Status"] || "N/A"}
-              </span>
-            </div>
-          </div>
         </section>
       </main>
+
+      {/* Below Section */}
+
+      {/* AI Prediction + Milestone Section */}
+      <section className="flex flex-col md:flex-row gap-6 w-full mt-6">
+        {/* AI Prediction Data (80%) */}
+        <div className="w-full md:w-4/5 bg-gradient-to-br from-[#E6F7F7] to-[#F0FAFA] p-5 rounded-xl shadow border border-[#BEE3E3] relative">
+          <h3 className="text-[#0B2E56] font-bold text-[16px] mb-4">
+            AI Predictive Summary
+          </h3>
+          {issue?.ai_predictions?.ai_summary && (
+            <span className="text-[13px] font-semibold text-gray-700 leading-relaxed">
+              {issue.ai_predictions.ai_summary}
+            </span>
+          )}
+
+          {/* Feedback button */}
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="absolute bottom-4 right-4 bg-[#00254D] text-white text-xs px-3 py-1 rounded flex items-center gap-1"
+          >
+           Feedback
+          </button>
+        </div>
+
+        {/* Milestone Status (20%) */}
+        <div className="w-full flex flex-col md:w-1/5 bg-[#D4F0C0] rounded-md px-4 py-4 gap-6 items-center shadow font-semibold text-[#3CA52B] text-[15px]">
+          <span className="mt-3">Milestone Status</span>
+          <div className="flex items-center">
+            {getStatusIcon(issue?.ai_predictions?.["Milestone_Status"])}
+            <span className="ml-2">
+              {issue?.ai_predictions?.["Milestone_Status"] || "N/A"}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Feedback Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg w-[400px] p-6 relative">
+            <h2 className="text-lg font-bold mb-4">Submit Feedback</h2>
+            <textarea
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="Write your feedback here..."
+              className="w-full h-32 p-2 border border-gray-300 rounded mb-4 resize-none"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitFeedback}
+                className="px-4 py-2 rounded bg-[#00254D] text-white "
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

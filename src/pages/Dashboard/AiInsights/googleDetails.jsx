@@ -9,13 +9,29 @@ import toast from "react-hot-toast";
 
 const GoogleDetails = () => {
   const [selectedLabel, setSelectedLabel] = useState(null);
-   const { user } = useSelector((state) => state.profile)
+  const { user } = useSelector((state) => state.profile);
   const dispatch = useDispatch();
   const { id } = useParams();
   const [issue, setIssue] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
+  const [rejected, setRejected] = useState(false);
+ const isApproved =
+  issue?.ai_predictions?.approved === true ||
+  issue?.ai_predictions?.approved === "true";
 
+
+
+const handleApprove = () => {
+  setIssue((prev) => ({
+    ...prev,
+    ai_predictions: {
+      ...prev.ai_predictions,
+      approved: "true", // mark as approved
+    },
+  }));
+  setRejected(false);
+};
 
 const handleSubmitFeedback = async () => {
   if (!feedbackText.trim()) {
@@ -27,20 +43,19 @@ const handleSubmitFeedback = async () => {
     createFeedback({
       userid: user._id,
       feedback: feedbackText,
-      for: `Google AI Predective Summary - id ${id}`
+      for: `Google AI Predective Summary - id ${id}`,
     })
   );
 
   if (res.success) {
     toast.success("Feedback submitted successfully!");
     setFeedbackText("");
-    setIsModalOpen(false); // close modal
+    setIsModalOpen(false);
+    setRejected(true); // mark as rejected after feedback
   } else {
     toast.error("Failed to submit feedback");
   }
 };
-
-
 
   useEffect(() => {
     const fetchIssues = async () => {
@@ -438,12 +453,35 @@ const handleSubmitFeedback = async () => {
           )}
 
           {/* Feedback button */}
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="absolute bottom-4 right-4 bg-[#00254D] text-white text-xs px-3 py-1 rounded flex items-center gap-1"
-          >
-           Feedback
-          </button>
+<div className="absolute top-4 right-4 flex items-center gap-2">
+  {isApproved && !rejected ? (
+    <span className="px-3 py-1 bg-green-600 text-white text-xs rounded">
+      Approved
+    </span>
+  ) : rejected ? (
+    <span className="px-3 py-1 bg-red-600 text-white text-xs rounded">
+      Rejected
+    </span>
+  ) : (
+    <>
+      <button
+        onClick={handleApprove}
+        className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+      >
+        Approve
+      </button>
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+      >
+        Reject
+      </button>
+    </>
+  )}
+</div>
+
+
+
         </div>
 
         {/* Milestone Status (20%) */}
@@ -486,7 +524,6 @@ const handleSubmitFeedback = async () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

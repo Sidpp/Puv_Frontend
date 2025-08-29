@@ -146,6 +146,13 @@ const GoogleSummaryPageById = () => {
   // Prepare charts data dynamically
   // Aggregate projects by month
   const monthlyTotals = {};
+  
+  function parseNumberSafe(value) {
+  if (!value) return 0;
+  const cleaned = value.toString().replace(/,/g, ""); // remove commas
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? 0 : parsed;
+}
 
   projectData.forEach((proj) => {
     const rawDate = proj.sync_timestamp;
@@ -155,21 +162,15 @@ const GoogleSummaryPageById = () => {
     const monthLabel = dateObj.toLocaleString("default", {
       month: "short",
       year: "numeric",
-    }); // e.g. "Jun 2025"
+    }); 
 
     if (!monthlyTotals[monthLabel]) {
       monthlyTotals[monthLabel] = { planned: 0, actual: 0, forecast: 0 };
     }
 
-    monthlyTotals[monthLabel].planned += Number(
-      proj.source_data["Planned Cost"] || 0
-    );
-    monthlyTotals[monthLabel].actual += Number(
-      proj.source_data["Actual Cost"] || 0
-    );
-    monthlyTotals[monthLabel].forecast += Number(
-      proj.ai_predictions?.Forecasted_Cost || 0
-    );
+  monthlyTotals[monthLabel].planned += parseNumberSafe(proj.source_data["Planned Cost"]);
+  monthlyTotals[monthLabel].actual += parseNumberSafe(proj.source_data["Actual Cost"]);
+  monthlyTotals[monthLabel].forecast += parseNumberSafe(proj.ai_predictions?.Forecasted_Cost);
   });
 
   // Convert to array for chart

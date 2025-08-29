@@ -343,6 +343,13 @@ function getPortfolioStatusData(source, googleData = [], jiraData = []) {
   }
 }
 
+function parseNumberSafe(value) {
+  if (!value) return 0; // null, undefined, empty string
+  const cleaned = value.toString().replace(/,/g, ""); // remove commas
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
 function getBudgetBarsData(googleData = []) {
   if (googleData.length === 0) return [];
 
@@ -351,9 +358,17 @@ function getBudgetBarsData(googleData = []) {
 
   googleData.forEach((project) => {
     const data = project.source_data || {};
-    totalApprovedBudget += Number(data["Planned Cost"] || 0);
-    totalActualSpend += Number(data["Actual Contract Spend"] || 0);
+
+    const planned = parseNumberSafe(data["Planned Cost"]);
+    const actual = parseNumberSafe(data["Actual Contract Spend"]);
+
+    console.log("log", planned, actual);
+
+    totalApprovedBudget += planned;
+    totalActualSpend += actual;
   });
+
+  console.log("data", totalApprovedBudget, totalActualSpend);
 
   const barWidthPercent =
     totalApprovedBudget > 0
@@ -376,52 +391,65 @@ function getBudgetBarsData(googleData = []) {
   ];
 }
 
+
 function getForecastsData(googleData = []) {
   if (googleData.length === 0) return [];
 
   let totalDeviation = 0;
   let totalPlanned = 0;
+  let totalForecasted = 0;
 
   googleData.forEach((project) => {
     const data = project.source_data || {};
-     const ai = project.ai_predictions || {};
+    const ai = project.ai_predictions || {};
 
-    const planned = Number(data["Planned Cost"] || 0);
-    const forecasted = Number(ai["Forecasted Cost"] || 0);
+    // Safely parse numbers
+    const planned = parseFloat(data["Planned Cost"]);
+    const forecasted = parseFloat(ai["Forecasted_Cost"]);
 
-    // Prefer Forecast Deviation if exists, otherwise calculate
+    const safePlanned = isNaN(planned) ? 0 : planned;
+    const safeForecasted = isNaN(forecasted) ? 0 : forecasted;
+
+    totalPlanned += safePlanned;
+    totalForecasted += safeForecasted;
+
+    // Calculate deviation (use Forecast Deviation if exists)
     const deviation =
       data["Forecast Deviation"] !== undefined
-        ? Number(data["Forecast Deviation"])
-        : forecasted - planned;
+        ? Number(data["Forecast Deviation"]) || 0
+        : safeForecasted - safePlanned;
 
     totalDeviation += deviation;
-    totalPlanned += planned;
+
+   // console.log("logss", safePlanned, safeForecasted);
   });
 
-  // Calculate percentage deviation
+  // Percentage deviation
   const deviationPercent =
     totalPlanned > 0 ? (totalDeviation / totalPlanned) * 100 : 0;
 
+  //console.log("logs", deviationPercent, totalDeviation);
+
   return [
     {
-      label: `${
-        totalDeviation < 0 ? "" : "+"
-      }$${totalDeviation.toLocaleString()}`,
-      needleRotation: Math.max(0, Math.min(180, 90 + deviationPercent)), // map % to angle
+      label: `${totalDeviation < 0 ? "" : "+"}$${totalDeviation.toLocaleString()}`,
+      needleRotation: Math.max(0, Math.min(180, 90 + deviationPercent)),
       sections: [{ color: "#22c55e", percentage: 100, offset: 0 }],
+      isPositive: totalDeviation >= 0,
     },
     {
       label: `${deviationPercent.toFixed(1)}%`,
-      needleRotation: Math.max(0, Math.min(180, 90 + deviationPercent)), // continuous scaling
+      needleRotation: Math.max(0, Math.min(180, 90 + deviationPercent)),
       sections: [
         { color: "#22c55e", percentage: 50, offset: 0 },
         { color: "#facc15", percentage: 25, offset: 50 },
         { color: "#ef4444", percentage: 25, offset: 75 },
       ],
+      isPositive: totalDeviation >= 0,
     },
   ];
 }
+
 
 function getRiskFactors(googleData = []) {
   let taskDelay = { count: 0, ids: [] };
@@ -892,52 +920,58 @@ const Home = () => {
 
   const PIE_COLORS = ["#ef4444", "#facc15", "#22c55e", "#6b7280"];
 
-  const Gauge = ({ label, needleRotation, sections }) => {
-    const radius = 40;
-    const circumference = Math.PI * radius;
-    return (
-      <div className="flex flex-col items-center">
-        <svg width="120" height="65" viewBox="0 0 100 55" className="mb-1">
-          <path
-            d="M 10 50 A 40 40 0 0 1 90 50"
-            fill="none"
-            stroke="#e5e7eb"
-            strokeWidth="10"
-          />
-          {sections.map((section, index) => (
+const Gauge = ({ label, needleRotation, sections, isPositive }) => {
+  const radius = 40;
+  const circumference = Math.PI * radius;
+  const center = 50;
+
+  return (
+    <div className="flex flex-col items-center">
+      <svg width="120" height="65" viewBox="0 0 100 55" className="mb-1">
+        {/* Background arc */}
+        <path
+          d={`M ${center - radius} 50 A ${radius} ${radius} 0 0 1 ${center + radius} 50`}
+          fill="none"
+          stroke="#e5e7eb"
+          strokeWidth="10"
+        />
+        {/* Sections */}
+        {sections.map((section, index) => {
+          const dash = (section.percentage / 100) * circumference;
+          const offset = (section.offset / 100) * circumference;
+          return (
             <path
               key={index}
-              d="M 10 50 A 40 40 0 0 1 90 50"
+              d={`M ${center - radius} 50 A ${radius} ${radius} 0 0 1 ${center + radius} 50`}
               fill="none"
               stroke={section.color}
               strokeWidth="10"
-              strokeDasharray={`${
-                (section.percentage / 100) * circumference
-              } ${circumference}`}
-              strokeDashoffset={-((section.offset / 100) * circumference)}
+              strokeDasharray={`${dash} ${circumference}`}
+              strokeDashoffset={-offset}
             />
-          ))}
-          <g
-            style={{
-              transform: `rotate(${needleRotation}deg)`,
-              transformOrigin: "50px 50px",
-              transition: "transform 0.5s ease-in-out",
-            }}
-          >
-            <path d="M 50 50 L 50 15" strokeWidth="2" stroke="black" />
-            <circle cx="50" cy="50" r="4" fill="black" />
-          </g>
-        </svg>
-        <span
-          className={`text-sm font-bold ${
-            label.startsWith("+") ? "text-red-600" : "text-green-600"
-          }`}
+          );
+        })}
+        {/* Needle */}
+        <g
+          style={{
+            transform: `rotate(${needleRotation}deg)`,
+            transformOrigin: `${center}px ${center}px`,
+            transition: "transform 0.5s ease-in-out",
+          }}
         >
-          {label}
-        </span>
-      </div>
-    );
-  };
+          <path d={`M ${center} 50 L ${center} 15`} strokeWidth="2" stroke="black" />
+          <circle cx={center} cy={50} r="4" fill="black" />
+        </g>
+      </svg>
+      <span
+        className={`text-sm font-bold ${isPositive ? "text-red-600" : "text-green-600"}`}
+      >
+        {label}
+      </span>
+    </div>
+  );
+};
+
 
   // Renders the correct financial detail card based on state
   const renderFinancialDetailCard = () => {

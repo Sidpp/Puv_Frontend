@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import NotificationPopup from "./NotificationPopup";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { Search, Bell } from "lucide-react";
+import { Bell } from "lucide-react";
 import logo from "../../../assets/PortfolioVue_logo.png";
 import SearchComponent from "./SearchComponent";
 import { getNotification } from "../../../services/oprations/authAPI";
@@ -18,41 +18,22 @@ const Navbar = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await dispatch(getNotification());
-        if (res) {
-          const { jiraData, googleData } = res;
+        const res = await dispatch(getNotification()); // res = array of notifications
+        console.log("res", res);
 
-          // Flatten Jira alerts
-          const flatJira = Object.entries(jiraData || {}).flatMap(
-            ([project, alerts]) =>
-              alerts.map((alert, i) => ({
-                id: `jira-${project}-${i}`,
-                project,
-                source: "Jira",
-                ...alert,
-              }))
+        if (res.length > 0) {
+          // Sort by latest first
+          res.sort(
+            (a, b) =>
+              new Date(b.timestamp || b.alert_timestamp) -
+              new Date(a.timestamp || a.alert_timestamp)
           );
-
-          // Flatten Google alerts
-          const flatGoogle = Object.entries(googleData || {}).flatMap(
-            ([project, alerts]) =>
-              alerts.map((alert, i) => ({
-                id: `google-${project}-${i}`,
-                project,
-                source: "Google",
-                ...alert,
-              }))
-          );
-
-          let combined = [...flatJira, ...flatGoogle];
 
           if (user?.projectrole === "Team Leader") {
-            // Step 1: filter by role
-            let filtered = combined.filter(
+            let filtered = res.filter(
               (notif) => notif.role?.toLowerCase().trim() === "team leader"
             );
 
-            // Step 2: filter by assigned projects
             const googleIds = user?.assignGoogleProjects || [];
             const jiraIds = user?.assignJiraProjects || [];
 
@@ -71,17 +52,11 @@ const Navbar = () => {
               return false;
             });
 
-            console.log(
-              "Filtered notifications (Team Leader + assigned projects):",
-              filtered
-            );
-
             setAlerts(filtered);
             setNotificationCount(filtered.length);
           } else {
-            // Other roles see all
-            setAlerts(combined);
-            setNotificationCount(combined.length);
+            setAlerts(res);
+            setNotificationCount(res.length);
           }
         }
       } catch (error) {

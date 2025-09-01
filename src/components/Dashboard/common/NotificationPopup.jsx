@@ -6,6 +6,7 @@ import {
   faHourglassHalf,
   faThumbtack,
   faCheckSquare,
+  faClock,
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import { deleteNotification } from "../../../services/oprations/authAPI";
@@ -39,7 +40,7 @@ export default function NotificationPopup({ onClose, alerts, setAlerts }) {
     } else {
       navigate(`/dashboard/insights/jira-details/${notif._id || notif.id}`);
     }
-    await handleDelete(notif);
+    // await handleDelete(notif);
     onClose?.();
   };
 
@@ -161,6 +162,14 @@ export default function NotificationPopup({ onClose, alerts, setAlerts }) {
                   <p className="text-xs text-gray-700">
                     <strong>Action Required :</strong> {notif.action_required}
                   </p>
+                )}
+                {(notif.alert_timestamp || notif.timestamp) && (
+                  <span className="ml-auto flex items-center gap-1 text-sm text-gray-700">
+                    <FontAwesomeIcon icon={faClock} className="text-gray-500" />
+                    {new Date(
+                      notif.alert_timestamp || notif.timestamp
+                    ).toLocaleString()}
+                  </span>
                 )}
               </div>
             );

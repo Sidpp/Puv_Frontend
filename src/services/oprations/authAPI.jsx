@@ -26,6 +26,45 @@ const {
   NOTIFICATION_API
 } = endpoints;
 
+// export function approveAlert(issueId, operation) {
+//   //console.log("loggg", issueId, operation, APPROVE_ISSUE_API);
+//   return async (dispatch) => {
+//     const toastId = toast.loading(
+//       operation === "approved" ? "Approving Jira issue..." : "Rejecting Jira issue..."
+//     );
+
+//     try {
+  
+
+//       const response = await apiConnector(
+//         "POST",
+//         APPROVE_ISSUE_API, // backend route
+//         { issueId, operation }
+//       );
+
+//       console.log("UPDATE_JIRA_ISSUE_STATUS RESPONSE:", response);
+
+//       if (response.data?.success) {
+//         toast.success(
+//           operation === "approved"
+//             ? "Issue approved successfully"
+//             : "Issue rejected successfully"
+//         );
+//       } else {
+//         toast.error(response.data?.message || "Failed to update issue status");
+//       }
+//     } catch (error) {
+//       console.error("UPDATE_JIRA_ISSUE_STATUS ERROR:", error);
+//       toast.error(
+//         error?.response?.data?.message || "Failed to update Jira issue status"
+//       );
+//     } finally {
+//       dispatch(setLoading(false));
+//       toast.dismiss(toastId);
+//     }
+//   };
+// }
+
 export function globalSearch(query) {
   return async (dispatch) => {
     try {
@@ -63,27 +102,29 @@ export function getNotification() {
 
       console.log("NOTIFICATION RESPONSE:", response);
 
-      const { success, jiraData, googleData } = response.data;
+      const { success, alerts } = response.data;
 
       if (!success) {
         throw new Error("Invalid response format: no alerts found");
       }
 
-      // return both jira and google alerts
-      return { jiraData: jiraData || {}, googleData: googleData || {} };
+      // return merged alerts array
+      return alerts || [];
     } catch (error) {
       console.error("NOTIFICATION ERROR:", error);
-      return { jiraData: {}, googleData: {} };
+      return [];
     } finally {
       // dispatch(setLoading(false));
     }
   };
 }
 
-export function deleteNotification(data) {
+
+export function deleteNotification(id,source,alert_id) {
+  console.log("delete",id,source,alert_id)
   return async (dispatch) => {
     try {
-      const response = await apiConnector("DELETE", NOTIFICATION_API, data);
+      const response = await apiConnector("DELETE", NOTIFICATION_API, { id, source, alert_id });
 
       console.log("DELETE NOTIFICATION RESPONSE:", response);
 

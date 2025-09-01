@@ -5,7 +5,7 @@ export const endpoints = {
 
   SEARCH_API: BASE_URL + "/search",
   NOTIFICATION_API: BASE_URL + "/alerts",
-  FEEDBACK_API: BASE_URL + "/feedback",
+  FEEDBACK_API: BASE_URL + "/feedback", 
 
   SENDOTP_API: BASE_URL + "/auth/sendotp",
   REGISTER_API: BASE_URL + "/auth/register",
@@ -31,6 +31,11 @@ export const endpoints = {
 
 //JIRA ENDPOINTS
 export const jiraendpoints = {
+
+    APPROVE_ISSUE_API: BASE_URL + "/jira/approve",
+    MARK_JIRA_ALERT_READ_API: BASE_URL + "/jira/alert/read",
+    UPDATE_JIRA_ALERT_STATUS_API: BASE_URL + "/jira/alert/status",
+
   GET_ISSUES_API: BASE_URL + "/jira/issues",
   GET_ISSUES_BY_ID_API: BASE_URL + "/jira/issues",
   JIRA_CONNECT_API: BASE_URL + "/jira/connect",
@@ -39,9 +44,12 @@ export const jiraendpoints = {
 
 //Google ENDPOINTS
 export const googleendpoints = {
+  APPROVE_GOOGLE_API: BASE_URL + "/google/approve",
+  MARK_GOOGLE_ALERT_READ_API: BASE_URL + "/google/alert/read",
+  UPDATE_GOOGLE_ALERT_STATUS_API: BASE_URL + "/google/alert/status",
+
+  
   GET_ALL_GOOGLE_DETAILS_API: BASE_URL + "/google",
   GET_GOOGLE_SHEET_BY_ID_API: BASE_URL + "/google",
-  // GET_ISSUES_BY_ID_API: BASE_URL + "/jira/issues",
-  // JIRA_CONNECT_API: BASE_URL + "/jira/connect",
   GET_GOOGLE_CREDENTIALS_API: BASE_URL + "/google/credentials",
 }

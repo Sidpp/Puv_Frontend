@@ -3,7 +3,10 @@ import { FaTimes, FaCheckCircle } from "react-icons/fa";
 import { FaCheck, FaRegCircle, FaExclamationTriangle } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import { getGoogleSheetById } from "../../../services/oprations/googleAPI";
+import {
+  approveGoogleSumary,
+  getGoogleSheetById,
+} from "../../../services/oprations/googleAPI";
 import { createFeedback } from "../../../services/oprations/feedbackAPI";
 import toast from "react-hot-toast";
 
@@ -15,47 +18,6 @@ const GoogleDetails = () => {
   const [issue, setIssue] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
-  const [rejected, setRejected] = useState(false);
- const isApproved =
-  issue?.ai_predictions?.approved === true ||
-  issue?.ai_predictions?.approved === "true";
-
-
-
-const handleApprove = () => {
-  setIssue((prev) => ({
-    ...prev,
-    ai_predictions: {
-      ...prev.ai_predictions,
-      approved: "true", // mark as approved
-    },
-  }));
-  setRejected(false);
-};
-
-const handleSubmitFeedback = async () => {
-  if (!feedbackText.trim()) {
-    toast.error("Feedback cannot be empty");
-    return;
-  }
-
-  const res = await dispatch(
-    createFeedback({
-      userid: user._id,
-      feedback: feedbackText,
-      for: `Google AI Predective Summary - id ${id}`,
-    })
-  );
-
-  if (res.success) {
-    toast.success("Feedback submitted successfully!");
-    setFeedbackText("");
-    setIsModalOpen(false);
-    setRejected(true); // mark as rejected after feedback
-  } else {
-    toast.error("Failed to submit feedback");
-  }
-};
 
   useEffect(() => {
     const fetchIssues = async () => {
@@ -72,7 +34,58 @@ const handleSubmitFeedback = async () => {
     };
 
     fetchIssues();
-  }, [dispatch]);
+  }, [dispatch, issue]);
+
+  const handleSubmitFeedback = async () => {
+    if (!feedbackText.trim()) {
+      toast.error("Feedback cannot be empty");
+      return;
+    }
+
+    const res = await dispatch(
+      createFeedback({
+        userid: user._id,
+        feedback: feedbackText,
+        for: `Jira AI Predictive Summary - id ${id}`,
+      })
+    );
+
+    if (res.success) {
+      toast.success("Feedback submitted successfully!");
+      setFeedbackText("");
+      setIsModalOpen(false);
+    } else {
+      toast.error("Failed to submit feedback");
+    }
+  };
+
+  // ✅ Handle Approve
+  const handleApprove = async () => {
+    try {
+      await dispatch(approveGoogleSumary(issue._id, "approved"));
+      setIssue((prev) => ({ ...prev, approved: true }));
+    } catch (error) {
+      console.error(error);
+      toast.error("Error approving issue");
+    }
+  };
+
+  // ✅ Handle Reject (open modal → feedback → reject)
+  const handleReject = () => {
+    setIsModalOpen(true); // first open feedback modal
+  };
+
+  const confirmReject = async () => {
+    try {
+      await dispatch(approveGoogleSumary(issue._id, "rejected"));
+      setIssue((prev) => ({ ...prev, rejected: true }));
+
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error rejecting issue");
+    }
+  };
 
   if (!issue || Object.keys(issue).length === 0) {
     return <p className="text-center py-10">Loading...</p>;
@@ -453,35 +466,43 @@ const handleSubmitFeedback = async () => {
           )}
 
           {/* Feedback button */}
-<div className="absolute top-4 right-4 flex items-center gap-2">
-  {isApproved && !rejected ? (
-    <span className="px-3 py-1 bg-green-600 text-white text-xs rounded">
-      Approved
-    </span>
-  ) : rejected ? (
-    <span className="px-3 py-1 bg-red-600 text-white text-xs rounded">
-      Rejected
-    </span>
-  ) : (
-    <>
-      <button
-        onClick={handleApprove}
-        className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-      >
-        Approve
-      </button>
-      <button
-        onClick={() => setIsModalOpen(true)}
-        className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-      >
-        Reject
-      </button>
-    </>
-  )}
-</div>
-
-
-
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            {/* If approved → show Approved */}
+            {issue?.ai_predictions?.approved ? (
+              <span
+                className="px-3 py-1 rounded-full text-xs font-medium text-white shadow 
+      bg-gradient-to-r from-green-500 via-green-600 to-green-700"
+              >
+                Approved
+              </span>
+            ) : issue?.ai_predictions?.rejected ? (
+              // If rejected → show Rejected
+              <span
+                className="px-3 py-1 rounded-full text-xs font-medium text-white shadow 
+      bg-gradient-to-r from-red-500 via-red-600 to-red-700"
+              >
+                Rejected
+              </span>
+            ) : (
+              // If neither → show both action buttons
+              <>
+                <button
+                  onClick={handleApprove}
+                   className="px-3 py-1 rounded-full text-xs font-medium text-white shadow 
+  bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 hover:opacity-90 transition"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={handleReject}
+                 className="px-3 py-1 rounded-full text-xs font-medium text-white shadow 
+  bg-gradient-to-r from-rose-400 via-rose-500 to-rose-600 hover:opacity-90 transition"
+                >
+                  Reject
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Milestone Status (20%) */}
@@ -515,10 +536,16 @@ const handleSubmitFeedback = async () => {
                 Cancel
               </button>
               <button
-                onClick={handleSubmitFeedback}
-                className="px-4 py-2 rounded bg-[#00254D] text-white "
+                onClick={async () => {
+                  await handleSubmitFeedback();
+                  await confirmReject();
+                }}
+                className="px-5 py-2 rounded-full text-white font-medium shadow-md 
+             bg-gradient-to-r from-red-500 via-red-600 to-red-700 
+             hover:from-red-600 hover:via-red-700 hover:to-red-800 
+             transition-all duration-300 ease-in-out transform hover:scale-105"
               >
-                Submit
+                Submit & Reject
               </button>
             </div>
           </div>

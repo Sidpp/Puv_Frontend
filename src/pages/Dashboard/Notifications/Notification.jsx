@@ -5,15 +5,26 @@ import {
   faExclamationTriangle,
   faThumbtack,
   faCheckSquare,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
+import logo from "../../../assets/logo.png";
+import { faClock } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
 import {
   deleteNotification,
   getNotification,
 } from "../../../services/oprations/authAPI";
 import { useNavigate } from "react-router-dom";
-import { createFeedback } from "../../../services/oprations/feedbackAPI"; // import your Redux action
+import { createFeedback } from "../../../services/oprations/feedbackAPI";
 import toast from "react-hot-toast";
+import {
+  markJiraAlertRead,
+  updateJiraAlertStatus,
+} from "../../../services/oprations/jiraAPI";
+import {
+  markGoogleAlertRead,
+  updateGoogleAlertStatus,
+} from "../../../services/oprations/googleAPI";
 
 const sourceStyles = {
   Jira: "bg-red-100 text-red-600",
@@ -24,70 +35,89 @@ export default function Notifications() {
   const { user } = useSelector((state) => state.profile);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [alerts, setAlerts] = useState([]);
+  const [latestNotif, setLatestNotif] = useState(null);
+  const [notifications, setNotifications] = useState([]);
 
-  // Modal state for per-notification feedback
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [feedbackModal, setFeedbackModal] = useState({
     isOpen: false,
     notifId: null,
   });
   const [feedbackText, setFeedbackText] = useState("");
-  const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [isRead, setIsRead] = useState(false);
 
-  const handleSubmitFeedback = async () => {
-    if (!feedbackText.trim()) return;
-    try {
-      setLoadingFeedback(true);
-      await dispatch(
-        createFeedback({
-          userid: user?._id,
-          feedback: feedbackText,
-          for:`Notification - ${feedbackModal.notifId}` ,
-           
-        })
+  // after notifications state
+  const [filteredNotifications, setFilteredNotifications] = useState([]);
+
+  // whenever notifications or isRead changes, filter
+  useEffect(() => {
+    setFilteredNotifications(
+      notifications.filter((n) => {
+        const isReadBool = n.readed === true || n.readed === "true";
+        return isRead ? isReadBool : !isReadBool;
+      })
+    );
+  }, [notifications, isRead]);
+
+  useEffect(() => {
+    if ("Notification" in window) {
+      Notification.requestPermission().then((permission) => {
+        console.log("Notification permission:", permission);
+      });
+    }
+  }, []);
+
+  const showDesktopNotification = (notif) => {
+    if (Notification.permission === "granted") {
+      const notification = new Notification(
+        notif.alert_type || "New Notification",
+        {
+          body: notif.message,
+          icon: logo,
+        }
       );
-      toast.success("Feedback submitted successfully!");
-      setFeedbackText("");
-      setFeedbackModal({ isOpen: false, notifId: null });
-    } catch (error) {
-      console.error("Error submitting feedback:", error);
-      toast.error("Failed to submit feedback. Try again.");
-    } finally {
-      setLoadingFeedback(false);
+
+      notification.onclick = async () => {
+        window.focus();
+
+        if (!notif) return;
+
+        if (notif.source === "Jira") {
+          await dispatch(markJiraAlertRead(notif._id, notif.alert_id));
+          window.location.href = `/dashboard/insights/jira-details/${
+            notif._id || notif.id
+          }`;
+        } else if (notif.source === "Google") {
+          await dispatch(markGoogleAlertRead(notif._id, notif.alert_id));
+          window.location.href = `/dashboard/insights/google-details/${
+            notif._id || notif.id
+          }`;
+        }
+
+        notification.close();
+      };
     }
   };
 
   useEffect(() => {
+    let intervalId;
+
     const fetchNotifications = async () => {
       try {
-        const res = await dispatch(getNotification());
-        if (res) {
-          const { jiraData, googleData } = res;
+        const res = await dispatch(getNotification()); // res = array of notifications
+        console.log("res", res);
 
-          const flatJira = Object.entries(jiraData || {}).flatMap(
-            ([project, alerts]) =>
-              alerts.map((alert, i) => ({
-                id: `jira-${project}-${i}`,
-                project,
-                source: "Jira",
-                ...alert,
-              }))
+        if (res.length > 0) {
+          // Sort by latest first
+          res.sort(
+            (a, b) =>
+              new Date(b.timestamp || b.alert_timestamp) -
+              new Date(a.timestamp || a.alert_timestamp)
           );
-
-          const flatGoogle = Object.entries(googleData || {}).flatMap(
-            ([project, alerts]) =>
-              alerts.map((alert, i) => ({
-                id: `google-${project}-${i}`,
-                project,
-                source: "Google",
-                ...alert,
-              }))
-          );
-
-          let combined = [...flatJira, ...flatGoogle];
 
           if (user?.projectrole === "Team Leader") {
-            let filtered = combined.filter(
+            let filtered = res.filter(
               (notif) => notif.role?.toLowerCase().trim() === "team leader"
             );
 
@@ -109,40 +139,159 @@ export default function Notifications() {
               return false;
             });
 
-            setAlerts(filtered);
+            setLatestNotif(filtered);
+            setNotifications(filtered);
           } else {
-            setAlerts(combined);
+            setLatestNotif(res);
+            setNotifications(res);
+          }
+        }
+
+        // ✅ Detect if new notification came in
+        if (notifications.length > 0) {
+          const latestNew = res[0];
+          if (!notifications.find((n) => n._id === latestNew._id)) {
+            showDesktopNotification(latestNew);
           }
         }
       } catch (error) {
         console.error("Failed to load notifications", error);
       }
     };
-    if (user) fetchNotifications();
-  }, [dispatch, user]);
 
-  const handleDelete = async (notif) => {
+    if (user) {
+      fetchNotifications();
+      intervalId = setInterval(fetchNotifications, 5000);
+    }
+    return () => clearInterval(intervalId);
+  }, [dispatch, user, notifications]);
+
+  const handleSubmitFeedback = async () => {
+    if (!feedbackText.trim()) {
+      toast.error("Feedback cannot be empty");
+      return;
+    }
+
     const res = await dispatch(
-      deleteNotification({
-        id: notif._id,
-        source: notif.source,
-        message: notif.message,
+      createFeedback({
+        userid: user._id,
+        feedback: feedbackText,
+        for: `Notification - ${feedbackModal.notifId}`,
       })
     );
 
     if (res.success) {
-      setAlerts((prev) => prev.filter((a) => a.alertId !== notif.alertId));
+      toast.success("Feedback submitted successfully!");
+      setFeedbackText("");
+      setIsModalOpen(false);
+    } else {
+      toast.error("Failed to submit feedback");
+    }
+  };
+
+  const handleApprove = async (notif) => {
+    try {
+      console.log("notif", notif._id, notif.alert_id, notif.source);
+      // choose API based on source
+      if (notif.source === "Jira") {
+        await dispatch(
+          updateJiraAlertStatus(notif._id, notif.alert_id, "approved")
+        );
+      } else if (notif.source === "Google") {
+        await dispatch(
+          updateGoogleAlertStatus(notif._id, notif.alert_id, "approved")
+        );
+      }
+
+      // optimistic UI update
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n._id === notif._id
+            ? { ...n, alertapproved: true, alertrejected: false }
+            : n
+        )
+      );
+      toast.success("Approved successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error approving");
+    }
+  };
+
+  const handleReject = (notif) => {
+    setFeedbackModal({ isOpen: true, notifId: notif._id });
+    setIsModalOpen(true);
+  };
+
+  const confirmReject = async () => {
+    try {
+      const notif = notifications.find((n) => n._id === feedbackModal.notifId);
+      if (!notif) return;
+
+      if (notif.source === "Jira") {
+        await dispatch(
+          updateJiraAlertStatus(notif._id, notif.alert_id, "rejected")
+        );
+      } else if (notif.source === "Google") {
+        await dispatch(
+          updateGoogleAlertStatus(notif._id, notif.alert_id, "rejected")
+        );
+      }
+
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n._id === notif._id
+            ? { ...n, alertapproved: false, alertrejected: true }
+            : n
+        )
+      );
+
+      setIsModalOpen(false);
+      toast.success("Rejected successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error rejecting");
     }
   };
 
   const handleClick = async (notif) => {
-    if (notif.source === "Google") {
-      navigate(`/dashboard/insights/google-details/${notif._id || notif.id}`);
-    } else {
+    if (!notif) return;
+
+    if (notif.source === "Jira") {
+      await dispatch(markJiraAlertRead(notif._id, notif.alert_id));
       navigate(`/dashboard/insights/jira-details/${notif._id || notif.id}`);
+    } else if (notif.source === "Google") {
+      await dispatch(markGoogleAlertRead(notif._id, notif.alert_id));
+      navigate(`/dashboard/insights/google-details/${notif._id || notif.id}`);
     }
-    await handleDelete(notif);
   };
+
+  const handleDelete = async (notif) => {
+    try {
+      await dispatch(
+        deleteNotification(notif._id, notif.source, notif.alert_id)
+      );
+
+      // Optimistic UI update
+      setNotifications((prev) => prev.filter((n) => n._id !== notif._id));
+
+      toast.success("Notification deleted");
+    } catch (error) {
+      console.error("Failed to delete notification", error);
+      toast.error("Failed to delete notification");
+    }
+  };
+
+  if (!latestNotif) {
+    return (
+      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[#0c2e55] mb-6">
+          Welcome Back, {user?.name}
+        </h1>
+        <p className="text-gray-500 text-sm">No notifications found.</p>
+      </main>
+    );
+  }
 
   return (
     <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white font-sans text-gray-800">
@@ -152,24 +301,44 @@ export default function Notifications() {
 
       <section className="mb-4">
         <div className="flex items-center justify-between mb-2">
+          {/* Left side - title */}
           <span className="text-lg font-semibold text-gray-700">
             Notifications
           </span>
+
+          {/* Right side - switch */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Unread</span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={isRead}
+                onChange={() => setIsRead(!isRead)}
+              />
+              <div className="w-11 h-6 bg-gray-300 rounded-full  "></div>
+              <div className="absolute left-1 top-1 w-4 h-4 bg-[#00254D] rounded-full transition-transform peer-checked:translate-x-5"></div>
+            </label>
+            <span className="text-sm text-gray-600">Read</span>
+          </div>
         </div>
       </section>
 
       <section className="divide-y divide-gray-300">
-        {alerts.length === 0 ? (
-          <p className="text-gray-500 text-sm">No notifications found.</p>
+        {filteredNotifications.length === 0 ? (
+          <p className="text-gray-500 text-sm">
+            No {isRead ? "read" : "unread"} notifications found.
+          </p>
         ) : (
-          alerts.map((notif) => (
+          filteredNotifications.map((notif) => (
             <article
               key={notif.id}
-              className="py-4 hover:bg-gray-50 transition rounded-md px-2 relative"
+              className="py-4 hover:bg-gray-50 transition rounded-md px-2"
             >
               {/* Main clickable content */}
               <div onClick={() => handleClick(notif)}>
-                <div className="flex items-start sm:items-center flex-col sm:flex-row gap-2 mb-1">
+                {/* Top row with type, source, and time */}
+                <div className="flex items-center gap-2 mb-1">
                   <span
                     className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0 mt-1"
                     aria-hidden="true"
@@ -184,8 +353,22 @@ export default function Notifications() {
                   >
                     {notif.source}
                   </span>
+
+                  {/* Time on right side */}
+                  {(notif.alert_timestamp || notif.timestamp) && (
+                    <span className="ml-auto flex items-center gap-1 text-sm text-gray-700">
+                      <FontAwesomeIcon
+                        icon={faClock}
+                        className="text-gray-500"
+                      />
+                      {new Date(
+                        notif.alert_timestamp || notif.timestamp
+                      ).toLocaleString()}
+                    </span>
+                  )}
                 </div>
 
+                {/* Message row */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2 text-[15px]">
                   <FontAwesomeIcon
                     icon={
@@ -204,35 +387,36 @@ export default function Notifications() {
                   <p className="text-gray-900 font-semibold">{notif.message}</p>
                 </div>
 
+                {/* Action required */}
                 {notif.action_required && (
                   <p className="text-sm text-gray-700 mb-2">
                     <strong>Action Required:</strong> {notif.action_required}
                   </p>
                 )}
-              </div>
 
-              {/* Feedback button per notification */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation(); // prevent triggering handleClick
-                  setFeedbackModal({ isOpen: true, notifId: notif.id });
-                }}
-                className="absolute top-2 right-2 bg-[#00254D] text-white px-2 py-1 rounded text-xs"
-              >
-                Feedback
-              </button>
+                {/* Right side Delete button (only if Read) */}
+                {isRead && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // ✅ Prevent parent click
+                      handleDelete(notif);
+                    }}
+                    className="ml-4 text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    <FontAwesomeIcon icon={faTrash} />
+                  </button>
+                )}
+              </div>
             </article>
           ))
         )}
       </section>
 
       {/* Feedback Modal */}
-      {feedbackModal.isOpen && (
+      {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg w-[400px] p-6 relative">
-            <h2 className="text-lg font-bold mb-4">
-              Submit Feedback for {feedbackModal.notifId}
-            </h2>
+            <h2 className="text-lg font-bold mb-4">Submit Feedback</h2>
             <textarea
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
@@ -241,23 +425,22 @@ export default function Notifications() {
             />
             <div className="flex justify-end gap-2">
               <button
-                onClick={() =>
-                  setFeedbackModal({ isOpen: false, notifId: null })
-                }
+                onClick={() => setIsModalOpen(false)}
                 className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
               >
                 Cancel
               </button>
               <button
-                onClick={handleSubmitFeedback}
-                className={`px-4 py-2 rounded text-white ${
-                  loadingFeedback
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-[#00254D] hover:bg-blue-600"
-                }`}
-                disabled={loadingFeedback}
+                onClick={async () => {
+                  await handleSubmitFeedback();
+                  await confirmReject();
+                }}
+                className="px-5 py-2 rounded-full text-white font-medium shadow-md 
+             bg-gradient-to-r from-red-500 via-red-600 to-red-700 
+             hover:from-red-600 hover:via-red-700 hover:to-red-800 
+             transition-all duration-300 ease-in-out transform hover:scale-105"
               >
-                {loadingFeedback ? "Submitting..." : "Submit"}
+                Submit & Reject
               </button>
             </div>
           </div>

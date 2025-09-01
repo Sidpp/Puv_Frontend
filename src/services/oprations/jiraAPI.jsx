@@ -4,7 +4,121 @@ import { apiConnector } from "../apiConnector";
 import { jiraendpoints } from "../apis";
 import { setJiraCredentials } from "../../slices/jiraDetailSlice";
 
-const { GET_ISSUES_API, GET_ISSUES_BY_ID_API, JIRA_CONNECT_API ,GET_JIRA_CREDENTIALS_API} = jiraendpoints;
+const { GET_ISSUES_API, APPROVE_ISSUE_API ,MARK_JIRA_ALERT_READ_API,UPDATE_JIRA_ALERT_STATUS_API, GET_ISSUES_BY_ID_API, JIRA_CONNECT_API ,GET_JIRA_CREDENTIALS_API} = jiraendpoints;
+
+
+//approve/reject for alert
+export function updateJiraAlertStatus(issueId, alertId, operation) {
+  console.log("backend",issueId,alertId,operation)
+  return async (dispatch) => {
+    const toastId = toast.loading(
+      operation === "approved"
+        ? "Approving Jira alert..."
+        : "Rejecting Jira alert..."
+    );
+
+    try {
+      const response = await apiConnector("PUT", UPDATE_JIRA_ALERT_STATUS_API, {
+        issueId,
+        alertId,
+        operation,
+      });
+
+      console.log("UPDATE_JIRA_ALERT_STATUS RESPONSE:", response);
+
+      if (response.data?.success) {
+        toast.success(
+          operation === "approved"
+            ? "Jira alert approved successfully"
+            : "Jira alert rejected successfully"
+        );
+      } else {
+        toast.error(response.data?.message || "Failed to update alert status");
+      }
+    } catch (error) {
+      console.error("UPDATE_JIRA_ALERT_STATUS ERROR:", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to update Jira alert status"
+      );
+    } finally {
+      dispatch(setLoading(false));
+      toast.dismiss(toastId);
+    }
+  };
+}
+
+//mark readed as true
+export function markJiraAlertRead(issueId, alertId) {
+  //console.log("backend..",issueId,alertId);
+  return async (dispatch) => {
+    const toastId = toast.loading("Marking Jira alert as read...");
+
+    try {
+      const response = await apiConnector("PUT", MARK_JIRA_ALERT_READ_API, {
+        issueId,
+        alertId,
+      });
+
+      console.log("MARK_JIRA_ALERT_READ RESPONSE:", response);
+
+      if (response.data?.success) {
+        toast.success("Jira alert marked as read");
+      } else {
+        toast.error(response.data?.message || "Failed to mark alert as read");
+      }
+    } catch (error) {
+      console.error("MARK_JIRA_ALERT_READ ERROR:", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to mark Jira alert as read"
+      );
+    } finally {
+      dispatch(setLoading(false));
+      toast.dismiss(toastId);
+    }
+  };
+}
+
+
+// 🔁 APPROVE JIRA ISSUE
+export function approveJiraIssue(issueId, operation) {
+  //console.log("loggg", issueId, operation, APPROVE_ISSUE_API);
+  return async (dispatch) => {
+    const toastId = toast.loading(
+      operation === "approved" ? "Approving Jira issue..." : "Rejecting Jira issue..."
+    );
+
+    try {
+  
+
+      const response = await apiConnector(
+        "POST",
+        APPROVE_ISSUE_API, // backend route
+        { issueId, operation }
+      );
+
+      console.log("UPDATE_JIRA_ISSUE_STATUS RESPONSE:", response);
+
+      if (response.data?.success) {
+        toast.success(
+          operation === "approved"
+            ? "Issue approved successfully"
+            : "Issue rejected successfully"
+        );
+      } else {
+        toast.error(response.data?.message || "Failed to update issue status");
+      }
+    } catch (error) {
+      console.error("UPDATE_JIRA_ISSUE_STATUS ERROR:", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to update Jira issue status"
+      );
+    } finally {
+      dispatch(setLoading(false));
+      toast.dismiss(toastId);
+    }
+  };
+}
+
 
 // 🔁 GET JIRA ISSUE BY ID
 export function getJiraIssueById(issueId) {

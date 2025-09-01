@@ -100,71 +100,69 @@ export default function Notifications() {
     }
   };
 
-  useEffect(() => {
-    let intervalId;
+useEffect(() => {
+  let intervalId;
+  let lastShownIdRef = null; 
 
-    const fetchNotifications = async () => {
-      try {
-        const res = await dispatch(getNotification()); // res = array of notifications
-        console.log("res", res);
+  const fetchNotifications = async () => {
+    try {
+      const res = await dispatch(getNotification());
+      if (res.length > 0) {
+        res.sort(
+          (a, b) =>
+            new Date(b.timestamp || b.alert_timestamp) -
+            new Date(a.timestamp || a.alert_timestamp)
+        );
 
-        if (res.length > 0) {
-          // Sort by latest first
-          res.sort(
-            (a, b) =>
-              new Date(b.timestamp || b.alert_timestamp) -
-              new Date(a.timestamp || a.alert_timestamp)
+        // Filtering for Team Leader
+        let filtered = res;
+        if (user?.projectrole === "Team Leader") {
+          filtered = res.filter(
+            (notif) => notif.role?.toLowerCase().trim() === "team leader"
           );
 
-          if (user?.projectrole === "Team Leader") {
-            let filtered = res.filter(
-              (notif) => notif.role?.toLowerCase().trim() === "team leader"
-            );
+          const googleIds = user?.assignGoogleProjects || [];
+          const jiraIds = user?.assignJiraProjects || [];
 
-            const googleIds = user?.assignGoogleProjects || [];
-            const jiraIds = user?.assignJiraProjects || [];
-
-            filtered = filtered.filter((notif) => {
-              if (notif.source === "Google") {
-                return (
-                  googleIds.includes(notif.project) ||
-                  googleIds.includes(notif._id)
-                );
-              }
-              if (notif.source === "Jira") {
-                return (
-                  jiraIds.includes(notif.project) || jiraIds.includes(notif._id)
-                );
-              }
-              return false;
-            });
-
-            setLatestNotif(filtered);
-            setNotifications(filtered);
-          } else {
-            setLatestNotif(res);
-            setNotifications(res);
-          }
+          filtered = filtered.filter((notif) => {
+            if (notif.source === "Google") {
+              return (
+                googleIds.includes(notif.project) ||
+                googleIds.includes(notif._id)
+              );
+            }
+            if (notif.source === "Jira") {
+              return (
+                jiraIds.includes(notif.project) ||
+                jiraIds.includes(notif._id)
+              );
+            }
+            return false;
+          });
         }
 
-        // ✅ Detect if new notification came in
-        if (notifications.length > 0) {
-          const latestNew = res[0];
-          if (!notifications.find((n) => n._id === latestNew._id)) {
-            showDesktopNotification(latestNew);
-          }
+        setLatestNotif(filtered);
+        setNotifications(filtered);
+
+        // ✅ Show desktop notif only for new ones
+        const latestNew = filtered[0];
+        if (latestNew && lastShownIdRef !== latestNew._id) {
+          showDesktopNotification(latestNew);
+          lastShownIdRef = latestNew._id;
         }
-      } catch (error) {
-        console.error("Failed to load notifications", error);
       }
-    };
-
-    if (user) {
-      fetchNotifications();
-      intervalId = setInterval(fetchNotifications, 5000);
+    } catch (error) {
+      console.error("Failed to load notifications", error);
     }
-    return () => clearInterval(intervalId);
-  }, [dispatch, user, notifications]);
+  };
+
+  if (user) {
+    fetchNotifications();
+    intervalId = setInterval(fetchNotifications, 5000);
+  }
+  return () => clearInterval(intervalId);
+}, [dispatch, user]); // ✅ no notifications/latestNotif
+
 
   const handleSubmitFeedback = async () => {
     if (!feedbackText.trim()) {

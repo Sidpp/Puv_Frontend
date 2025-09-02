@@ -1211,11 +1211,15 @@ const Gauge = ({ label, needleRotation, sections, isPositive }) => {
                               const ai = project.ai_predictions || {};
                               const s = project.source_data || {};
                               const isGoogle = aiSource === "Google";
-
+{/* 
                               const predictedDelay = isGoogle
                                 ? ((Number(ai.Forecasted_Deviation) || 0) /
                                     (Number(s?.["Planned Cost"]) || 1)) *
                                   100
+                                : (project.avg_delay_score ?? 0) * 100; */}
+                                
+                              const predictedDelay = isGoogle
+                                ? (ai.AI_Delay_Score)
                                 : (project.avg_delay_score ?? 0) * 100;
 
                               const confidence = calculateConfidence(ai);

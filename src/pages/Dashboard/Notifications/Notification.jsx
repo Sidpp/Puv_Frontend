@@ -31,7 +31,8 @@ const sourceStyles = {
   Jira: "bg-red-100 text-red-600",
   Google: "bg-blue-100 text-blue-600",
 };
-const BASE_URL = process.env.REACT_APP_BASE_URL.replace("/api", "");
+
+const BASE_URL = process.env.REACT_APP_SOCKET_URL;
 const socket = io(BASE_URL, {
   transports: ["websocket", "polling"],
   path: "/socket.io",

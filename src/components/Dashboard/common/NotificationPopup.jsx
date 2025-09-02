@@ -130,6 +130,13 @@ export default function NotificationPopup({ onClose, alerts, setAlerts }) {
                   >
                     {notif.source}
                   </span>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      sourceStyles[notif.role] || "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {notif.role}
+                  </span>
                 </div>
 
                 {/* Message */}

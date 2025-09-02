@@ -114,15 +114,44 @@ export default function Notifications() {
             icon: logo,
           }
         );
-        desktopNotif.onclick = () => {
+        // desktopNotif.onclick = () => {
+        //   window.focus();
+        //   const path =
+        //     notif.source === "Jira"
+        //       ? `/dashboard/insights/jira-details/${notif.id || notif.alert_id}`
+        //       : `/dashboard/insights/google-details/${
+        //           notif.id || notif.alert_id
+        //         }`;
+        //   window.location.href = path;
+        // };
+        desktopNotif.onclick = async () => {
           window.focus();
-          const path =
-            notif.source === "Jira"
-              ? `/dashboard/insights/jira-details/${notif.id || notif.alert_id}`
-              : `/dashboard/insights/google-details/${
-                  notif.id || notif.alert_id
-                }`;
-          window.location.href = path;
+
+          try {
+            if (notif.source === "Jira") {
+              await dispatch(markJiraAlertRead(notif._id, notif.alert_id));
+              window.location.href = `/dashboard/insights/jira-details/${
+                notif.id || notif.alert_id
+              }`;
+            } else {
+              await dispatch(markGoogleAlertRead(notif._id, notif.alert_id));
+              window.location.href = `/dashboard/insights/google-details/${
+                notif.id || notif.alert_id
+              }`;
+            }
+          } catch (error) {
+            console.error("Failed to mark alert as read:", error);
+            // fallback to navigation even if marking fails
+            const path =
+              notif.source === "Jira"
+                ? `/dashboard/insights/jira-details/${
+                    notif.id || notif.alert_id
+                  }`
+                : `/dashboard/insights/google-details/${
+                    notif.id || notif.alert_id
+                  }`;
+            window.location.href = path;
+          }
         };
       }
 
@@ -327,6 +356,7 @@ export default function Notifications() {
   };
   // ---- end helpers ----
 
+  //work
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -356,6 +386,69 @@ export default function Notifications() {
 
     fetchNotifications();
   }, [dispatch, user]);
+
+  //   useEffect(() => {
+  //   const fetchNotifications = async () => {
+  //     try {
+  //       const res = await dispatch(getNotification());
+  //       if (!res || res.length === 0) {
+  //         setNotifications([]);
+  //         setLatestNotif(null);
+  //         return;
+  //       }
+
+  //       // sort by timestamp
+  //       res.sort(
+  //         (a, b) =>
+  //           new Date(b.timestamp || b.alert_timestamp) -
+  //           new Date(a.timestamp || a.alert_timestamp)
+  //       );
+
+  //       // apply filter (source allowed + role match)
+  //       const filtered = res.filter((notif) => shouldShowNotif(notif));
+
+  //       // detect new notifications (not already in state)
+  //       const newNotifs = filtered.filter(
+  //         (n) => !notifications.some((a) => (a.id || a.alert_id) === (n.id || n.alert_id))
+  //       );
+
+  //       // // show desktop notifications for new ones
+  //       // newNotifs.forEach((notif) => {
+
+  //       //   if (Notification.permission === "granted") {
+  //       //     const desktopNotif = new Notification(
+  //       //       notif.alert_type || "New Notification",
+  //       //       {
+  //       //         body: notif.message,
+  //       //         icon: logo,
+  //       //       }
+  //       //     );
+  //       //     desktopNotif.onclick = () => {
+  //       //       window.focus();
+  //       //       const path =
+  //       //         notif.source === "Jira"
+  //       //           ? `/dashboard/insights/jira-details/${notif.id || notif.alert_id}`
+  //       //           : `/dashboard/insights/google-details/${notif.id || notif.alert_id}`;
+  //       //       window.location.href = path;
+  //       //     };
+  //       //   }
+  //       // });
+
+  //       setNotifications(filtered);
+  //       setLatestNotif(filtered.length ? filtered[0] : null);
+  //     } catch (error) {
+  //       console.error("Failed to load notifications", error);
+  //     }
+  //   };
+
+  //   // fetch immediately
+  //   fetchNotifications();
+
+  //   // refresh every 5 sec
+  //   const intervalId = setInterval(fetchNotifications, 5000);
+
+  //   return () => clearInterval(intervalId);
+  // }, [dispatch, user, notifications]);
 
   const handleSubmitFeedback = async () => {
     if (!feedbackText.trim()) {

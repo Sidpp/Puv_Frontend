@@ -257,13 +257,11 @@ function mapJiraStatus(status) {
 function getPortfolioStatusData(source, googleData = [], jiraData = []) {
   let delayed = 0;
   let completed = 0;
-  let onTrack = 0;
   let inProgress = 0;
 
   const statusBuckets = {
     Delayed: [],
     Completed: [],
-    "On Track": [],
     "In Progress": [],
   };
 
@@ -276,9 +274,9 @@ function getPortfolioStatusData(source, googleData = [], jiraData = []) {
       } else if (status === "Completed") {
         completed++;
         statusBuckets.Completed.push(project._id);
-      } else if (status === "On Track") {
-        onTrack++;
-        statusBuckets["On Track"].push(project._id);
+      } else if (status === "In Progress") {
+        inProgress++;
+        statusBuckets["In Progress"].push(project._id);
       }
     });
 
@@ -297,10 +295,10 @@ function getPortfolioStatusData(source, googleData = [], jiraData = []) {
         ids: statusBuckets.Completed,
       },
       {
-        name: "On Track",
-        value: Math.round((onTrack / total) * 100),
-        barColor: "#22c55e",
-        ids: statusBuckets["On Track"],
+        name: "In Progress",
+        value: Math.round((inProgress / total) * 100),
+        barColor: "#f59e0b",
+        ids: statusBuckets["In Progress"],
       },
     ];
   } else {
@@ -319,7 +317,6 @@ function getPortfolioStatusData(source, googleData = [], jiraData = []) {
     });
 
     const total = jiraData.length || 1;
-
     return [
       {
         name: "Delayed",
@@ -342,6 +339,7 @@ function getPortfolioStatusData(source, googleData = [], jiraData = []) {
     ];
   }
 }
+
 
 function parseNumberSafe(value) {
   if (!value) return 0; // null, undefined, empty string

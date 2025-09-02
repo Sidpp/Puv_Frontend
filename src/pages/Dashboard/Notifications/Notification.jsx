@@ -34,6 +34,7 @@ const sourceStyles = {
 const BASE_URL = process.env.REACT_APP_BASE_URL.replace("/api", "");
 const socket = io(BASE_URL, {
   transports: ["websocket", "polling"],
+  path: "/socket.io",
 });
 
 export default function Notifications() {

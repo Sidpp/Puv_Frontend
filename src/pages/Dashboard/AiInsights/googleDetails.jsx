@@ -123,7 +123,7 @@ const GoogleDetails = () => {
     switch (status) {
       case "Completed":
         return "#D4F0C0"; // greenish
-      case "On Track":
+      case "In Progress":
         return "#FFF3C4"; // yellowish
       case "Delayed":
         return "#FECACA"; // reddish

@@ -11,6 +11,7 @@ import { getNotification } from "../../../services/oprations/authAPI";
 const BASE_URL = process.env.REACT_APP_BASE_URL.replace("/api", "");
 const socket = io(BASE_URL, {
   transports: ["websocket", "polling"],
+  path: "/socket.io",
 });
 
 const Navbar = () => {

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { io } from "socket.io-client";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBullhorn,
@@ -30,6 +31,10 @@ const sourceStyles = {
   Jira: "bg-red-100 text-red-600",
   Google: "bg-blue-100 text-blue-600",
 };
+const BASE_URL = process.env.REACT_APP_BASE_URL.replace("/api", "");
+const socket = io(BASE_URL, {
+  transports: ["websocket", "polling"],
+});
 
 export default function Notifications() {
   const { user } = useSelector((state) => state.profile);
@@ -37,18 +42,129 @@ export default function Notifications() {
   const navigate = useNavigate();
   const [latestNotif, setLatestNotif] = useState(null);
   const [notifications, setNotifications] = useState([]);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [feedbackModal, setFeedbackModal] = useState({
     isOpen: false,
     notifId: null,
   });
   const [feedbackText, setFeedbackText] = useState("");
   const [isRead, setIsRead] = useState(false);
-
-  // after notifications state
   const [filteredNotifications, setFilteredNotifications] = useState([]);
+
+  //--------------------------------------------------------
+  const [isConnected, setIsConnected] = useState(socket.connected);
+  useEffect(() => {
+    // Request notification permission
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+
+    // Socket listeners
+    const handleConnect = () => {
+      console.log("Connected to server ✅");
+      setIsConnected(true);
+    };
+
+    const handleDisconnect = () => {
+      console.log("Disconnected from server ❌");
+      setIsConnected(false);
+    };
+    //old
+    // const handleNewNotification = (notif) => {
+    //   console.log("New notification:", notif);
+    //   setNotifications((prev) => [notif, ...prev]);
+
+    //   setLatestNotif((prev) => [notif, ...prev]);
+
+    //   // if (Notification.permission === "granted") {
+    //   //   const desktopNotif = new Notification(
+    //   //     notif.alert_type || "New Notification",
+    //   //     {
+    //   //       body: notif.message,
+    //   //       icon: logo,
+    //   //     }
+    //   //   );
+    //   //   desktopNotif.onclick = () => {
+    //   //     window.focus();
+    //   //     const path =
+    //   //       notif.source === "Jira"
+    //   //         ? `/dashboard/insights/jira-details/${notif.id || notif.alert_id}`
+    //   //         : `/dashboard/insights/google-details/${
+    //   //             notif.id || notif.alert_id
+    //   //           }`;
+    //   //     window.location.href = path;
+    //   //   };
+    //   // }
+
+    // };
+
+    const handleNewNotification = (notif) => {
+      console.log("New notification (raw):", notif);
+      // filter with same rules
+      if (!shouldShowNotif(notif)) {
+        console.log("Notification skipped by filter:", notif);
+        return;
+      }
+      if (Notification.permission === "granted") {
+        const desktopNotif = new Notification(
+          notif.alert_type || "New Notification",
+          {
+            body: notif.message,
+            icon: logo,
+          }
+        );
+        desktopNotif.onclick = () => {
+          window.focus();
+          const path =
+            notif.source === "Jira"
+              ? `/dashboard/insights/jira-details/${notif.id || notif.alert_id}`
+              : `/dashboard/insights/google-details/${
+                  notif.id || notif.alert_id
+                }`;
+          window.location.href = path;
+        };
+      }
+
+      // Add to UI
+      setNotifications((prev) => [notif, ...prev]);
+
+      // update latestNotif to single latest object (or array per your UI)
+      setLatestNotif((prev) =>
+        Array.isArray(prev) ? [notif, ...prev] : [notif]
+      );
+    };
+
+    const handleDeleteNotification = (id) => {
+      setNotifications((prev) =>
+        prev.filter((n) => n._id !== id && n.alert_id !== id)
+      );
+    };
+
+    const handleUpdateNotification = (updatedNotif) => {
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n._id === updatedNotif._id || n.alert_id === updatedNotif.alert_id
+            ? updatedNotif
+            : n
+        )
+      );
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("new-notification", handleNewNotification);
+    socket.on("delete-notification", handleDeleteNotification);
+    socket.on("update-notification", handleUpdateNotification);
+
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("new-notification", handleNewNotification);
+      socket.off("delete-notification", handleDeleteNotification);
+      socket.off("update-notification", handleUpdateNotification);
+    };
+  }, []);
+  //---------------------------------------------------------
 
   // whenever notifications or isRead changes, filter
   useEffect(() => {
@@ -60,109 +176,185 @@ export default function Notifications() {
     );
   }, [notifications, isRead]);
 
-  useEffect(() => {
-    if ("Notification" in window) {
-      Notification.requestPermission().then((permission) => {
-        console.log("Notification permission:", permission);
-      });
+  // useEffect(() => {
+  //   if ("Notification" in window) {
+  //     Notification.requestPermission().then((permission) => {
+  //       console.log("Notification permission:", permission);
+  //     });
+  //   }
+  // }, []);
+
+  // const showDesktopNotification = (notif) => {
+  //   if (Notification.permission === "granted") {
+  //     const notification = new Notification(
+  //       notif.alert_type || "New Notification",
+  //       {
+  //         body: notif.message,
+  //         icon: logo,
+  //       }
+  //     );
+
+  //     notification.onclick = async () => {
+  //       window.focus();
+
+  //       if (!notif) return;
+
+  //       if (notif.source === "Jira") {
+  //         await dispatch(markJiraAlertRead(notif._id, notif.alert_id));
+  //         window.location.href = `/dashboard/insights/jira-details/${
+  //           notif._id || notif.id
+  //         }`;
+  //       } else if (notif.source === "Google") {
+  //         await dispatch(markGoogleAlertRead(notif._id, notif.alert_id));
+  //         window.location.href = `/dashboard/insights/google-details/${
+  //           notif._id || notif.id
+  //         }`;
+  //       }
+
+  //       notification.close();
+  //     };
+  //   }
+  // };
+
+  //old
+  // useEffect(() => {
+  //   let intervalId;
+  //   let lastShownIdRef = null;
+
+  //   const fetchNotifications = async () => {
+  //     try {
+  //       const res = await dispatch(getNotification());
+  //       if (res.length > 0) {
+  //         res.sort(
+  //           (a, b) =>
+  //             new Date(b.timestamp || b.alert_timestamp) -
+  //             new Date(a.timestamp || a.alert_timestamp)
+  //         );
+
+  //         // Filtering for Team Leader
+  //         let filtered = res;
+  //         if (user?.projectrole === "Team Leader") {
+  //           filtered = res.filter(
+  //             (notif) => notif.role?.toLowerCase().trim() === "team leader"
+  //           );
+
+  //           const googleIds = user?.assignGoogleProjects || [];
+  //           const jiraIds = user?.assignJiraProjects || [];
+
+  //           filtered = filtered.filter((notif) => {
+  //             if (notif.source === "Google") {
+  //               return (
+  //                 googleIds.includes(notif.project) ||
+  //                 googleIds.includes(notif._id)
+  //               );
+  //             }
+  //             if (notif.source === "Jira") {
+  //               return (
+  //                 jiraIds.includes(notif.project) || jiraIds.includes(notif._id)
+  //               );
+  //             }
+  //             return false;
+  //           });
+  //         }
+
+  //         setLatestNotif(filtered);
+  //         setNotifications(filtered);
+
+  //         // ✅ Show desktop notif only for new ones
+  //         // const latestNew = filtered[0];
+  //         // if (latestNew && lastShownIdRef !== latestNew._id) {
+  //         //   showDesktopNotification(latestNew);
+  //         //   lastShownIdRef = latestNew._id;
+  //         // }
+  //       }
+  //     } catch (error) {
+  //       console.error("Failed to load notifications", error);
+  //     }
+  //   };
+
+  //   // if (user) {
+  //   //   fetchNotifications();
+  //   //   intervalId = setInterval(fetchNotifications, 5000);
+  //   // }
+  //   fetchNotifications();
+  //   return () => clearInterval(intervalId);
+  // }, [dispatch, user]);
+
+  // ---- Helper functions (place inside Notifications component, above useEffect) ----
+  const hasSourceAccess = (notif) => {
+    if (!notif || !notif.source) return false;
+
+    if (notif.source === "Jira") {
+      const hasCred = !!user?.jira_credential_id;
+      const assigned =
+        Array.isArray(user?.assignJiraProjects) &&
+        user.assignJiraProjects.length > 0 &&
+        (user.assignJiraProjects.includes(notif.project) ||
+          user.assignJiraProjects.includes(notif._id));
+      return hasCred || assigned;
     }
-  }, []);
 
-  const showDesktopNotification = (notif) => {
-    if (Notification.permission === "granted") {
-      const notification = new Notification(
-        notif.alert_type || "New Notification",
-        {
-          body: notif.message,
-          icon: logo,
-        }
-      );
-
-      notification.onclick = async () => {
-        window.focus();
-
-        if (!notif) return;
-
-        if (notif.source === "Jira") {
-          await dispatch(markJiraAlertRead(notif._id, notif.alert_id));
-          window.location.href = `/dashboard/insights/jira-details/${
-            notif._id || notif.id
-          }`;
-        } else if (notif.source === "Google") {
-          await dispatch(markGoogleAlertRead(notif._id, notif.alert_id));
-          window.location.href = `/dashboard/insights/google-details/${
-            notif._id || notif.id
-          }`;
-        }
-
-        notification.close();
-      };
+    if (notif.source === "Google") {
+      const hasCred = !!user?.google_credential_id;
+      const assigned =
+        Array.isArray(user?.assignGoogleProjects) &&
+        user.assignGoogleProjects.length > 0 &&
+        (user.assignGoogleProjects.includes(notif.project) ||
+          user.assignGoogleProjects.includes(notif._id));
+      return hasCred || assigned;
     }
+
+    return false;
   };
 
-useEffect(() => {
-  let intervalId;
-  let lastShownIdRef = null; 
+  const roleMatches = (notif) => {
+    // only show if both user.projectrole and notif.role exist and match
+    if (!user?.projectrole) return false;
+    if (!notif?.role) return false;
+    return (
+      notif.role.toString().toLowerCase().trim() ===
+      user.projectrole.toString().toLowerCase().trim()
+    );
+  };
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await dispatch(getNotification());
-      if (res.length > 0) {
+  const shouldShowNotif = (notif) => {
+    // 1) source must be allowed by credentials or assigned projects
+    if (!hasSourceAccess(notif)) return false;
+    // 2) role must exist and match user's role
+    if (!roleMatches(notif)) return false;
+    return true;
+  };
+  // ---- end helpers ----
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await dispatch(getNotification());
+        if (!res || res.length === 0) {
+          setNotifications([]);
+          setLatestNotif(null);
+          return;
+        }
+
+        // sort by timestamp
         res.sort(
           (a, b) =>
             new Date(b.timestamp || b.alert_timestamp) -
             new Date(a.timestamp || a.alert_timestamp)
         );
 
-        // Filtering for Team Leader
-        let filtered = res;
-        if (user?.projectrole === "Team Leader") {
-          filtered = res.filter(
-            (notif) => notif.role?.toLowerCase().trim() === "team leader"
-          );
+        // apply filter that enforces: source allowed AND role match
+        const filtered = res.filter((notif) => shouldShowNotif(notif));
 
-          const googleIds = user?.assignGoogleProjects || [];
-          const jiraIds = user?.assignJiraProjects || [];
-
-          filtered = filtered.filter((notif) => {
-            if (notif.source === "Google") {
-              return (
-                googleIds.includes(notif.project) ||
-                googleIds.includes(notif._id)
-              );
-            }
-            if (notif.source === "Jira") {
-              return (
-                jiraIds.includes(notif.project) ||
-                jiraIds.includes(notif._id)
-              );
-            }
-            return false;
-          });
-        }
-
-        setLatestNotif(filtered);
         setNotifications(filtered);
-
-        // ✅ Show desktop notif only for new ones
-        const latestNew = filtered[0];
-        if (latestNew && lastShownIdRef !== latestNew._id) {
-          showDesktopNotification(latestNew);
-          lastShownIdRef = latestNew._id;
-        }
+        setLatestNotif(filtered.length ? filtered[0] : null);
+      } catch (error) {
+        console.error("Failed to load notifications", error);
       }
-    } catch (error) {
-      console.error("Failed to load notifications", error);
-    }
-  };
+    };
 
-  if (user) {
     fetchNotifications();
-    intervalId = setInterval(fetchNotifications, 5000);
-  }
-  return () => clearInterval(intervalId);
-}, [dispatch, user]); // ✅ no notifications/latestNotif
-
+  }, [dispatch, user]);
 
   const handleSubmitFeedback = async () => {
     if (!feedbackText.trim()) {
@@ -286,6 +478,18 @@ useEffect(() => {
         <h1 className="text-2xl sm:text-3xl font-semibold text-[#0c2e55] mb-6">
           Welcome Back, {user?.name}
         </h1>
+        {/* <div
+          className={`mb-2 font-semibold ${
+            isConnected ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {isConnected
+            ? "🟢 Connected to server"
+            : "🔴 Disconnected from server"}
+        </div>
+
+        <h2 className="text-xl font-bold">Live Jira Notifications</h2>
+        <span>[{notifications.length}]</span> */}
         <p className="text-gray-500 text-sm">No notifications found.</p>
       </main>
     );

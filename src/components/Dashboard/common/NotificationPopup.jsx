@@ -11,6 +11,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { deleteNotification } from "../../../services/oprations/authAPI";
 import { useDispatch } from "react-redux";
+import { markJiraAlertRead } from "../../../services/oprations/jiraAPI";
+import { markGoogleAlertRead } from "../../../services/oprations/googleAPI";
 
 const sourceStyles = {
   Jira: "bg-red-100 text-red-600",
@@ -21,27 +23,29 @@ export default function NotificationPopup({ onClose, alerts, setAlerts }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const handleDelete = async (notif) => {
-    const res = await dispatch(
-      deleteNotification({
-        id: notif._id,
-        source: notif.source,
-        message: notif.message,
-      })
-    );
-    if (res.success) {
-      setAlerts((prev) => prev.filter((a) => a.id !== notif.id));
-    }
-  };
+  // const handleDelete = async (notif) => {
+  //   const res = await dispatch(
+  //     deleteNotification({
+  //       id: notif._id,
+  //       source: notif.source,
+  //       message: notif.message,
+  //     })
+  //   );
+  //   if (res.success) {
+  //     setAlerts((prev) => prev.filter((a) => a.id !== notif.id));
+  //   }
+  // };
 
   const handleClick = async (notif) => {
-    if (notif.source === "Google") {
-      navigate(`/dashboard/insights/google-details/${notif._id || notif.id}`);
-    } else {
+    if (!notif) return;
+
+    if (notif.source === "Jira") {
+      await dispatch(markJiraAlertRead(notif._id, notif.alert_id));
       navigate(`/dashboard/insights/jira-details/${notif._id || notif.id}`);
+    } else if (notif.source === "Google") {
+      await dispatch(markGoogleAlertRead(notif._id, notif.alert_id));
+      navigate(`/dashboard/insights/google-details/${notif._id || notif.id}`);
     }
-    // await handleDelete(notif);
-    onClose?.();
   };
 
   const getIcon = (type) => {

@@ -23,7 +23,9 @@ const {
   UPDATE_INFO_API,
   SEND_EMAIL_OTP_API,
   VERIFY_EMAIL_OTP_API,
-  NOTIFICATION_API
+  NOTIFICATION_API,
+  JIRA_DELETE_API,
+  GOOGLE_DELETE_API
 } = endpoints;
 
 // export function approveAlert(issueId, operation) {
@@ -64,6 +66,59 @@ const {
 //     }
 //   };
 // }
+
+export function deleteUserJiraCredential(user_id) {
+  console.log("delete Jira credential for user:", user_id);
+
+  return async (dispatch) => {
+    try {
+      const response = await apiConnector("DELETE", JIRA_DELETE_API, { user_id });
+      console.log("DELETE JIRA RESPONSE:", response);
+
+      const { success, message } = response.data;
+
+      // Only throw if backend returns success: false
+      if (success === false) {
+        throw new Error(message || "Failed to delete Jira credential");
+      }
+
+      // Success case
+      return { success: true, message };
+    } catch (error) {
+      // Only log network errors or unexpected issues
+      console.error("DELETE JIRA ERROR (network/unknown):", error);
+      return { success: false, message: error.message || "Server error" };
+    }
+  };
+}
+
+
+export function deleteUserGoogleCredential(user_id) {
+  console.log("delete Google credential for user:", user_id);
+
+  return async (dispatch) => {
+    try {
+      const response = await apiConnector("DELETE", GOOGLE_DELETE_API, { user_id });
+      console.log("DELETE GOOGLE RESPONSE:", response);
+
+      const { success, message } = response.data;
+
+      // Only throw if backend returns success: false
+      if (success === false) {
+        throw new Error(message || "Failed to delete Google credential");
+      }
+
+      // Success case
+      return { success: true, message };
+    } catch (error) {
+      // Only log network errors or unexpected issues
+      console.error("DELETE GOOGLE ERROR (network/unknown):", error);
+      return { success: false, message: error.message || "Server error" };
+    }
+  };
+}
+
+
 
 export function globalSearch(query) {
   return async (dispatch) => {

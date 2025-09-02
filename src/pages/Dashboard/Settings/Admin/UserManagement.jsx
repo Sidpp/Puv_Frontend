@@ -146,11 +146,11 @@ export default function UserManagement() {
       <div className="block md:hidden space-y-4 mt-4">
         {users
           .filter((u) => {
-            const query = search.toLowerCase();
+            const query = (search || "").toLowerCase();
             return (
-              u.name.toLowerCase().includes(query) ||
-              u.role?.toLowerCase().includes(query) ||
-              u.email.toLowerCase().includes(query)
+              (u.name || "").toLowerCase().includes(query) ||
+              (u.role || "").toLowerCase().includes(query) ||
+              (u.email || "").toLowerCase().includes(query)
             );
           })
           .map((user) => (
@@ -169,7 +169,7 @@ export default function UserManagement() {
                       />
                     ) : (
                       <span className="text-sm font-semibold text-gray-700">
-                        {user.name[0].toUpperCase()}
+                        {user?.name?.[0]?.toUpperCase() || "?"}
                       </span>
                     )}
                   </div>
@@ -237,11 +237,11 @@ export default function UserManagement() {
           <tbody>
             {users
               .filter((u) => {
-                const query = search.toLowerCase();
+                const query = (search || "").toLowerCase();
                 return (
-                  u.name.toLowerCase().includes(query) ||
-                  u.role?.toLowerCase().includes(query) ||
-                  u.email.toLowerCase().includes(query)
+                  (u.name || "").toLowerCase().includes(query) ||
+                  (u.role || "").toLowerCase().includes(query) ||
+                  (u.email || "").toLowerCase().includes(query)
                 );
               })
               .map((user) => (
@@ -259,7 +259,7 @@ export default function UserManagement() {
                         />
                       ) : (
                         <span className="text-xs font-medium text-gray-700">
-                          {user.name[0].toUpperCase()}
+                          {user?.name?.[0]?.toUpperCase() || "?"}
                         </span>
                       )}
                     </div>
@@ -384,31 +384,35 @@ export default function UserManagement() {
                 </select>
               </div>
 
-            { user?.projectrole !== "Team Leader" && (              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Project Role
-                </label>
-                <select
-                  value={editUserData.projectrole}
-                  onChange={(e) =>
-                    setEditUserData({
-                      ...editUserData,
-                      projectrole: e.target.value,
-                    })
-                  }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                >
-                  <option value="">Select Project Role</option>
-                  <option value="Project Manager">Project Manager(Jira)</option>
-                  <option value="Team Leader">
-                    Team Leader(Jira & Google)
-                  </option>
-                  <option value="Executive">Executive(Google)</option>
-                  <option value="Portfolio Manager">
-                    Portfolio Manager(Google)
-                  </option>
-                </select>
-              </div>)}
+              {user?.projectrole !== "Team Leader" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Project Role
+                  </label>
+                  <select
+                    value={editUserData.projectrole}
+                    onChange={(e) =>
+                      setEditUserData({
+                        ...editUserData,
+                        projectrole: e.target.value,
+                      })
+                    }
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  >
+                    <option value="">Select Project Role</option>
+                    <option value="Project Manager">
+                      Project Manager(Jira)
+                    </option>
+                    <option value="Team Leader">
+                      Team Leader(Jira & Google)
+                    </option>
+                    <option value="Executive">Executive(Google)</option>
+                    <option value="Portfolio Manager">
+                      Portfolio Manager(Google)
+                    </option>
+                  </select>
+                </div>
+              )}
 
               {["Portfolio Manager", "Project Manager", "Executive"].includes(
                 user.projectrole

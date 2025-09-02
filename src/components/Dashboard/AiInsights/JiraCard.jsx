@@ -28,12 +28,28 @@ const JiraCard = ({
   const fullSummary =
     ai_summary.length > 0 ? ai_summary[0] : "No summary available";
 
+    // helper to truncate text by word count
+const truncateText = (text, wordLimit = 2) => {
+  if (!text) return "";
+  const words = text.split(" ");
+  if (words.length <= wordLimit) return text;
+  return words.slice(0, wordLimit).join(" ") + "...";
+};
+
   // helper: truncate summary by word count
-  const truncateSummary = (text, wordLimit = 20) => {
-    const words = text.split(" ");
-    if (words.length <= wordLimit) return text;
-    return words.slice(0, wordLimit).join(" ") + "...";
-  };
+const truncateSummary = (text, wordLimit = 10, charLimit = 60) => {
+  if (!text) return "";
+
+  let words = text.trim().split(/\s+/);
+  let truncated = words.slice(0, wordLimit).join(" ");
+
+  if (truncated.length > charLimit) {
+    truncated = truncated.slice(0, charLimit).trim();
+  }
+
+  return truncated + (truncated.length < text.length ? "..." : "");
+};
+
 
   const summary = truncateSummary(fullSummary);
   
@@ -55,7 +71,7 @@ const JiraCard = ({
           {priority}
         </div>
       </div>
-      <h3 className="text-[#002E5D] font-bold text-sm mb-1">{project_name}</h3>
+      <h3 className="text-[#002E5D] font-bold text-sm mb-1">{truncateText(project_name)}</h3>
       <p className="text-gray-600 text-xs mb-2">{summary}.</p>
 
       <div className="text-[10px] text-gray-500 font-semibold mb-1">

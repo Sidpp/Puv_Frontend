@@ -3,14 +3,19 @@ import JiraCard from "../../../components/Dashboard/AiInsights/JiraCard";
 import GoogleCard from "../../../components/Dashboard/AiInsights/GoogleCard";
 import { useDispatch, useSelector } from "react-redux";
 import FilterTab from "../../../components/Dashboard/AiInsights/FilterTab";
-import { getAllJiraIssues,getJiraIssueById } from "../../../services/oprations/jiraAPI";
+import {
+  getAllJiraIssues,
+  getJiraIssueById,
+} from "../../../services/oprations/jiraAPI";
 import {
   getAllGoogleDetails,
   getGoogleSheetById,
 } from "../../../services/oprations/googleAPI";
+import { useNavigate } from "react-router-dom";
 
 const AiInsights = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [jiraData, setJiraData] = useState([]);
   const [googleData, setGoogleData] = useState([]);
   const [selectedView, setSelectedView] = useState("google");
@@ -56,13 +61,13 @@ const AiInsights = () => {
         try {
           const ids = user?.assignJiraProjects || [];
           let allData = [];
-                  
+
           for (const id of ids) {
             const res = await dispatch(getJiraIssueById(id));
             if (res) {
               allData.push(res);
             }
-           // console.log("allData", allData);
+            // console.log("allData", allData);
           }
 
           setJiraData(allData);
@@ -82,7 +87,6 @@ const AiInsights = () => {
 
     fetchJira();
   }, [dispatch, user]);
-
 
   const handleViewChange = (e) => {
     const value = e.target.value;
@@ -326,8 +330,33 @@ const AiInsights = () => {
       </div>
 
       {/* Data Grid */}
-      {selectedView === "jira" && isJiraEmpty && <div>No Jira data</div>}
-      {selectedView === "google" && isGoogleEmpty && <div>No Google data</div>}
+      {selectedView === "jira" && isJiraEmpty && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-xl font-semibold mb-4">No Jira data found.</p>
+          <button
+            className="px-6 py-3 bg-[#00254D] text-white rounded-md hover:bg-[#003366] transition"
+            onClick={() => {
+              navigate("/dashboard/settings/profile-management");
+            }}
+          >
+            Connect Jira
+          </button>
+        </div>
+      )}
+
+      {selectedView === "google" && isGoogleEmpty && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-xl font-semibold mb-4">No Google data found.</p>
+          <button
+            className="px-6 py-3 bg-[#00254D] text-white rounded-md hover:bg-[#003366] transition"
+            onClick={() => {
+              navigate("/dashboard/settings/profile-management");
+            }}
+          >
+            Add Google Credentials
+          </button>
+        </div>
+      )}
 
       {!(
         (selectedView === "jira" && isJiraEmpty) ||

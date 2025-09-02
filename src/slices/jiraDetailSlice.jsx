@@ -28,9 +28,12 @@ const jiraDetailSlice = createSlice({
         selectJiraError(state, action) {
       state.credentials = action.payload;
     },
+        clearJiraCredentials(state) {
+      state.credentials = null; // clear credentials on disconnect
+    },
   },
 });
 
-export const { setJiraCredentials,fetchProjectBySlug,selectJiraProject, setJiraLoading,selectJiraError,selectJiraStatus, setJiraError } = jiraDetailSlice.actions;
+export const { setJiraCredentials,fetchProjectBySlug,selectJiraProject, setJiraLoading,selectJiraError,selectJiraStatus, setJiraError,clearJiraCredentials } = jiraDetailSlice.actions;
 
 export default jiraDetailSlice.reducer;

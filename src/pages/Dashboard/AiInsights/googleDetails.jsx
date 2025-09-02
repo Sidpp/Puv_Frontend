@@ -47,6 +47,8 @@ const GoogleDetails = () => {
         userid: user._id,
         feedback: feedbackText,
         for: `Jira AI Predictive Summary - id ${id}`,
+        ai_summary: issue?.ai_predictions?.ai_summary,
+        source: "GoogleSheet",
       })
     );
 
@@ -116,6 +118,19 @@ const GoogleDetails = () => {
         return null;
     }
   }
+  // helper to get bg color
+  const getStatusBgColor = (status) => {
+    switch (status) {
+      case "Completed":
+        return "#D4F0C0"; // greenish
+      case "On Track":
+        return "#FFF3C4"; // yellowish
+      case "Delayed":
+        return "#FECACA"; // reddish
+      default:
+        return "#E5E7EB"; // grayish for N/A
+    }
+  };
 
   function getNeedleAngle(rag) {
     switch (rag) {
@@ -242,7 +257,8 @@ const GoogleDetails = () => {
             <div className="bg-[#F7FAF9] rounded-md p-4 flex items-center justify-center w-56 h-full">
               <svg viewBox="0 0 120 120" className="w-full h-full">
                 {(() => {
-                  const risk = issue?.ai_predictions?.["Burnout_Risk"] || 0;
+                  const risk =
+                    issue?.ai_predictions?.["AI_Delay_Score"] || "N/A";
                   const radius = 54;
                   const circumference = 2 * Math.PI * radius;
                   const progress = (risk / 100) * circumference;
@@ -488,14 +504,14 @@ const GoogleDetails = () => {
               <>
                 <button
                   onClick={handleApprove}
-                   className="px-3 py-1 rounded-full text-xs font-medium text-white shadow 
+                  className="px-3 py-1 rounded-full text-xs font-medium text-white shadow 
   bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 hover:opacity-90 transition"
                 >
                   Approve
                 </button>
                 <button
                   onClick={handleReject}
-                 className="px-3 py-1 rounded-full text-xs font-medium text-white shadow 
+                  className="px-3 py-1 rounded-full text-xs font-medium text-white shadow 
   bg-gradient-to-r from-rose-400 via-rose-500 to-rose-600 hover:opacity-90 transition"
                 >
                   Reject
@@ -506,13 +522,19 @@ const GoogleDetails = () => {
         </div>
 
         {/* Milestone Status (20%) */}
-        <div className="w-full flex flex-col md:w-1/5 bg-[#D4F0C0] rounded-md px-4 py-4 gap-6 items-center shadow font-semibold text-[#3CA52B] text-[15px]">
+        <div
+          className="w-full flex flex-col md:w-1/5 rounded-md px-4 py-4 gap-6 items-center shadow font-semibold text-[15px]"
+          style={{
+            backgroundColor: getStatusBgColor(
+              issue?.ai_predictions?.["Milestone_Status"]
+            ),
+          }}
+        >
           <span className="mt-3">Milestone Status</span>
           <div className="flex items-center">
             {getStatusIcon(issue?.ai_predictions?.["Milestone_Status"])}
-            <span className="ml-2">
-              {issue?.ai_predictions?.["Milestone_Status"] || "N/A"}
-            </span>
+
+            <span>{issue?.ai_predictions?.["Milestone_Status"] || "N/A"}</span>
           </div>
         </div>
       </section>

@@ -4,6 +4,8 @@ import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import Eclipse from "../../../assets/Ellipse.png";
 import Profile from "../../../assets/Profile.png";
 import {
+  deleteUserGoogleCredential,
+  deleteUserJiraCredential,
   sendEmailOtp,
   updateBasicInfo,
   updateImage,
@@ -14,6 +16,9 @@ import {
   jiraConnect,
 } from "../../../services/oprations/jiraAPI";
 import { fetchGoogleCredentials } from "../../../services/oprations/googleAPI";
+import toast from "react-hot-toast";
+import { clearJiraCredentials } from "../../../slices/jiraDetailSlice";
+import { clearGoogleCredentials } from "../../../slices/googleSlice";
 
 const ProfileSettings = () => {
   const { user } = useSelector((state) => state.profile);
@@ -188,6 +193,40 @@ const ProfileSettings = () => {
       window.location.href = `${baseUrl}/auth/google?state=${encodedState}`;
     } else {
       console.log("Please fill all Google Sheet fields before connecting.");
+    }
+  };
+
+  const handleJiraDisConnect = async () => {
+    if (!user?._id) return;
+
+    try {
+      const result = await dispatch(deleteUserJiraCredential(user._id));
+
+      if (result.success) {
+        console.log("Jira disconnected successfully");
+        toast.success(result.message || "Jira disconnected successfully"); // show backend message
+        dispatch(clearJiraCredentials());
+      } else {
+        console.error("Failed to disconnect Jira:", result.message);
+        toast.error(result.message || "Failed to disconnect Jira");
+      }
+    } catch (error) {
+      console.error("Unexpected error disconnecting Jira:", error);
+      toast.error("An unexpected error occurred while disconnecting Jira");
+    }
+  };
+
+  const handleGoogleDisConnect = async () => {
+    if (!user?._id) return;
+
+    const result = await dispatch(deleteUserGoogleCredential(user._id));
+    if (result.success) {
+      console.log("Google disconnected successfully");
+      toast.success(result.message);
+           dispatch(clearGoogleCredentials()); 
+    } else {
+      console.error("Failed to disconnect Google:", result.message);
+      toast.error(result.message || "Failed to disconnect Google");
     }
   };
 
@@ -393,10 +432,16 @@ const ProfileSettings = () => {
             </div>
             <button
               type="button"
-              onClick={handleGoogleConnect}
-              className="w-fit bg-[#001f3f] text-white font-semibold rounded-full px-8 py-3 shadow-md hover:shadow-lg transition-shadow"
+              onClick={
+                googleCredentials ? handleGoogleDisConnect : handleGoogleConnect
+              }
+              className={`w-fit ${
+                googleCredentials
+                  ? "bg-red-400 hover:bg-red-500"
+                  : "bg-[#001f3f] hover:shadow-lg"
+              } text-white font-semibold rounded-full px-8 py-3 shadow-md transition-shadow`}
             >
-              Connect to Google Sheet
+              {googleCredentials ? "Disconnect" : "Connect to Google Sheet"}
             </button>
           </div>
 
@@ -475,10 +520,14 @@ const ProfileSettings = () => {
             </div>
             <button
               type="button"
-              onClick={handleJiraConnect}
-              className="w-fit bg-[#001f3f] text-white font-semibold rounded-full px-8 py-3 shadow-md hover:shadow-lg transition-shadow"
+              onClick={credentials ? handleJiraDisConnect : handleJiraConnect}
+              className={`w-fit ${
+                credentials
+                  ? "bg-red-400 hover:bg-red-500"
+                  : "bg-[#001f3f] hover:shadow-lg"
+              } text-white font-semibold rounded-full px-8 py-3 shadow-md transition-shadow`}
             >
-              Connect to Jira
+              {credentials ? "Disconnect" : "Connect to Jira"}
             </button>
           </form>
         </div>

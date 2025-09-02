@@ -19,9 +19,13 @@ const googleSlice = createSlice({
     setGoogleError(state, action) {
       state.error = action.payload;
     },
+        clearGoogleCredentials(state) {
+      state.credentials = null; // clear credentials on disconnect
+    },
+
   },
 });
 
-export const { setGoogleCredentials, setGoogleLoading, setGoogleError } = googleSlice.actions;
+export const { setGoogleCredentials, setGoogleLoading, setGoogleError,clearGoogleCredentials } = googleSlice.actions;
 
 export default googleSlice.reducer;

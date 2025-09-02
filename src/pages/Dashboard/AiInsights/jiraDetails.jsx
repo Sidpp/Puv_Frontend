@@ -46,6 +46,8 @@ const JiraDetails = () => {
         userid: user._id,
         feedback: feedbackText,
         for: `Jira AI Predictive Summary - id ${id}`,
+        ai_summary:issue?.ai_summary,
+        source:"Jira"
       })
     );
 

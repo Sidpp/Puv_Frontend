@@ -106,13 +106,16 @@ const JiraDetails = () => {
     original_estimate,
     remaining_estimate,
     time_logged,
-    worklog_enterie,
+    worklog_total_entries,
     status_transition_log,
+    worklog_timespent,
     project_name,
     reporter,
     executive_summary,
     burnout_flag,
   } = issue;
+
+
 
   return (
     <div className="bg-white text-gray-900 max-w-[1200px] mx-auto p-6">
@@ -323,6 +326,8 @@ const JiraDetails = () => {
               ["Original Estimate", original_estimate],
               ["Time Logged", time_logged],
               ["Remaining Estimate", remaining_estimate],
+              ["Worklog Total Entries", worklog_total_entries ? worklog_total_entries : "NA"],
+              ["Worklog Timespent", worklog_timespent ? worklog_timespent : "NA"],
             ].map(([label, value], idx) => (
               <p key={idx} className="text-gray-600 font-semibold">
                 {label}

@@ -284,14 +284,14 @@ const Navbar = () => {
         );
 
         // apply filter that enforces: source allowed AND role match
-        const filtered = res.filter((notif) => shouldShowNotif(notif));
+       // const filtered = res.filter((notif) => shouldShowNotif(notif));
 
         setAlerts((prev) => {
           const existingIds = new Set(prev.map((n) => n._id || n.alert_id));
 
           // merge new API notifs with socket notifs (without duplicates)
           const merged = [
-            ...filtered,
+            ...res,
             ...prev.filter((n) => !existingIds.has(n._id || n.alert_id)),
           ];
 

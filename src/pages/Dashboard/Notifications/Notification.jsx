@@ -73,10 +73,10 @@ export default function Notifications() {
     };
 
     const handleNewNotification = (notif) => {
-     // console.log("New notification (raw):", notif);
+      // console.log("New notification (raw):", notif);
       // filter with same rules
       if (!shouldShowNotif(notif)) {
-       // console.log("Notification skipped by filter:", notif);
+        // console.log("Notification skipped by filter:", notif);
         return;
       }
 
@@ -301,12 +301,12 @@ export default function Notifications() {
         );
 
         // apply filter that enforces: source allowed AND role match
-        const filtered = res.filter((notif) => shouldShowNotif(notif));
+        // const filtered = res.filter((notif) => shouldShowNotif(notif));
 
-        setNotifications(filtered);
-        setLatestNotif(filtered.length ? filtered[0] : null);
+        setNotifications(res);
+        setLatestNotif(res.length ? res[0] : null);
       } catch (error) {
-       // console.error("Failed to load notifications", error);
+        // console.error("Failed to load notifications", error);
       } finally {
         setLoading(false);
       }
@@ -403,7 +403,7 @@ export default function Notifications() {
 
   const handleApprove = async (notif) => {
     try {
-     // console.log("notif", notif._id, notif.alert_id, notif.source);
+      // console.log("notif", notif._id, notif.alert_id, notif.source);
       // choose API based on source
       if (notif.source === "Jira") {
         await dispatch(
@@ -489,7 +489,7 @@ export default function Notifications() {
 
       toast.success("Notification deleted");
     } catch (error) {
-     // console.error("Failed to delete notification", error);
+      // console.error("Failed to delete notification", error);
       toast.error("Failed to delete notification");
     }
   };
@@ -588,6 +588,13 @@ export default function Notifications() {
                   >
                     {notif.source}
                   </span>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      sourceStyles[notif.role] || "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {notif.role}
+                  </span>
 
                   {/* Time on right side */}
                   {(notif.alert_timestamp || notif.timestamp) && (
@@ -629,17 +636,19 @@ export default function Notifications() {
                   </p>
                 )}
 
-                {/* Right side Delete button (only if Read) */}
+                {/* Bottom-right Delete button (only if Read) */}
                 {isRead && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); // ✅ Prevent parent click
-                      handleDelete(notif);
-                    }}
-                    className="ml-4 text-red-600 hover:text-red-800 text-sm font-medium"
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
+                  <div className="flex justify-end mt-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // ✅ Prevent parent click
+                        handleDelete(notif);
+                      }}
+                      className="text-red-600 hover:text-red-800 text-sm font-medium"
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
                 )}
               </div>
             </article>

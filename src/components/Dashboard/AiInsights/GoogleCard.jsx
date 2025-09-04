@@ -28,7 +28,7 @@ const GoogleCard = (props) => {
     const str = progress?.toString().toLowerCase().trim();
 
     if (str === "completed") return "green-500";
-    if (str === "on track") return "blue-500";
+    if (str === "in progress") return "blue-500";
     if (str === "delayed") return "yellow-400";
 
     return "gray-500";
@@ -50,7 +50,7 @@ const GoogleCard = (props) => {
     const str = progress.toString().toLowerCase().trim();
 
     if (str === "completed") return 100;
-    if (str === "on track") return 70;
+    if (str === "in progress") return 70;
     if (str === "delayed") return 40;
 
     // fallback: try to parse numeric
@@ -66,7 +66,7 @@ const GoogleCard = (props) => {
     const str = progress?.toString().toLowerCase().trim();
 
     if (str === "completed") return "bg-green-500";
-    if (str === "on track") return "bg-blue-500";
+    if (str === "in progress") return "bg-blue-500";
     if (str === "delayed") return "bg-yellow-400";
 
     return "bg-gray-500";

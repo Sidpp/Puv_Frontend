@@ -34,7 +34,7 @@ const GoogleDetails = () => {
     };
 
     fetchIssues();
-  }, [dispatch, issue]);
+  }, [dispatch]);
 
   const handleSubmitFeedback = async () => {
     if (!feedbackText.trim()) {
@@ -46,7 +46,7 @@ const GoogleDetails = () => {
       createFeedback({
         userid: user._id,
         feedback: feedbackText,
-        for: `Jira AI Predictive Summary - id ${id}`,
+        for: `Google AI Predictive Summary - id ${id}`,
         ai_summary: issue?.ai_predictions?.ai_summary,
         source: "GoogleSheet",
       })

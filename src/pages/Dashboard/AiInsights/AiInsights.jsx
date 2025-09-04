@@ -18,75 +18,135 @@ const AiInsights = () => {
   const navigate = useNavigate();
   const [jiraData, setJiraData] = useState([]);
   const [googleData, setGoogleData] = useState([]);
+    const [loadingJira, setLoadingJira] = useState(true);
+  const [loadingGoogle, setLoadingGoogle] = useState(true);
   const [selectedView, setSelectedView] = useState("google");
   const [selectedFilter, setSelectedFilter] = useState("All");
   const { user } = useSelector((state) => state.profile);
 
+  // useEffect(() => {
+  //   const fetchGoogle = async () => {
+  //     if (user?.projectrole === "Team Leader") {
+  //       try {
+  //         const ids = user?.assignGoogleProjects || [];
+  //         let allData = [];
+
+  //         for (const id of ids) {
+  //           const res = await dispatch(getGoogleSheetById(id));
+  //           if (res) {
+  //             allData.push(res);
+  //           }
+  //           // console.log("allData", allData);
+  //         }
+
+  //         setGoogleData(allData);
+  //       } catch (error) {
+  //         //console.error("Failed to fetch Google data:", error);
+  //       }
+  //     } else {
+  //       try {
+  //         const res = await dispatch(getAllGoogleDetails());
+  //         setGoogleData(Array.isArray(res) ? res : []);
+  //       } catch (error) {
+  //         console.error("Failed to fetch Google data:", error);
+  //       }
+  //     }
+  //   };
+
+  //   fetchGoogle();
+  //   console.log("GoogleData", googleData);
+  // }, [dispatch, user]);
+
+  // useEffect(() => {
+  //   const fetchJira = async () => {
+  //     if (user?.projectrole === "Team Leader") {
+  //       try {
+  //         const ids = user?.assignJiraProjects || [];
+  //         let allData = [];
+
+  //         for (const id of ids) {
+  //           const res = await dispatch(getJiraIssueById(id));
+  //           if (res) {
+  //             allData.push(res);
+  //           }
+  //           // console.log("allData", allData);
+  //         }
+
+  //         setJiraData(allData);
+  //       } catch (error) {
+  //         console.error("Failed to fetch Jira issues:", error);
+  //       }
+  //     } else {
+  //       try {
+  //         const issues = await dispatch(getAllJiraIssues());
+  //         setJiraData(Array.isArray(issues) ? issues : []);
+  //       } catch (error) {
+  //         console.error("Failed to fetch Jira issues:", error);
+  //         setJiraData([]);
+  //       }
+  //     }
+  //   };
+
+  //   fetchJira();
+  // }, [dispatch, user]);
+
+   // --- Google Fetch ---
   useEffect(() => {
     const fetchGoogle = async () => {
-      if (user?.projectrole === "Team Leader") {
-        try {
+      setLoadingGoogle(true);
+      try {
+        if (user?.projectrole === "Team Leader") {
           const ids = user?.assignGoogleProjects || [];
           let allData = [];
-
           for (const id of ids) {
             const res = await dispatch(getGoogleSheetById(id));
-            if (res) {
-              allData.push(res);
-            }
-            // console.log("allData", allData);
+            if (res) allData.push(res);
           }
-
           setGoogleData(allData);
-        } catch (error) {
-          //console.error("Failed to fetch Google data:", error);
-        }
-      } else {
-        try {
+        } else {
           const res = await dispatch(getAllGoogleDetails());
           setGoogleData(Array.isArray(res) ? res : []);
-        } catch (error) {
-          console.error("Failed to fetch Google data:", error);
         }
+      } catch (error) {
+        console.error("Failed to fetch Google data:", error);
+        setGoogleData([]);
+      } finally {
+        setLoadingGoogle(false);
       }
     };
 
     fetchGoogle();
-    console.log("GoogleData", googleData);
   }, [dispatch, user]);
 
+  // --- Jira Fetch ---
   useEffect(() => {
     const fetchJira = async () => {
-      if (user?.projectrole === "Team Leader") {
-        try {
+      setLoadingJira(true);
+      try {
+        if (user?.projectrole === "Team Leader") {
           const ids = user?.assignJiraProjects || [];
           let allData = [];
-
           for (const id of ids) {
             const res = await dispatch(getJiraIssueById(id));
-            if (res) {
-              allData.push(res);
-            }
-            // console.log("allData", allData);
+            if (res) allData.push(res);
           }
-
           setJiraData(allData);
-        } catch (error) {
-          console.error("Failed to fetch Jira issues:", error);
-        }
-      } else {
-        try {
+        } else {
           const issues = await dispatch(getAllJiraIssues());
           setJiraData(Array.isArray(issues) ? issues : []);
-        } catch (error) {
-          console.error("Failed to fetch Jira issues:", error);
-          setJiraData([]);
         }
+      } catch (error) {
+        console.error("Failed to fetch Jira issues:", error);
+        setJiraData([]);
+      } finally {
+        setLoadingJira(false);
       }
     };
 
     fetchJira();
   }, [dispatch, user]);
+
+
 
   const handleViewChange = (e) => {
     const value = e.target.value;
@@ -248,6 +308,23 @@ const AiInsights = () => {
       ? getCounts(jiraData, "jira")
       : getCounts(googleData, "google");
 
+    // --- Loading checks ---
+  if (selectedView === "jira" && loadingJira) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <p className="text-lg font-semibold">Loading Jira data...</p>
+      </div>
+    );
+  }
+
+  if (selectedView === "google" && loadingGoogle) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <p className="text-lg font-semibold">Loading Google data...</p>
+      </div>
+    );
+  }    
+
   return (
     <div className="max-w-[1200px] mx-auto p-6">
       {/* Filter Tabs */}
@@ -291,8 +368,8 @@ const AiInsights = () => {
           <>
             <FilterTab
               id="ontrack"
-              label="On Track"
-              count={counts["On Track"]}
+              label="In Progress"
+              count={counts["In Progress"]}
               color="#3b82f6"
               selectedFilter={selectedFilter}
               onClick={setSelectedFilter}

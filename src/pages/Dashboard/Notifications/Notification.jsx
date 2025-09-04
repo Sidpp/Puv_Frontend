@@ -52,7 +52,7 @@ export default function Notifications() {
   const [feedbackText, setFeedbackText] = useState("");
   const [isRead, setIsRead] = useState(false);
   const [filteredNotifications, setFilteredNotifications] = useState([]);
-
+  const [loading, setLoading] = useState(true);
   //--------------------------------------------------------
   const [isConnected, setIsConnected] = useState(socket.connected);
   useEffect(() => {
@@ -71,34 +71,6 @@ export default function Notifications() {
       console.log("Disconnected from server ❌");
       setIsConnected(false);
     };
-    //old
-    // const handleNewNotification = (notif) => {
-    //   console.log("New notification:", notif);
-    //   setNotifications((prev) => [notif, ...prev]);
-
-    //   setLatestNotif((prev) => [notif, ...prev]);
-
-    //   // if (Notification.permission === "granted") {
-    //   //   const desktopNotif = new Notification(
-    //   //     notif.alert_type || "New Notification",
-    //   //     {
-    //   //       body: notif.message,
-    //   //       icon: logo,
-    //   //     }
-    //   //   );
-    //   //   desktopNotif.onclick = () => {
-    //   //     window.focus();
-    //   //     const path =
-    //   //       notif.source === "Jira"
-    //   //         ? `/dashboard/insights/jira-details/${notif.id || notif.alert_id}`
-    //   //         : `/dashboard/insights/google-details/${
-    //   //             notif.id || notif.alert_id
-    //   //           }`;
-    //   //     window.location.href = path;
-    //   //   };
-    //   // }
-
-    // };
 
     const handleNewNotification = (notif) => {
       console.log("New notification (raw):", notif);
@@ -106,54 +78,6 @@ export default function Notifications() {
       if (!shouldShowNotif(notif)) {
         console.log("Notification skipped by filter:", notif);
         return;
-      }
-      if (Notification.permission === "granted") {
-        const desktopNotif = new Notification(
-          notif.alert_type || "New Notification",
-          {
-            body: notif.message,
-            icon: logo,
-          }
-        );
-        // desktopNotif.onclick = () => {
-        //   window.focus();
-        //   const path =
-        //     notif.source === "Jira"
-        //       ? `/dashboard/insights/jira-details/${notif.id || notif.alert_id}`
-        //       : `/dashboard/insights/google-details/${
-        //           notif.id || notif.alert_id
-        //         }`;
-        //   window.location.href = path;
-        // };
-        desktopNotif.onclick = async () => {
-          window.focus();
-
-          try {
-            if (notif.source === "Jira") {
-              await dispatch(markJiraAlertRead(notif._id, notif.alert_id));
-              window.location.href = `/dashboard/insights/jira-details/${
-                notif.id || notif.alert_id
-              }`;
-            } else {
-              await dispatch(markGoogleAlertRead(notif._id, notif.alert_id));
-              window.location.href = `/dashboard/insights/google-details/${
-                notif.id || notif.alert_id
-              }`;
-            }
-          } catch (error) {
-            console.error("Failed to mark alert as read:", error);
-            // fallback to navigation even if marking fails
-            const path =
-              notif.source === "Jira"
-                ? `/dashboard/insights/jira-details/${
-                    notif.id || notif.alert_id
-                  }`
-                : `/dashboard/insights/google-details/${
-                    notif.id || notif.alert_id
-                  }`;
-            window.location.href = path;
-          }
-        };
       }
 
       // Add to UI
@@ -360,6 +284,7 @@ export default function Notifications() {
   //work
   useEffect(() => {
     const fetchNotifications = async () => {
+      setLoading(true);
       try {
         const res = await dispatch(getNotification());
         if (!res || res.length === 0) {
@@ -382,6 +307,8 @@ export default function Notifications() {
         setLatestNotif(filtered.length ? filtered[0] : null);
       } catch (error) {
         console.error("Failed to load notifications", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -566,6 +493,17 @@ export default function Notifications() {
       toast.error("Failed to delete notification");
     }
   };
+
+  if (loading) {
+    return (
+      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[#0c2e55] mb-6">
+          Welcome Back, {user?.name}
+        </h1>
+        <p className="text-gray-500 text-sm">Loading notifications...</p>
+      </main>
+    );
+  }
 
   if (!latestNotif) {
     return (

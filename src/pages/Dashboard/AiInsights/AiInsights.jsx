@@ -108,7 +108,7 @@ const AiInsights = () => {
           setGoogleData(Array.isArray(res) ? res : []);
         }
       } catch (error) {
-        console.error("Failed to fetch Google data:", error);
+       // console.error("Failed to fetch Google data:", error);
         setGoogleData([]);
       } finally {
         setLoadingGoogle(false);
@@ -136,7 +136,7 @@ const AiInsights = () => {
           setJiraData(Array.isArray(issues) ? issues : []);
         }
       } catch (error) {
-        console.error("Failed to fetch Jira issues:", error);
+        //console.error("Failed to fetch Jira issues:", error);
         setJiraData([]);
       } finally {
         setLoadingJira(false);

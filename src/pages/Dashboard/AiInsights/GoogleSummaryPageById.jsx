@@ -84,6 +84,8 @@ const GoogleSummaryPageById = () => {
   const [activeSummaryId, setActiveSummaryId] = useState(null);
   const dispatch = useDispatch();
 
+  
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -108,7 +110,7 @@ const GoogleSummaryPageById = () => {
         }
         setStatus("succeeded");
       } catch (err) {
-        console.error("Failed to fetch Google data:", err);
+       // console.error("Failed to fetch Google data:", err);
         setError(err.message);
         setStatus("failed");
       }
@@ -203,6 +205,7 @@ const GoogleSummaryPageById = () => {
       color: "#ef4444",
     },
   ];
+  
 
   return (
     <div className="text-[#0B2545] bg-slate-50 min-h-screen p-4 sm:p-6 max-w-7xl mx-auto">

@@ -68,12 +68,12 @@ const {
 // }
 
 export function deleteUserJiraCredential(user_id) {
-  console.log("delete Jira credential for user:", user_id);
+  //console.log("delete Jira credential for user:", user_id);
 
   return async (dispatch) => {
     try {
       const response = await apiConnector("DELETE", JIRA_DELETE_API, { user_id });
-      console.log("DELETE JIRA RESPONSE:", response);
+      //console.log("DELETE JIRA RESPONSE:", response);
 
       const { success, message } = response.data;
 
@@ -86,7 +86,7 @@ export function deleteUserJiraCredential(user_id) {
       return { success: true, message };
     } catch (error) {
       // Only log network errors or unexpected issues
-      console.error("DELETE JIRA ERROR (network/unknown):", error);
+      //console.error("DELETE JIRA ERROR (network/unknown):", error);
       return { success: false, message: error.message || "Server error" };
     }
   };
@@ -94,12 +94,12 @@ export function deleteUserJiraCredential(user_id) {
 
 
 export function deleteUserGoogleCredential(user_id) {
-  console.log("delete Google credential for user:", user_id);
+ // console.log("delete Google credential for user:", user_id);
 
   return async (dispatch) => {
     try {
       const response = await apiConnector("DELETE", GOOGLE_DELETE_API, { user_id });
-      console.log("DELETE GOOGLE RESPONSE:", response);
+      //console.log("DELETE GOOGLE RESPONSE:", response);
 
       const { success, message } = response.data;
 
@@ -112,7 +112,7 @@ export function deleteUserGoogleCredential(user_id) {
       return { success: true, message };
     } catch (error) {
       // Only log network errors or unexpected issues
-      console.error("DELETE GOOGLE ERROR (network/unknown):", error);
+     // console.error("DELETE GOOGLE ERROR (network/unknown):", error);
       return { success: false, message: error.message || "Server error" };
     }
   };
@@ -131,7 +131,7 @@ export function globalSearch(query) {
         { query }
       );
 
-      console.log("SEARCH RESPONSE:", response);
+     // console.log("SEARCH RESPONSE:", response);
 
       // Our backend returns { query, jira: [...], google: [...] }
       const { jira, google } = response.data;
@@ -142,7 +142,7 @@ export function globalSearch(query) {
 
       return { jira, google };  // return both sets of results
     } catch (error) {
-      console.error("GLOBAL_SEARCH ERROR:", error);
+     // console.error("GLOBAL_SEARCH ERROR:", error);
       return null;
     } finally {
      // dispatch(setLoading(false));
@@ -155,7 +155,7 @@ export function getNotification() {
     try {
       const response = await apiConnector("GET", NOTIFICATION_API);
 
-      console.log("NOTIFICATION RESPONSE:", response);
+      //console.log("NOTIFICATION RESPONSE:", response);
 
       const { success, alerts } = response.data;
 
@@ -166,7 +166,7 @@ export function getNotification() {
       // return merged alerts array
       return alerts || [];
     } catch (error) {
-      console.error("NOTIFICATION ERROR:", error);
+     // console.error("NOTIFICATION ERROR:", error);
       return [];
     } finally {
       // dispatch(setLoading(false));
@@ -176,12 +176,12 @@ export function getNotification() {
 
 
 export function deleteNotification(id,source,alert_id) {
-  console.log("delete",id,source,alert_id)
+  //console.log("delete",id,source,alert_id)
   return async (dispatch) => {
     try {
       const response = await apiConnector("DELETE", NOTIFICATION_API, { id, source, alert_id });
 
-      console.log("DELETE NOTIFICATION RESPONSE:", response);
+     // console.log("DELETE NOTIFICATION RESPONSE:", response);
 
       const { success, message } = response.data;
 
@@ -191,7 +191,7 @@ export function deleteNotification(id,source,alert_id) {
 
       return { success: true, message };
     } catch (error) {
-      console.error("DELETE NOTIFICATION ERROR:", error);
+      //console.error("DELETE NOTIFICATION ERROR:", error);
       return { success: false, message: error.message || "Server error" };
     } finally {
       // dispatch(setLoading(false));
@@ -223,7 +223,7 @@ export function updateImage(displayPicture, onSuccess) {
       toast.success("Image updated successfully");
       onSuccess && onSuccess(response.data.data);
     } catch (error) {
-      console.error("UPDATE_IMAGE ERROR:", error);
+     // console.error("UPDATE_IMAGE ERROR:", error);
       toast.error(error?.response?.data?.message || "Failed to update image");
     } finally {
       toast.dismiss(toastId);
@@ -252,11 +252,11 @@ export function updateBasicInfo({ name, email }, onSuccess) {
 
       dispatch(setUser(response.data.data));
 
-      toast.success("Info updated successfully");
+      //toast.success("Info updated successfully");
       onSuccess && onSuccess(response.data.data);
     } catch (error) {
-      console.error("UPDATE_BASIC_INFO ERROR:", error);
-      toast.error(error?.response?.data?.message || "Failed to update info");
+     // console.error("UPDATE_BASIC_INFO ERROR:", error);
+     // toast.error(error?.response?.data?.message || "Failed to update info");
     } finally {
       toast.dismiss(toastId);
     }
@@ -266,7 +266,7 @@ export function updateBasicInfo({ name, email }, onSuccess) {
 
 //change password 
 export function changePassword(oldPassword, newPassword, onSuccess) {
-  console.log("api",CHANGE_PASSWORD_API)
+ // console.log("api",CHANGE_PASSWORD_API)
   return async (dispatch) => {
     const toastId = toast.loading("Changing password...");
     //dispatch(setLoading(true));
@@ -290,7 +290,7 @@ export function changePassword(oldPassword, newPassword, onSuccess) {
       // Call optional success callback to do things like clear form
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error("CHANGE_PASSWORD ERROR:", error);
+     // console.error("CHANGE_PASSWORD ERROR:", error);
       toast.error(error?.response?.data?.message || "Failed to change password");
     } finally {
       //  dispatch(setLoading(false));
@@ -314,7 +314,7 @@ export function getAllUsers() {
 
       return response.data.users;
     } catch (error) {
-      console.error("GET_ALL_USERS ERROR:", error);
+     // console.error("GET_ALL_USERS ERROR:", error);
       return [];
     }
   };
@@ -339,7 +339,7 @@ export function editUser(userId, updatedData, onSuccess) {
       toast.success("User updated successfully");
       onSuccess && onSuccess(response.data.user); // Optional callback
     } catch (error) {
-      console.error("EDIT_USER ERROR:", error);
+     // console.error("EDIT_USER ERROR:", error);
       toast.error(error?.response?.data?.message || "Failed to update user");
     }
     toast.dismiss(toastId);
@@ -365,7 +365,7 @@ export function deleteUser(userId, onSuccess) {
       toast.success("User deleted successfully");
       onSuccess && onSuccess(); // Optional callback to refresh UI
     } catch (error) {
-      console.error("DELETE_USER ERROR:", error);
+     // console.error("DELETE_USER ERROR:", error);
       toast.error(error?.response?.data?.message || "Failed to delete user");
     }
     toast.dismiss(toastId);
@@ -396,7 +396,7 @@ export function signUp(role, name, email, password, confirmPassword, navigate) {
         }
       );
 
-      console.log("SIGNUP API RESPONSE............", response);
+      //console.log("SIGNUP API RESPONSE............", response);
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -404,7 +404,7 @@ export function signUp(role, name, email, password, confirmPassword, navigate) {
       toast.success("Signup Successful");
       navigate("/");
     } catch (error) {
-      console.log("SIGNUP API ERROR............", error);
+     // console.log("SIGNUP API ERROR............", error);
       toast.error(error?.response?.data?.message || error?.message || "Signup Failed");
     }
     //spatch(setLoading(false));
@@ -440,7 +440,7 @@ export function register(role, projectrole,name, email, password, confirmPasswor
         }
       );
 
-      console.log("REGISTRATION API RESPONSE............", response);
+     // console.log("REGISTRATION API RESPONSE............", response);
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -448,7 +448,7 @@ export function register(role, projectrole,name, email, password, confirmPasswor
       toast.success("Register Successful");
       navigate("/dashboard/settings/user-management");
     } catch (error) {
-      console.log("REGISRATION API ERROR............", error);
+     // console.log("REGISRATION API ERROR............", error);
       toast.error(error?.response?.data?.message || error?.message || "Signup Failed");
     }
     //spatch(setLoading(false));
@@ -474,7 +474,7 @@ export function getUserDetails() {
       dispatch(setUser(userData));
       return true;
     } catch (error) {
-      console.log("GET_USER_DETAILS ERROR:", error);
+      //console.log("GET_USER_DETAILS ERROR:", error);
       toast.error("Failed to fetch user details");
       localStorage.removeItem("token");
       return false;
@@ -494,7 +494,7 @@ export function getPasswordResetToken(email, setEmailSent) {
         email,
       });
 
-      console.log("RESETPASSTOKEN RESPONSE............", response);
+     // console.log("RESETPASSTOKEN RESPONSE............", response);
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -503,7 +503,7 @@ export function getPasswordResetToken(email, setEmailSent) {
       toast.success("Reset Email Sent");
       setEmailSent(true);
     } catch (error) {
-      console.log("RESETPASSTOKEN ERROR............", error);
+     // console.log("RESETPASSTOKEN ERROR............", error);
       toast.error("Failed To Send Reset Email");
     }
     toast.dismiss(toastId);
@@ -522,7 +522,7 @@ export function resetPassword(password, confirmPassword, token, navigate) {
         token,
       });
 
-      console.log("RESETPASSWORD RESPONSE............", response);
+     // console.log("RESETPASSWORD RESPONSE............", response);
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -531,7 +531,7 @@ export function resetPassword(password, confirmPassword, token, navigate) {
       toast.success("Password Reset Successfully");
       navigate("/");
     } catch (error) {
-      console.log("RESETPASSWORD ERROR............", error);
+      //console.log("RESETPASSWORD ERROR............", error);
       toast.error("Failed To Reset Password");
     }
     toast.dismiss(toastId);
@@ -561,7 +561,7 @@ export function sendOtp(email, password, navigate) {
       toast.success("OTP Sent Successfully");
       navigate("/verify-email");
     } catch (error) {
-      console.log("SENDOTP API ERROR............", error);
+      //console.log("SENDOTP API ERROR............", error);
       toast.error(error.response.data.message);
     }
     dispatch(setLoading(false));
@@ -590,7 +590,7 @@ export function sendEmailOtp(email) {
       toast.success("OTP Sent Successfully");
   
     } catch (error) {
-      console.log("SENDOTP API ERROR............", error);
+     // console.log("SENDOTP API ERROR............", error);
       toast.error(error.response.data.message);
     }
     //dispatch(setLoading(false));
@@ -609,7 +609,7 @@ export function verifyEmailOtp(oldEmail, newEmail, otp) {
         otp,
       });
 
-      console.log("VERIFICATION API RESPONSE............", response);
+     // console.log("VERIFICATION API RESPONSE............", response);
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -617,11 +617,11 @@ export function verifyEmailOtp(oldEmail, newEmail, otp) {
 
       toast.success("Email verified & updated successfully");
 
-      console.log("verify for setUser",response.data.updatedUser)
+      //console.log("verify for setUser",response.data.updatedUser)
       dispatch(setUser({ ...response.data.updatedUser }));
 
     } catch (error) {
-      console.log("verification ERROR............", error);
+     // console.log("verification ERROR............", error);
       toast.error(error.response?.data?.message || "Verification Failed");
     }
     dispatch(setLoading(false));
@@ -641,7 +641,7 @@ export function signin(email, password, otp, navigate) {
         otp,
       });
 
-      console.log("SIGNin API RESPONSE............", response);
+     // console.log("SIGNin API RESPONSE............", response);
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -654,7 +654,7 @@ export function signin(email, password, otp, navigate) {
       localStorage.setItem("token", JSON.stringify(response.data.token));
       navigate("/dashboard");
     } catch (error) {
-      console.log("SIGNin API ERROR............", error);
+     // console.log("SIGNin API ERROR............", error);
       toast.error("Signin Failed");
       navigate("/");
     }

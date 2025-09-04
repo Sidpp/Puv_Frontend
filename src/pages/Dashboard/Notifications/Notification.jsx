@@ -73,10 +73,10 @@ export default function Notifications() {
     };
 
     const handleNewNotification = (notif) => {
-      console.log("New notification (raw):", notif);
+     // console.log("New notification (raw):", notif);
       // filter with same rules
       if (!shouldShowNotif(notif)) {
-        console.log("Notification skipped by filter:", notif);
+       // console.log("Notification skipped by filter:", notif);
         return;
       }
 
@@ -306,7 +306,7 @@ export default function Notifications() {
         setNotifications(filtered);
         setLatestNotif(filtered.length ? filtered[0] : null);
       } catch (error) {
-        console.error("Failed to load notifications", error);
+       // console.error("Failed to load notifications", error);
       } finally {
         setLoading(false);
       }
@@ -403,7 +403,7 @@ export default function Notifications() {
 
   const handleApprove = async (notif) => {
     try {
-      console.log("notif", notif._id, notif.alert_id, notif.source);
+     // console.log("notif", notif._id, notif.alert_id, notif.source);
       // choose API based on source
       if (notif.source === "Jira") {
         await dispatch(
@@ -425,7 +425,7 @@ export default function Notifications() {
       );
       toast.success("Approved successfully");
     } catch (err) {
-      console.error(err);
+      //console.error(err);
       toast.error("Error approving");
     }
   };
@@ -489,7 +489,7 @@ export default function Notifications() {
 
       toast.success("Notification deleted");
     } catch (error) {
-      console.error("Failed to delete notification", error);
+     // console.error("Failed to delete notification", error);
       toast.error("Failed to delete notification");
     }
   };

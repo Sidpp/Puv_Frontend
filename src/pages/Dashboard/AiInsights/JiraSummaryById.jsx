@@ -73,7 +73,7 @@ const JiraSummaryById = () => {
 
         setJiraData(results.filter(Boolean)); // only valid issues
       } catch (error) {
-        console.error("Failed to fetch Jira issues by IDs:", error);
+       // console.error("Failed to fetch Jira issues by IDs:", error);
         setJiraData([]);
       }finally {
       setLoading(false);

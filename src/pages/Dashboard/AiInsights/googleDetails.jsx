@@ -24,12 +24,12 @@ const GoogleDetails = () => {
       try {
         const res = await dispatch(getGoogleSheetById(id));
         // console.log("Fetched issue1:", res);
-        console.log("res payload", res?.ai_predictions);
+        //console.log("res payload", res?.ai_predictions);
         // console.log("status_transition_log", res?.status_transition);
         setIssue(res);
-        console.log("Fetched issue:", res);
+       // console.log("Fetched issue:", res);
       } catch (error) {
-        console.error("Failed to fetch Jira issues:", error);
+      //  console.error("Failed to fetch Jira issues:", error);
       }
     };
 
@@ -53,7 +53,7 @@ const GoogleDetails = () => {
     );
 
     if (res.success) {
-      toast.success("Feedback submitted successfully!");
+     // toast.success("Feedback submitted successfully!");
       setFeedbackText("");
       setIsModalOpen(false);
     } else {
@@ -67,7 +67,7 @@ const GoogleDetails = () => {
       await dispatch(approveGoogleSumary(issue._id, "approved"));
       setIssue((prev) => ({ ...prev, approved: true }));
     } catch (error) {
-      console.error(error);
+      //console.error(error);
       toast.error("Error approving issue");
     }
   };
@@ -84,7 +84,7 @@ const GoogleDetails = () => {
 
       setIsModalOpen(false);
     } catch (error) {
-      console.error(error);
+     // console.error(error);
       toast.error("Error rejecting issue");
     }
   };

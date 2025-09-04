@@ -53,21 +53,21 @@ const Navbar = () => {
     };
     //old
     // const handleNewNotification = (notif) => {
-    //   console.log("New notification:", notif);
+    //   console.log("New popup (raw):", notif);
+
+    //   // Always push to alerts (raw state)
     //   setAlerts((prev) => {
     //     const updatedAlerts = [notif, ...prev];
-    //     setNotificationCount(updatedAlerts.length);
+    //     //  setNotificationCount((prev) => (prev ?? 0) + 1);
     //     return updatedAlerts;
     //   });
 
     //   if (Notification.permission === "granted") {
-    //     const desktopNotif = new Notification(
-    //       notif.alert_type || "New Notification",
-    //       {
+
+    //     const desktopNotif = new Notification(notif.alert_type || "New Notification",          {
     //         body: notif.message,
     //         icon: icon,
-    //       }
-    //     );
+    //       });
     //     desktopNotif.onclick = () => {
     //       window.focus();
     //       const path =
@@ -81,68 +81,58 @@ const Navbar = () => {
     //   }
     // };
 
+    // Keep a map of notifId → notif payload
+    const notifMap = new Map();
+
     const handleNewNotification = (notif) => {
-      console.log("New popup (raw):", notif);
+      //console.log("New popup (raw):", notif);
 
-      // Always push to alerts (raw state)
-      setAlerts((prev) => {
-        const updatedAlerts = [notif, ...prev];
-        //  setNotificationCount((prev) => (prev ?? 0) + 1);
-        return updatedAlerts;
-      });
+      // Always push to alerts state
+      setAlerts((prev) => [notif, ...prev]);
 
-      // Show desktop notif only if it passes filter
-      if (shouldShowNotif(notif) && Notification.permission === "granted") {
-        const desktopNotif = new Notification(
-          notif.alert_type || "New Notification",
-          {
-            body: notif.message,
-            icon: icon,
-          }
-        );
+      if (Notification.permission === "granted") {
+        const title = notif.alert_type || "New Notification";
 
-        // desktopNotif.onclick = () => {
-        //   window.focus();
-        //   const path =
-        //     notif.source === "Jira"
-        //       ? `/dashboard/insights/jira-details/${notif.id || notif.alert_id}`
-        //       : `/dashboard/insights/google-details/${
-        //           notif.id || notif.alert_id
-        //         }`;
-        //   window.location.href = path;
-        // };
+        // Unique id for this notification
+        const notifId = `${Date.now()}-${Math.random()}`;
+        notifMap.set(notifId, notif);
 
-        desktopNotif.onclick = async () => {
+        const desktopNotif = new Notification(title, {
+          body: notif.message,
+          icon: icon,
+          tag: notifId, // use tag to identify
+        });
+
+        desktopNotif.onclick = (event) => {
           window.focus();
 
-          try {
-            if (notif.source === "Jira") {
-              await dispatch(markJiraAlertRead(notif._id, notif.alert_id));
-              window.location.href = `/dashboard/insights/jira-details/${
-                notif.id || notif.alert_id
-              }`;
-            } else {
-              await dispatch(markGoogleAlertRead(notif._id, notif.alert_id));
-              window.location.href = `/dashboard/insights/google-details/${
-                notif.id || notif.alert_id
-              }`;
-            }
-          } catch (error) {
-            console.error("Failed to mark alert as read:", error);
-            // fallback to navigation even if marking fails
-            const path =
-              notif.source === "Jira"
-                ? `/dashboard/insights/jira-details/${
-                    notif.id || notif.alert_id
-                  }`
-                : `/dashboard/insights/google-details/${
-                    notif.id || notif.alert_id
-                  }`;
-            window.location.href = path;
+          const clickedId = event.currentTarget.tag;
+          const clickedNotif = notifMap.get(clickedId);
+
+          if (!clickedNotif) {
+           // console.warn("Notification payload not found:", clickedId);
+            return;
           }
 
+          const path =
+            clickedNotif.source === "Jira"
+              ? `/dashboard/insights/jira-details/${
+                  clickedNotif.id || clickedNotif.alert_id
+                }`
+              : `/dashboard/insights/google-details/${
+                  clickedNotif.id || clickedNotif.alert_id
+                }`;
+
+          // cleanup after click
+          notifMap.delete(clickedId);
+
+          window.location.href = path;
         };
-        
+
+        desktopNotif.onclose = () => {
+          // cleanup when user closes without clicking
+          notifMap.delete(notifId);
+        };
       }
     };
 
@@ -318,7 +308,7 @@ const Navbar = () => {
         // setAlerts(filtered);
         // setNotificationCount(filtered.length);
       } catch (error) {
-        console.error("Failed to load notifications", error);
+       // console.error("Failed to load notifications", error);
       }
     };
 

@@ -60,7 +60,7 @@ export default function UserManagement() {
         // console.log("response ", res);
         // console.log("Google data",googleData);
       } catch (error) {
-        console.error("Failed to fetch Google data:", error);
+       // console.error("Failed to fetch Google data:", error);
       }
     };
     fetchGoogle();
@@ -71,9 +71,9 @@ export default function UserManagement() {
       try {
         const issues = await dispatch(getAllJiraIssues());
         setJiraData(Array.isArray(issues) ? issues : []);
-        console.log("jiraData:", issues);
+       // console.log("jiraData:", issues);
       } catch (error) {
-        console.error("Failed to fetch Jira issues:", error);
+       // console.error("Failed to fetch Jira issues:", error);
         setJiraData([]);
       }
     };

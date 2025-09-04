@@ -18,7 +18,7 @@ const JiraCard = ({
     Lowest: "bg-blue-200 text-blue-800",
     Default: "bg-gray-200 text-gray-800",
   };
-  console.log("jiracard", project_name, ai_summary, ai_delay_scores, ids);
+ // console.log("jiracard", project_name, ai_summary, ai_delay_scores, ids);
   const ai_delay_score =
     ai_delay_scores.length > 0
       ? ai_delay_scores.reduce((sum, val) => sum + val, 0) /

@@ -9,7 +9,7 @@ const { GET_ISSUES_API, APPROVE_ISSUE_API ,MARK_JIRA_ALERT_READ_API,UPDATE_JIRA_
 
 //approve/reject for alert
 export function updateJiraAlertStatus(issueId, alertId, operation) {
-  console.log("backend",issueId,alertId,operation)
+  //console.log("backend",issueId,alertId,operation)
   return async (dispatch) => {
     const toastId = toast.loading(
       operation === "approved"
@@ -24,7 +24,7 @@ export function updateJiraAlertStatus(issueId, alertId, operation) {
         operation,
       });
 
-      console.log("UPDATE_JIRA_ALERT_STATUS RESPONSE:", response);
+      //console.log("UPDATE_JIRA_ALERT_STATUS RESPONSE:", response);
 
       if (response.data?.success) {
         toast.success(
@@ -36,13 +36,13 @@ export function updateJiraAlertStatus(issueId, alertId, operation) {
         toast.error(response.data?.message || "Failed to update alert status");
       }
     } catch (error) {
-      console.error("UPDATE_JIRA_ALERT_STATUS ERROR:", error);
-      toast.error(
-        error?.response?.data?.message || "Failed to update Jira alert status"
-      );
+     // console.error("UPDATE_JIRA_ALERT_STATUS ERROR:", error);
+      // toast.error(
+      //   error?.response?.data?.message || "Failed to update Jira alert status"
+      // );
     } finally {
       dispatch(setLoading(false));
-      toast.dismiss(toastId);
+     // toast.dismiss(toastId);
     }
   };
 }
@@ -59,7 +59,7 @@ export function markJiraAlertRead(issueId, alertId) {
         alertId,
       });
 
-      console.log("MARK_JIRA_ALERT_READ RESPONSE:", response);
+     // console.log("MARK_JIRA_ALERT_READ RESPONSE:", response);
 
       if (response.data?.success) {
         toast.success("Jira alert marked as read");
@@ -67,7 +67,7 @@ export function markJiraAlertRead(issueId, alertId) {
         toast.error(response.data?.message || "Failed to mark alert as read");
       }
     } catch (error) {
-      console.error("MARK_JIRA_ALERT_READ ERROR:", error);
+     // console.error("MARK_JIRA_ALERT_READ ERROR:", error);
       toast.error(
         error?.response?.data?.message || "Failed to mark Jira alert as read"
       );
@@ -96,7 +96,7 @@ export function approveJiraIssue(issueId, operation) {
         { issueId, operation }
       );
 
-      console.log("UPDATE_JIRA_ISSUE_STATUS RESPONSE:", response);
+      //console.log("UPDATE_JIRA_ISSUE_STATUS RESPONSE:", response);
 
       if (response.data?.success) {
         toast.success(
@@ -108,7 +108,7 @@ export function approveJiraIssue(issueId, operation) {
         toast.error(response.data?.message || "Failed to update issue status");
       }
     } catch (error) {
-      console.error("UPDATE_JIRA_ISSUE_STATUS ERROR:", error);
+      //console.error("UPDATE_JIRA_ISSUE_STATUS ERROR:", error);
       toast.error(
         error?.response?.data?.message || "Failed to update Jira issue status"
       );
@@ -137,7 +137,7 @@ export function getJiraIssueById(issueId) {
         }
       );
 
-      console.log("GET_JIRA_ISSUE_BY_ID RESPONSE:", response);
+      //console.log("GET_JIRA_ISSUE_BY_ID RESPONSE:", response);
 
       const issue = response.data?.issue;
 
@@ -148,7 +148,7 @@ export function getJiraIssueById(issueId) {
       //toast.success("Jira issue loaded successfully");
       return issue;
     } catch (error) {
-      console.error("GET_JIRA_ISSUE_BY_ID ERROR:", error);
+      //console.error("GET_JIRA_ISSUE_BY_ID ERROR:", error);
       //toast.error(error?.response?.data?.message || "Failed to fetch Jira issue");
     } finally {
       dispatch(setLoading(false));
@@ -190,7 +190,7 @@ export function fetchJiraCredentials() {
 
       //toast.success("Fetched Jira credentials");
     } catch (error) {
-      console.error("Fetch Jira credentials error:", error);
+     // console.error("Fetch Jira credentials error:", error);
      // toast.error(error.response.data.message);
     } finally {
      // toast.dismiss(toastId);
@@ -232,7 +232,7 @@ export function jiraConnect(
      toast.success("Jira Details updated successfully");
       onSuccess && onSuccess(response.data.data);
     } catch (error) {
-      console.error("JIRA_INFO ERROR:", error);
+     // console.error("JIRA_INFO ERROR:", error);
      // toast.error(error?.response?.data?.message || "Failed to update jira");
     } finally {
      // toast.dismiss(toastId);
@@ -271,7 +271,7 @@ export function getAllJiraIssues() {
      // toast.success("Jira issues loaded successfully");
       return issues;
     } catch (error) {
-      console.error("GET_ISSUES_API ERROR:", error);
+     // console.error("GET_ISSUES_API ERROR:", error);
      // toast.error(error?.response?.data?.message || "Failed to fetch Jira issues");
     } finally {
      // dispatch(setLoading(false));

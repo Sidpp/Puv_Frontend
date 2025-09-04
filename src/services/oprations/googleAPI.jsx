@@ -30,7 +30,7 @@ export function updateGoogleAlertStatus(projectId, alertId, operation) {
         operation,
       });
 
-      console.log("UPDATE_GOOGLE_ALERT_STATUS RESPONSE:", response);
+     // console.log("UPDATE_GOOGLE_ALERT_STATUS RESPONSE:", response);
 
       if (response.data?.success) {
         toast.success(
@@ -42,7 +42,7 @@ export function updateGoogleAlertStatus(projectId, alertId, operation) {
         toast.error(response.data?.message || "Failed to update Google alert status");
       }
     } catch (error) {
-      console.error("UPDATE_GOOGLE_ALERT_STATUS ERROR:", error);
+      //console.error("UPDATE_GOOGLE_ALERT_STATUS ERROR:", error);
       toast.error(
         error?.response?.data?.message || "Failed to update Google alert status"
       );
@@ -64,7 +64,7 @@ export function markGoogleAlertRead(projectId, alertId) {
         alertId,
       });
 
-      console.log("MARK_GOOGLE_ALERT_READ RESPONSE:", response);
+     // console.log("MARK_GOOGLE_ALERT_READ RESPONSE:", response);
 
       if (response.data?.success) {
         toast.success("Google alert marked as read");
@@ -72,7 +72,7 @@ export function markGoogleAlertRead(projectId, alertId) {
         toast.error(response.data?.message || "Failed to mark Google alert as read");
       }
     } catch (error) {
-      console.error("MARK_GOOGLE_ALERT_READ ERROR:", error);
+      //console.error("MARK_GOOGLE_ALERT_READ ERROR:", error);
       toast.error(
         error?.response?.data?.message || "Failed to mark Google alert as read"
       );
@@ -85,7 +85,7 @@ export function markGoogleAlertRead(projectId, alertId) {
 
 //mark ai summary approve/rejected
 export function approveGoogleSumary(projectId, operation) {
-  console.log("project ",projectId, operation)
+ // console.log("project ",projectId, operation)
   return async (dispatch) => {
     const toastId = toast.loading(
       operation === "approved"
@@ -100,7 +100,7 @@ export function approveGoogleSumary(projectId, operation) {
         { projectId, operation }
       );
 
-      console.log("UPDATE_GOOGLE_SUMMARY_STATUS RESPONSE:", response);
+     // console.log("UPDATE_GOOGLE_SUMMARY_STATUS RESPONSE:", response);
 
       if (response.data?.success) {
         toast.success(
@@ -112,7 +112,7 @@ export function approveGoogleSumary(projectId, operation) {
         toast.error(response.data?.message || "Failed to update Google issue status");
       }
     } catch (error) {
-      console.error("UPDATE_GOOGLE_SUMMARY_STATUS ERROR:", error);
+     // console.error("UPDATE_GOOGLE_SUMMARY_STATUS ERROR:", error);
       toast.error(
         error?.response?.data?.message || "Failed to update Google summary status"
       );
@@ -156,7 +156,7 @@ export function fetchGoogleCredentials() {
 
       //toast.success("Fetched Google credentials");
     } catch (error) {
-      console.error("Fetch Google credentials error:", error);
+     // console.error("Fetch Google credentials error:", error);
       //toast.error(error.response.data.message);
     } finally {
       //toast.dismiss(toastId);
@@ -179,7 +179,7 @@ export function getGoogleSheetById(sheetId) {
         `${GET_GOOGLE_SHEET_BY_ID_API}/${sheetId}`
       );
 
-      console.log("GET_GOOGLE_SHEET_BY_ID RESPONSE:", response);
+     // console.log("GET_GOOGLE_SHEET_BY_ID RESPONSE:", response);
 
       const sheet = response.data?.sheet;
 
@@ -190,7 +190,7 @@ export function getGoogleSheetById(sheetId) {
      // toast.success("Google Sheet fetched successfully");
       return sheet;
     } catch (error) {
-      console.error("GET_GOOGLE_SHEET_BY_ID ERROR:", error);
+      //console.error("GET_GOOGLE_SHEET_BY_ID ERROR:", error);
       // toast.error(
       //   error?.response?.data?.error || "Failed to fetch Google Sheet"
       // );
@@ -218,7 +218,7 @@ export function getAllGoogleDetails() {
         }
       );
 
-      console.log("GET_GOOGLE_DETAILS RESPONSE:", response);
+      //console.log("GET_GOOGLE_DETAILS RESPONSE:", response);
 
       const projects = response.data?.data;
 
@@ -232,7 +232,7 @@ export function getAllGoogleDetails() {
      // toast.success("Google Sheet details loaded successfully");
       return projects;
     } catch (error) {
-      console.error("GET_GOOGLE_DETAILS ERROR:", error);
+      //console.error("GET_GOOGLE_DETAILS ERROR:", error);
       // toast.error(
       //   error?.response?.data?.message || "Failed to fetch Google Sheet details"
       // );

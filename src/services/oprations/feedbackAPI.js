@@ -13,13 +13,13 @@ export function createFeedback(feedbackData) {
     try {
       const response = await apiConnector("POST", FEEDBACK_API, feedbackData);
 
-      console.log("FEEDBACK RESPONSE:", response);
+    //  console.log("FEEDBACK RESPONSE:", response);
 
       const { success, feedback } = response.data;
 
       return { success, feedback }; // return success explicitly
     } catch (error) {
-      console.error("FEEDBACK ERROR:", error);
+    //  console.error("FEEDBACK ERROR:", error);
       return { success: false, error }; // propagate error safely
     }
   };

@@ -24,7 +24,7 @@ const JiraDetails = () => {
         const res = await dispatch(getJiraIssueById(id));
         setIssue(res);
       } catch (error) {
-        console.error("Failed to fetch Jira issue:", error);
+       // console.error("Failed to fetch Jira issue:", error);
       }
     };
 
@@ -52,7 +52,7 @@ const JiraDetails = () => {
     );
 
     if (res.success) {
-      toast.success("Feedback submitted successfully!");
+     // toast.success("Feedback submitted successfully!");
       setFeedbackText("");
       setIsModalOpen(false);
     } else {
@@ -66,7 +66,7 @@ const JiraDetails = () => {
       await dispatch(approveJiraIssue(id, "approved"));
       setIssue((prev) => ({ ...prev, approved: true }));
     } catch (error) {
-      console.error(error);
+     // console.error(error);
       toast.error("Error approving issue");
     }
   };
@@ -83,7 +83,7 @@ const JiraDetails = () => {
 
       setIsModalOpen(false);
     } catch (error) {
-      console.error(error);
+     // console.error(error);
       toast.error("Error rejecting issue");
     }
   };
@@ -323,7 +323,6 @@ const JiraDetails = () => {
               ["Original Estimate", original_estimate],
               ["Time Logged", time_logged],
               ["Remaining Estimate", remaining_estimate],
-              ["Worklog Entries", worklog_enterie],
             ].map(([label, value], idx) => (
               <p key={idx} className="text-gray-600 font-semibold">
                 {label}

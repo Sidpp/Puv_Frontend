@@ -360,13 +360,13 @@ function getBudgetBarsData(googleData = []) {
     const planned = parseNumberSafe(data["Planned Cost"]);
     const actual = parseNumberSafe(data["Actual Contract Spend"]);
 
-    console.log("log", planned, actual);
+    //console.log("log", planned, actual);
 
     totalApprovedBudget += planned;
     totalActualSpend += actual;
   });
 
-  console.log("data", totalApprovedBudget, totalActualSpend);
+  //console.log("data", totalApprovedBudget, totalActualSpend);
 
   const barWidthPercent =
     totalApprovedBudget > 0
@@ -825,25 +825,25 @@ const Home = () => {
             if (res) {
               allData.push(res); 
             }
-            console.log("allData", allData);
+            //console.log("allData", allData);
           }
 
           setGoogleData(allData);
         } catch (error) {
-          console.error("Failed to fetch Google data:", error);
+          //console.error("Failed to fetch Google data:", error);
         }
       } else {
         try {
           const res = await dispatch(getAllGoogleDetails());
           setGoogleData(Array.isArray(res) ? res : []);
         } catch (error) {
-          console.error("Failed to fetch Google data:", error);
+          //console.error("Failed to fetch Google data:", error);
         }
       }
     };
 
     fetchGoogle();
-    console.log("GoogleData", googleData);
+    //console.log("GoogleData", googleData);
   }, [dispatch, user]);
 
 
@@ -864,14 +864,14 @@ const Home = () => {
 
           setJiraData(allData);
         } catch (error) {
-          console.error("Failed to fetch Jira issues:", error);
+         // console.error("Failed to fetch Jira issues:", error);
         }
       } else {
         try {
           const issues = await dispatch(getAllJiraIssues());
           setJiraData(Array.isArray(issues) ? issues : []);
         } catch (error) {
-          console.error("Failed to fetch Jira issues:", error);
+          //console.error("Failed to fetch Jira issues:", error);
           setJiraData([]);
         }
       }
@@ -882,7 +882,7 @@ const Home = () => {
 
   useEffect(() => {
     //console.log("Google data", googleData);
-    console.log("Jira data", jiraData);
+   // console.log("Jira data", jiraData);
     setFinancialData(aggregateFinancials(googleData));
   }, [googleData, jiraData]);
 

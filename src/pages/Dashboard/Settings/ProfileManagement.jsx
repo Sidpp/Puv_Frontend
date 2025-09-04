@@ -88,7 +88,7 @@ const ProfileSettings = () => {
         sheetRange: googleCredentials.sheetRange || "",
       });
     }
-    console.log("google credentila", googleCredentials, googleSheet);
+   // console.log("google credentila", googleCredentials, googleSheet);
   }, [googleCredentials]);
 
   // Cleanup avatar preview on unmount
@@ -143,7 +143,7 @@ const ProfileSettings = () => {
     if (profile.name.trim()) {
       dispatch(
         updateBasicInfo({ name: profile.name.trim() }, (updatedUser) => {
-          console.log("Basic info updated:", updatedUser);
+         // console.log("Basic info updated:", updatedUser);
         })
       );
     }
@@ -151,7 +151,7 @@ const ProfileSettings = () => {
     if (profile.email.trim()) {
       dispatch(
         updateBasicInfo({ email: profile.email.trim() }, (updatedUser) => {
-          console.log("Basic info updated:", updatedUser);
+         // console.log("Basic info updated:", updatedUser);
         })
       );
     }
@@ -159,7 +159,7 @@ const ProfileSettings = () => {
     if (profile.avatar) {
       dispatch(
         updateImage(profile.avatar, (updatedUser) => {
-          console.log("Image updated:", updatedUser);
+         // console.log("Image updated:", updatedUser);
         })
       );
     }
@@ -187,12 +187,12 @@ const ProfileSettings = () => {
       };
 
       const encodedState = encodeURIComponent(JSON.stringify(stateObj));
-      console.log("encoded", encodedState);
+     // console.log("encoded", encodedState);
 
       const baseUrl = process.env.REACT_APP_GOOGLE_BACKEND_URL;
       window.location.href = `${baseUrl}/auth/google?state=${encodedState}`;
     } else {
-      console.log("Please fill all Google Sheet fields before connecting.");
+     // console.log("Please fill all Google Sheet fields before connecting.");
     }
   };
 
@@ -203,15 +203,15 @@ const ProfileSettings = () => {
       const result = await dispatch(deleteUserJiraCredential(user._id));
 
       if (result.success) {
-        console.log("Jira disconnected successfully");
+       // console.log("Jira disconnected successfully");
         toast.success(result.message || "Jira disconnected successfully"); // show backend message
         dispatch(clearJiraCredentials());
       } else {
-        console.error("Failed to disconnect Jira:", result.message);
+        //console.error("Failed to disconnect Jira:", result.message);
         toast.error(result.message || "Failed to disconnect Jira");
       }
     } catch (error) {
-      console.error("Unexpected error disconnecting Jira:", error);
+     // console.error("Unexpected error disconnecting Jira:", error);
       toast.error("An unexpected error occurred while disconnecting Jira");
     }
   };
@@ -221,11 +221,11 @@ const ProfileSettings = () => {
 
     const result = await dispatch(deleteUserGoogleCredential(user._id));
     if (result.success) {
-      console.log("Google disconnected successfully");
+     // console.log("Google disconnected successfully");
       toast.success(result.message);
            dispatch(clearGoogleCredentials()); 
     } else {
-      console.error("Failed to disconnect Google:", result.message);
+      //console.error("Failed to disconnect Google:", result.message);
       toast.error(result.message || "Failed to disconnect Google");
     }
   };
@@ -240,12 +240,12 @@ const ProfileSettings = () => {
             jira_api_key: jira.jiraApiKey,
           },
           (updatedJIRA) => {
-            console.log("Jira updated:", updatedJIRA);
+          //  console.log("Jira updated:", updatedJIRA);
           }
         )
       );
     } else {
-      console.log("Please fill all Jira fields before submitting.");
+     // console.log("Please fill all Jira fields before submitting.");
     }
   };
 

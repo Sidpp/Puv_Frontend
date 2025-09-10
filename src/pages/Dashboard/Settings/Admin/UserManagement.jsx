@@ -7,15 +7,8 @@ import {
   editUser,
   deleteUser,
 } from "../../../../services/oprations/authAPI";
-import {
-  UserPlus,
-  Search,
-  Pencil,
-  Trash2,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import { getAllGoogleDetails } from "../../../../services/oprations/googleAPI";
+import { UserPlus, Search, Pencil, Trash2 } from "lucide-react";
+
 import { getAllJiraIssues } from "../../../../services/oprations/jiraAPI";
 
 const accessStyles = {
@@ -24,13 +17,13 @@ const accessStyles = {
   "Team Leader": "bg-purple-100 text-purple-600",
   Executive: "bg-yellow-100 text-yellow-700",
   "Project Manager": "bg-orange-100 text-orange-600",
+  "Program Manager": "bg-red-100 text-red-600",
 };
 
 export default function UserManagement() {
   const { user } = useSelector((state) => state.profile);
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
-  const [googleData, setGoogleData] = useState([]);
   const [jiraData, setJiraData] = useState([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -41,6 +34,7 @@ export default function UserManagement() {
     name: "",
     email: "",
     role: "",
+    source: "",
     projectrole: "",
   });
 
@@ -50,36 +44,46 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     const fetchedUsers = await dispatch(getAllUsers());
     setUsers(fetchedUsers);
+    //console.log("user",fetchedUsers)
   };
 
   useEffect(() => {
-    const fetchGoogle = async () => {
-      try {
-        const res = await dispatch(getAllGoogleDetails());
-        setGoogleData(Array.isArray(res) ? res : []);
-        // console.log("response ", res);
-        // console.log("Google data",googleData);
-      } catch (error) {
-       // console.error("Failed to fetch Google data:", error);
-      }
-    };
-    fetchGoogle();
-  }, [dispatch]);
-
-  useEffect(() => {
-    const fetchIssues = async () => {
+    const fetchJira = async () => {
       try {
         const issues = await dispatch(getAllJiraIssues());
         setJiraData(Array.isArray(issues) ? issues : []);
-       // console.log("jiraData:", issues);
       } catch (error) {
-       // console.error("Failed to fetch Jira issues:", error);
+        //console.error("Failed to fetch Jira issues:", error);
         setJiraData([]);
       }
     };
 
-    fetchIssues();
+    fetchJira();
   }, [dispatch]);
+
+  const applyJiraGrouped = (data) => {
+    const grouped = {};
+
+    data.forEach((item) => {
+      const projectName = item.project_name || "Unknown";
+
+      if (!grouped[projectName]) {
+        grouped[projectName] = {
+          project_name: projectName,
+          ids: [],
+        };
+      }
+
+      if (item._id) {
+        grouped[projectName].ids.push(item._id);
+      }
+    });
+    // console.log("grouped",grouped)
+    // Convert grouped object → array
+    return Object.values(grouped);
+  };
+
+  const filteredJira = applyJiraGrouped(jiraData);
 
   useEffect(() => {
     fetchUsers();
@@ -91,9 +95,9 @@ export default function UserManagement() {
       name: user.name,
       email: user.email,
       role: user.role,
+      source: user.source,
       projectrole: user.projectrole || "",
       assignJiraProjects: user.assignJiraProjects || [],
-      assignGoogleProjects: user.assignGoogleProjects || [],
     });
     setIsEditModalOpen(true);
   };
@@ -101,6 +105,23 @@ export default function UserManagement() {
   const handleDeleteUser = (userId) => {
     setSelectedUserId(userId);
     setIsDeleteModalOpen(true);
+  };
+
+  // Handel edit save
+  const handleSaveUser = () => {
+    const payload = {
+      name: editUserData.name,
+      email: editUserData.email,
+      role: editUserData.role,
+      source: editUserData.source,
+      projectrole: editUserData.projectrole,
+      assignJiraProjects: editUserData.assignJiraProjects || [],
+      googleProjectAuthor: editUserData.source === "Google" ? user?._id : null,
+      jiraProjectAuthor: editUserData.projectrole === "Portfolio Manager" ? user?._id : null,
+    };
+
+    dispatch(editUser(editUserData._id, payload, fetchUsers));
+    setIsEditModalOpen(false);
   };
 
   return (
@@ -277,14 +298,16 @@ export default function UserManagement() {
                     >
                       {user.role}
                     </span>
-                    <span
-                      className={`px-2 py-1 ml-2 rounded-full text-xs font-medium ${
-                        accessStyles[user.projectrole] ||
-                        "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {user.projectrole}
-                    </span>
+                    {user.projectrole && (
+                      <span
+                        className={`px-2 py-1 ml-2 rounded-full text-xs font-medium ${
+                          accessStyles[user.projectrole] ||
+                          "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {user.projectrole}
+                      </span>
+                    )}
                   </td>
                   <td className="p-3 text-sm">
                     {new Date(user.lastActive).toLocaleDateString()}
@@ -308,28 +331,6 @@ export default function UserManagement() {
         </table>
       </div>
 
-      {/* Pagination */}
-      {/* <div className="flex justify-center sm:justify-end mt-4 space-x-2">
-        <button className="w-8 h-8 rounded-full border bg-white text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-center">
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        {[1, 2, 3, 4, 5].map((page) => (
-          <button
-            key={page}
-            className={`w-8 h-8 rounded-full border text-sm flex items-center justify-center ${
-              page === 1
-                ? "bg-slate-900 text-white"
-                : "text-gray-700 bg-white hover:bg-gray-100"
-            }`}
-          >
-            {page}
-          </button>
-        ))}
-        <button className="w-8 h-8 rounded-full border bg-white text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-center">
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div> */}
-
       {/* === ✅ Edit User Modal === */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -339,6 +340,7 @@ export default function UserManagement() {
             </h3>
 
             <div className="space-y-3">
+              {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Name
@@ -353,6 +355,7 @@ export default function UserManagement() {
                 />
               </div>
 
+              {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email
@@ -367,135 +370,130 @@ export default function UserManagement() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
-                </label>
-                <select
-                  value={editUserData.role}
-                  onChange={(e) =>
-                    setEditUserData({ ...editUserData, role: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                >
-                  <option value="">Select Role</option>
-                  <option value="Admin">Admin</option>
-                  <option value="User">User</option>
-                </select>
-              </div>
-
-              {user?.projectrole !== "Team Leader" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Project Role
-                  </label>
-                  <select
-                    value={editUserData.projectrole}
-                    onChange={(e) =>
-                      setEditUserData({
-                        ...editUserData,
-                        projectrole: e.target.value,
-                      })
-                    }
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  >
-                    <option value="">Select Project Role</option>
-                    <option value="Project Manager">
-                      Project Manager(Jira)
-                    </option>
-                    <option value="Team Leader">
-                      Team Leader(Jira & Google)
-                    </option>
-                    <option value="Executive">Executive(Google)</option>
-                    <option value="Portfolio Manager">
-                      Portfolio Manager(Google)
-                    </option>
-                  </select>
-                </div>
-              )}
-
-              {["Portfolio Manager", "Project Manager", "Executive"].includes(
-                user.projectrole
-              ) && (
+              {editUserData.role === "User" && (
                 <>
-                  {/* Assign Jira Projects */}
-                  {user?.projectrole !== "Team Leader" && (
+                  {/* Source Dropdown */}
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700">
+                      Platform
+                    </label>
+                    <select
+                      name="source"
+                      value={editUserData.source}
+                      onChange={(e) => {
+                        const { value } = e.target;
+                        setEditUserData((prev) => ({
+                          ...prev,
+                          source: value, // ✅ update source
+                          projectrole: "", // ✅ reset projectrole
+                          assignJiraProjects: [], // ✅ reset jira projects
+                          assignGoogleProjects: [], // ✅ reset google projects
+                        }));
+                      }}
+                      className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300 bg-white"
+                    >
+                      <option value="" disabled>
+                        Select Source
+                      </option>
+                      <option value="Jira">Jira</option>
+                      <option value="Google">Google</option>
+                    </select>
+                  </div>
+
+                  {/* ✅ Project Role Dropdown depends on Source */}
+                  {editUserData.source && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Assign Jira Projects
+                      <label className="text-sm font-semibold text-gray-700">
+                        Role
                       </label>
-                      <Select
-                        isMulti
-                        value={jiraData
-                          .filter((proj) =>
-                            (editUserData.assignJiraProjects || []).includes(
-                              proj._id
-                            )
-                          )
-                          .map((proj) => ({
-                            value: proj._id,
-                            label: proj.key || proj.issueKey,
-                          }))}
-                        options={jiraData.map((proj) => ({
-                          value: proj._id,
-                          label: proj.key || proj.issueKey,
-                        }))}
-                        onChange={(selected) =>
-                          setEditUserData({
-                            ...editUserData,
-                            assignJiraProjects: selected.map((s) => s.value),
-                          })
+                      <select
+                        name="projectrole"
+                        value={editUserData.projectrole}
+                        onChange={(e) =>
+                          setEditUserData((prev) => ({
+                            ...prev,
+                            projectrole: e.target.value,
+                          }))
                         }
-                      />
+                        className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300 bg-white"
+                      >
+                        <option value="" disabled>
+                          Select Project Role
+                        </option>
+                        {editUserData.source === "Jira" ? (
+                          <>
+                            <option value="Project Manager">
+                              Project Manager (Jira)
+                            </option>
+                            <option value="Team Leader">
+                              Team Leader (Jira)
+                            </option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="Portfolio Manager">
+                              Portfolio Manager (Google)
+                            </option>
+                            <option value="Program Manager">
+                              Program Manager (Google)
+                            </option>
+                            <option value="Project Manager">
+                              Project Manager (Google)
+                            </option>
+                            <option value="Executive">
+                              Executive (Google)
+                            </option>
+                          </>
+                        )}
+                      </select>
                     </div>
                   )}
 
-                  {/* Assign Google Projects */}
-                  {user?.projectrole !== "Team Leader" && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Assign Google Projects
-                      </label>
-                      <Select
-                        isMulti
-                        value={googleData
-                          .filter((proj) =>
-                            (editUserData.assignGoogleProjects || []).includes(
-                              proj._id
+                  {/* Assign Jira Projects */}
+                  {editUserData.source === "Jira" &&
+                    editUserData.projectrole && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Assign Jira Projects
+                        </label>
+                        <Select
+                          isMulti
+                          value={filteredJira
+                            .filter((proj) =>
+                              proj.ids.some((id) =>
+                                (
+                                  editUserData.assignJiraProjects || []
+                                ).includes(id)
+                              )
                             )
-                          )
-                          .map((proj) => ({
-                            value: proj._id,
-                            label:
-                              proj.project_identifier ||
-                              proj.project_name ||
-                              "Unnamed Google Project",
+                            .map((proj) => ({
+                              value: proj.project_name,
+                              label: proj.project_name,
+                            }))}
+                          options={filteredJira.map((proj) => ({
+                            value: proj.project_name,
+                            label: proj.project_name,
                           }))}
-                        options={googleData.map((proj) => ({
-                          value: proj._id,
-                          label:
-                            proj.project_identifier ||
-                            proj.project_name ||
-                            "Unnamed Google Project",
-                        }))}
-                        onChange={(selected) =>
-                          setEditUserData({
-                            ...editUserData,
-                            assignGoogleProjects: selected.map((s) => s.value),
-                          })
-                        }
-                        menuPortalTarget={document.body}
-                        menuPosition="fixed"
-                        styles={{
-                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                        }}
-                      />
-                    </div>
-                  )}
+                          onChange={(selected) => {
+                            const allIds = selected.flatMap((s) => {
+                              const proj = filteredJira.find(
+                                (p) => p.project_name === s.value
+                              );
+                              return proj ? proj.ids : [];
+                            });
+                            setEditUserData((prev) => ({
+                              ...prev,
+                              assignJiraProjects: allIds,
+                            }));
+                          }}
+                        />
+                      </div>
+                    )}
                 </>
               )}
             </div>
 
+            {/* Buttons */}
             <div className="flex justify-end gap-2 mt-6">
               <button
                 onClick={() => setIsEditModalOpen(false)}
@@ -504,25 +502,7 @@ export default function UserManagement() {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  dispatch(
-                    editUser(
-                      editUserData._id,
-                      {
-                        name: editUserData.name,
-                        email: editUserData.email,
-                        role: editUserData.role,
-                        projectrole: editUserData.projectrole,
-                        assignJiraProjects:
-                          editUserData.assignJiraProjects || [],
-                        assignGoogleProjects:
-                          editUserData.assignGoogleProjects || [],
-                      },
-                      fetchUsers
-                    )
-                  );
-                  setIsEditModalOpen(false);
-                }}
+                onClick={handleSaveUser}
                 className="px-4 py-2 bg-[#00254D] text-white rounded-md text-sm"
               >
                 Save

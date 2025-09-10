@@ -35,6 +35,89 @@ const Navbar = () => {
   const [filteredNotifications, setFilteredNotifications] = useState([]);
   //-------------------------------------------------------------
   const [isConnected, setIsConnected] = useState(socket.connected);
+
+  const hasSourceAccess = (notif) => {
+    const notifProjectId = notif._id || notif.id;
+    console.log("notif", notif);
+
+    console.log("id", notifProjectId);
+
+    if (user?.role === "User") {
+      console.log("role user", user?.role);
+      if (notif?.source === "Jira") {
+        console.log("notif source", notif?.source);
+        // normalize assigned projects (both Jira & Google) into one array
+        console.log("asssifn projets1", user?.assignJiraProjects);
+        const assignedProjects = [...(user?.assignJiraProjects || [])];
+        console.log("asssifn projets", assignedProjects);
+
+        // ✅ check if notifProjectId exists in user's assigned projects
+        const isAssigned =
+          assignedProjects.length > 0 &&
+          assignedProjects.some(
+            (proj) => proj?.toString() === notifProjectId?.toString()
+          );
+
+        console.log("isassign", isAssigned);
+
+        if (!isAssigned) return false; // block if user isn’t assigned to this project
+        console.log("last", isAssigned);
+      }
+
+      switch (user?.projectrole) {
+        case "Portfolio Manager":
+          // show all Google + Jira alerts for same role
+          if (notif.source === "Google") {
+            // only Google alerts for same role
+            return notif.role === "Portfolio Manager";
+          }
+          if (notif.source === "Jira") {
+            // show all Jira alerts
+            return true;
+          }
+          return false;
+
+        case "Program Manager":
+          // only Google alerts for Program Manager
+          return notif.role === "Program Manager" && notif.source === "Google";
+
+        case "Project Manager":
+          if (user?.source === "Google") {
+            return (
+              notif.role === "Project Manager" && notif.source === "Google"
+            );
+          } else {
+            return notif.role === "Project Manager" && notif.source === "Jira";
+          }
+
+        case "Executive":
+          // only Google notifications for Executives
+          return notif.role === "Executive" && notif.source === "Google";
+
+        default:
+          // fallback → Jira issues for Team Leader
+          return notif.role === "Team Leader" && notif.source === "Jira";
+      }
+    } else {
+      // Non-User roles (Admin, etc.)
+      if (user?.google_credential_id && user?.jira_credential_id) {
+        // user has both → allow both sources
+        return notif.source === "Google" || notif.source === "Jira";
+      }
+
+      if (user?.google_credential_id) {
+        return notif.source === "Google";
+      }
+
+      if (user?.jira_credential_id) {
+        return notif.source === "Jira";
+      }
+
+      // fallback (no credentials, maybe admin or system)
+      return true;
+    }
+  };
+
   useEffect(() => {
     // Request notification permission
     if (Notification.permission !== "granted") {
@@ -84,8 +167,64 @@ const Navbar = () => {
     // Keep a map of notifId → notif payload
     const notifMap = new Map();
 
+    // const handleNewNotification = (notif) => {
+    //   //console.log("New popup (raw):", notif);
+
+    //  //---------new added start------------
+
+    //   // Always push to alerts state
+    //    //setAlerts((prev) => [notif, ...prev]);
+    //   if ( Notification.permission === "granted") {
+    //     const title = notif.alert_type || "New Notification";
+
+    //     // Unique id for this notification
+    //     const notifId = `${Date.now()}-${Math.random()}`;
+    //     notifMap.set(notifId, notif);
+
+    //     const desktopNotif = new Notification(title, {
+    //       body: notif.message,
+    //       icon: icon,
+    //       tag: notifId, // use tag to identify
+    //     });
+
+    //     desktopNotif.onclick = (event) => {
+    //       window.focus();
+
+    //       const clickedId = event.currentTarget.tag;
+    //       const clickedNotif = notifMap.get(clickedId);
+
+    //       if (!clickedNotif) {
+    //         // console.warn("Notification payload not found:", clickedId);
+    //         return;
+    //       }
+
+    //       const path =
+    //         clickedNotif.source === "Jira"
+    //           ? `/dashboard/insights/jira-details/${
+    //               clickedNotif.id || clickedNotif.alert_id
+    //             }`
+    //           : `/dashboard/insights/google-details/${
+    //               clickedNotif.id || clickedNotif.alert_id
+    //             }`;
+
+    //       // cleanup after click
+    //       notifMap.delete(clickedId);
+
+    //       window.location.href = path;
+    //     };
+
+    //     desktopNotif.onclose = () => {
+    //       // cleanup when user closes without clicking
+    //       notifMap.delete(notifId);
+    //     };
+    //   }
+    // };
+
     const handleNewNotification = (notif) => {
-      //console.log("New popup (raw):", notif);
+      console.log("New popup (raw):", notif);
+
+      // check if this notif should be visible
+      if (!hasSourceAccess(notif)) return;
 
       // Always push to alerts state
       setAlerts((prev) => [notif, ...prev]);
@@ -110,7 +249,7 @@ const Navbar = () => {
           const clickedNotif = notifMap.get(clickedId);
 
           if (!clickedNotif) {
-           // console.warn("Notification payload not found:", clickedId);
+            // console.warn("Notification payload not found:", clickedId);
             return;
           }
 
@@ -135,6 +274,84 @@ const Navbar = () => {
         };
       }
     };
+
+    // const handleNewNotification = (notif) => {
+    //   console.log("New popup (raw):", notif);
+
+    //   // Normalize: always work with an array
+    //   const notifs = Array.isArray(notif) ? notif : [notif];
+
+    //   // Filter out invalid or unauthorized alerts
+    //   const validNotifs = notifs.filter(
+    //     (n) => n?.alert_type && n?.message && hasSourceAccess(n)
+    //   );
+    //   if (!validNotifs.length) return;
+
+    //   // Push all to state
+    //   setAlerts((prev) => [...validNotifs, ...prev]);
+
+    //   if (Notification.permission === "granted") {
+    //     if (validNotifs.length === 1) {
+    //       // === Single alert ===
+    //       const n = validNotifs[0];
+    //       const title = n.alert_type || "New Notification";
+    //       const notifId = `${Date.now()}-${Math.random()}`;
+    //       notifMap.set(notifId, n);
+
+    //       const desktopNotif = new Notification(title, {
+    //         body: n.message,
+    //         icon: icon,
+    //         tag: notifId,
+    //       });
+
+    //       desktopNotif.onclick = (event) => {
+    //         window.focus();
+    //         const clickedNotif = notifMap.get(event.currentTarget.tag);
+    //         if (!clickedNotif) return;
+
+    //         const path =
+    //           clickedNotif.source === "Jira"
+    //             ? `/dashboard/insights/jira-details/${
+    //                 clickedNotif.id || clickedNotif.alert_id
+    //               }`
+    //             : `/dashboard/insights/google-details/${
+    //                 clickedNotif.id || clickedNotif.alert_id
+    //               }`;
+
+    //         notifMap.delete(event.currentTarget.tag);
+    //         window.location.href = path;
+    //       };
+
+    //       desktopNotif.onclose = () => {
+    //         notifMap.delete(notifId);
+    //       };
+    //     } else {
+    //       // === Multiple alerts in same batch ===
+    //       const title = `${validNotifs.length} New Alerts`;
+    //       const body = validNotifs.map((n) => `• ${n.message}`).join("\n");
+
+    //       const notifId = `${Date.now()}-${Math.random()}`;
+    //       notifMap.set(notifId, validNotifs);
+
+    //       const desktopNotif = new Notification(title, {
+    //         body,
+    //         icon: icon,
+    //         tag: notifId,
+    //       });
+
+    //       desktopNotif.onclick = () => {
+    //         window.focus();
+    //         notifMap.delete(notifId);
+    //         // Instead of a single alert details page, send to general alerts view
+    //         window.location.href = "/dashboard/insights";
+    //       };
+
+    //       desktopNotif.onclose = () => {
+    //         notifMap.delete(notifId);
+    //       };
+    //     }
+    //   }
+    // };
 
     const handleDeleteNotification = (id) => {
       setAlerts((prev) =>
@@ -165,7 +382,7 @@ const Navbar = () => {
       socket.off("delete-notification", handleDeleteNotification);
       socket.off("update-notification", handleUpdateNotification);
     };
-  }, []);
+  }, [user]);
   //-----------------------------------------------------------------
   //old
   // useEffect(() => {
@@ -220,31 +437,6 @@ const Navbar = () => {
   // }, [dispatch, user,navigate]);
 
   // ---- Helper functions (place inside Notifications component, above useEffect) ----
-  const hasSourceAccess = (notif) => {
-    if (!notif || !notif.source) return false;
-
-    if (notif.source === "Jira") {
-      const hasCred = !!user?.jira_credential_id;
-      const assigned =
-        Array.isArray(user?.assignJiraProjects) &&
-        user.assignJiraProjects.length > 0 &&
-        (user.assignJiraProjects.includes(notif.project) ||
-          user.assignJiraProjects.includes(notif._id));
-      return hasCred || assigned;
-    }
-
-    if (notif.source === "Google") {
-      const hasCred = !!user?.google_credential_id;
-      const assigned =
-        Array.isArray(user?.assignGoogleProjects) &&
-        user.assignGoogleProjects.length > 0 &&
-        (user.assignGoogleProjects.includes(notif.project) ||
-          user.assignGoogleProjects.includes(notif._id));
-      return hasCred || assigned;
-    }
-
-    return false;
-  };
 
   const roleMatches = (notif) => {
     // only show if both user.projectrole and notif.role exist and match
@@ -263,6 +455,7 @@ const Navbar = () => {
     if (!roleMatches(notif)) return false;
     return true;
   };
+
   // ---- end helpers ----
 
   //work
@@ -284,14 +477,15 @@ const Navbar = () => {
         );
 
         // apply filter that enforces: source allowed AND role match
-       // const filtered = res.filter((notif) => shouldShowNotif(notif));
+        const filtered = res.filter((notif) => hasSourceAccess(notif));
+        //const filtered =res
 
         setAlerts((prev) => {
           const existingIds = new Set(prev.map((n) => n._id || n.alert_id));
 
           // merge new API notifs with socket notifs (without duplicates)
           const merged = [
-            ...res,
+            ...filtered,
             ...prev.filter((n) => !existingIds.has(n._id || n.alert_id)),
           ];
 
@@ -308,7 +502,7 @@ const Navbar = () => {
         // setAlerts(filtered);
         // setNotificationCount(filtered.length);
       } catch (error) {
-       // console.error("Failed to load notifications", error);
+        // console.error("Failed to load notifications", error);
       }
     };
 

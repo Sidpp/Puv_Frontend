@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { FaExclamationTriangle } from "react-icons/fa";
 import { useParams } from "react-router-dom";
-import { getJiraIssueById } from "../../../services/oprations/jiraAPI";
+import { getJiraIssueById, getJiraIssuesByIds } from "../../../services/oprations/jiraAPI";
 
 import {
   PieChart,
@@ -38,50 +38,35 @@ const JiraSummaryById = () => {
 
 
   useEffect(() => {
-    const fetchIssuesByIds = async () => {
-      try {
-        const ids = id.split(","); // split into array
-        const results = await Promise.all(
-          ids.map(async (issueId) => {
-            const res = await dispatch(getJiraIssueById(issueId.trim()));
-            if (res) {
-              return {
-                _id: res._id,
-                id: res.key,
-                status: res.status || "Unknown",
-                priority: res.priority || "Medium",
-                assignee: res.assignee || "Unassigned",
-                dueDate: res.due_date ? formatDate(res.due_date) : "N/A",
-                lastInteraction: res.last_ai_interaction_day
-                  ? formatDate(res.last_ai_interaction_day)
-                  : "N/A",
-                aisummary: res.ai_summary || null,
-                originalEstimate: res.original_estimate || 0,
-                timeSpent: res.time_logged
-                  ? parseInt(res.time_logged.replace("h", ""), 10)
-                  : 0,
-                remainingEstimate: res.remaining_estimate || 0,
-                summary: res.summary,
-                labels: res.labels || [],
-                projectName: res.project_name,
-                marker: res.marker,
-              };
-            }
-            return null;
-          })
-        );
+  const fetchIssuesByIds = async () => {
+    if (!id) return;
 
-        setJiraData(results.filter(Boolean)); // only valid issues
-      } catch (error) {
-       // console.error("Failed to fetch Jira issues by IDs:", error);
+    setLoading(true);
+
+    try {
+      // Split CSV string into array of IDs
+      const idsArray = id.split(",").map((i) => i.trim());
+      if (!idsArray.length) {
         setJiraData([]);
-      }finally {
+        return;
+      }
+
+      // Dispatch the batch API thunk
+      const results = await dispatch(getJiraIssuesByIds(idsArray));
+
+      // Set the fetched and formatted Jira data
+      setJiraData(results);
+    } catch (error) {
+      console.error("Failed to fetch Jira issues:", error);
+      setJiraData([]);
+    } finally {
       setLoading(false);
     }
-    };
+  };
 
-    if (id) fetchIssuesByIds();
-  }, [dispatch, id]);
+  fetchIssuesByIds();
+}, [dispatch, id]);
+
 
   if (loading) {
     return <p className="text-center py-10">Loading...</p>;

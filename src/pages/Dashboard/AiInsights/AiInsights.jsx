@@ -5,11 +5,12 @@ import { useDispatch, useSelector } from "react-redux";
 import FilterTab from "../../../components/Dashboard/AiInsights/FilterTab";
 import {
   getAllJiraIssues,
+  getAssignJiraIssues,
   getJiraIssueById,
 } from "../../../services/oprations/jiraAPI";
 import {
   getAllGoogleDetails,
-  getGoogleSheetById,
+  getAssignGoogleDetails,
 } from "../../../services/oprations/googleAPI";
 import { useNavigate } from "react-router-dom";
 
@@ -18,7 +19,7 @@ const AiInsights = () => {
   const navigate = useNavigate();
   const [jiraData, setJiraData] = useState([]);
   const [googleData, setGoogleData] = useState([]);
-    const [loadingJira, setLoadingJira] = useState(true);
+  const [loadingJira, setLoadingJira] = useState(true);
   const [loadingGoogle, setLoadingGoogle] = useState(true);
   const [selectedView, setSelectedView] = useState("google");
   const [selectedFilter, setSelectedFilter] = useState("All");
@@ -26,22 +27,23 @@ const AiInsights = () => {
 
   // useEffect(() => {
   //   const fetchGoogle = async () => {
-  //     if (user?.projectrole === "Team Leader") {
+  //     if (user?.role === "User") {
   //       try {
   //         const ids = user?.assignGoogleProjects || [];
   //         let allData = [];
+  //         //console.log("id",ids)
 
   //         for (const id of ids) {
   //           const res = await dispatch(getGoogleSheetById(id));
   //           if (res) {
   //             allData.push(res);
   //           }
-  //           // console.log("allData", allData);
+  //          // console.log("allData", allData);
   //         }
 
   //         setGoogleData(allData);
   //       } catch (error) {
-  //         //console.error("Failed to fetch Google data:", error);
+  //         console.error("Failed to fetch Google data:", error);
   //       }
   //     } else {
   //       try {
@@ -90,25 +92,53 @@ const AiInsights = () => {
   //   fetchJira();
   // }, [dispatch, user]);
 
-   // --- Google Fetch ---
+  //  --- Google Fetch ---
+
   useEffect(() => {
     const fetchGoogle = async () => {
       setLoadingGoogle(true);
       try {
-        if (user?.projectrole === "Team Leader") {
-          const ids = user?.assignGoogleProjects || [];
-          let allData = [];
-          for (const id of ids) {
-            const res = await dispatch(getGoogleSheetById(id));
-            if (res) allData.push(res);
+        if (
+          [
+            "Portfolio Manager",
+            "Project Manager",
+            "Program Manager",
+            // "Executive",
+          ].includes(user?.projectrole)
+        ) {
+          const assignSheet = await dispatch(
+            getAssignGoogleDetails(user?.googleProjectAuthor)
+          );
+          //  console.log("sheet",assignSheet)
+
+          const roleKey = user?.projectrole?.trim();
+          // console.log("role",roleKey)
+          // console.log("name",user?.name)
+
+          const filteredData = assignSheet.filter(
+            (proj) => proj?.source_data?.[roleKey] === user?.name
+          );
+          setGoogleData(filteredData);
+          //console.log("google data", filteredData);
+        } else if (
+          user?.projectrole === "Executive"
+        ) {
+          const allProjects = await dispatch(getAssignGoogleDetails(user?.googleProjectAuthor));
+          if (!Array.isArray(allProjects)) {
+            setGoogleData([]);
+            return;
           }
-          setGoogleData(allData);
+          setGoogleData(allProjects);
         } else {
-          const res = await dispatch(getAllGoogleDetails());
-          setGoogleData(Array.isArray(res) ? res : []);
+          const allProjects = await dispatch(getAllGoogleDetails());
+          if (!Array.isArray(allProjects)) {
+            setGoogleData([]);
+            return;
+          }
+          setGoogleData(allProjects);
         }
-      } catch (error) {
-       // console.error("Failed to fetch Google data:", error);
+      } catch (err) {
+        // console.error("Failed to fetch Google projects:", err);
         setGoogleData([]);
       } finally {
         setLoadingGoogle(false);
@@ -119,18 +149,33 @@ const AiInsights = () => {
   }, [dispatch, user]);
 
   // --- Jira Fetch ---
+
   useEffect(() => {
     const fetchJira = async () => {
       setLoadingJira(true);
       try {
-        if (user?.projectrole === "Team Leader") {
+        if (
+          user?.projectrole === "Team Leader" ||
+          user?.projectrole === "Project Manager"
+        ) {
           const ids = user?.assignJiraProjects || [];
-          let allData = [];
-          for (const id of ids) {
-            const res = await dispatch(getJiraIssueById(id));
-            if (res) allData.push(res);
+          try {
+            const results = await Promise.all(
+              ids.map((id) => dispatch(getJiraIssueById(id)))
+            );
+
+            const allData = results.filter(Boolean);
+            setJiraData(allData);
+          } catch (error) {
+            console.error("Failed to fetch Jira issues:", error);
+            setJiraData([]);
           }
-          setJiraData(allData);
+        } else if (user?.projectrole === "Portfolio Manager") {
+          const issues = await dispatch(
+            getAssignJiraIssues(user?.jiraProjectAuthor)
+          );
+          // console.log("data",issues)
+          setJiraData(Array.isArray(issues) ? issues : []);
         } else {
           const issues = await dispatch(getAllJiraIssues());
           setJiraData(Array.isArray(issues) ? issues : []);
@@ -146,7 +191,23 @@ const AiInsights = () => {
     fetchJira();
   }, [dispatch, user]);
 
+  useEffect(() => {
+  if (jiraData.length > 0 && googleData.length > 0) {
+    // keep dropdown, default stays "google"
+    if (selectedView !== "jira" && selectedView !== "google") {
+      setSelectedView("google");
+    }
+  } else if (jiraData.length > 0) {
+    setSelectedView("jira");
+  } else if (googleData.length > 0) {
+    setSelectedView("google");
+  }
+}, [jiraData, googleData]);
 
+
+
+    
+  
 
   const handleViewChange = (e) => {
     const value = e.target.value;
@@ -271,11 +332,13 @@ const AiInsights = () => {
   // const groupedJiraData = groupByProject(filteredJira);
 
   //console.log("group data ", groupedJiraData);
+
   const filteredGoogle = applyFilter(googleData);
 
   const isGoogleEmpty = !filteredGoogle || filteredGoogle.length === 0;
   const isJiraEmpty = !filteredJira || filteredJira.length === 0;
 
+  
   // --- Count calculation ---
   const getCounts = (data, source) => {
     const counts = {
@@ -308,7 +371,7 @@ const AiInsights = () => {
       ? getCounts(jiraData, "jira")
       : getCounts(googleData, "google");
 
-    // --- Loading checks ---
+  // --- Loading checks ---
   if (selectedView === "jira" && loadingJira) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -323,7 +386,10 @@ const AiInsights = () => {
         <p className="text-lg font-semibold">Loading Google data...</p>
       </div>
     );
-  }    
+  }
+
+
+
 
   return (
     <div className="max-w-[1200px] mx-auto p-6">
@@ -394,16 +460,20 @@ const AiInsights = () => {
         )}
 
         {/* View Switcher */}
-        <div className="ml-auto">
-          <select
-            value={selectedView}
-            onChange={handleViewChange}
-            className="appearance-none border border-blue-300 rounded-full px-6 py-2 shadow-md"
-          >
-            <option value="jira">Jira View</option>
-            <option value="google">Google View</option>
-          </select>
-        </div>
+{/* View Switcher - only show if both have data */}
+{jiraData.length > 0 && googleData.length > 0 && (
+  <div className="ml-auto">
+    <select
+      value={selectedView}
+      onChange={handleViewChange}
+      className="appearance-none border border-blue-300 rounded-full px-6 py-2 shadow-md"
+    >
+      <option value="jira">Jira View</option>
+      <option value="google">Google View</option>
+    </select>
+  </div>
+)}
+
       </div>
 
       {/* Data Grid */}

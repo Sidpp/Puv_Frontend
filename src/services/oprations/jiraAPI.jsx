@@ -4,8 +4,17 @@ import { apiConnector } from "../apiConnector";
 import { jiraendpoints } from "../apis";
 import { setJiraCredentials } from "../../slices/jiraDetailSlice";
 
-const { GET_ISSUES_API, APPROVE_ISSUE_API ,MARK_JIRA_ALERT_READ_API,UPDATE_JIRA_ALERT_STATUS_API, GET_ISSUES_BY_ID_API, JIRA_CONNECT_API ,GET_JIRA_CREDENTIALS_API} = jiraendpoints;
-
+const {
+  GET_ISSUES_API,
+  APPROVE_ISSUE_API,
+  GET_ASSIGN_ISSUES_API,
+  MARK_JIRA_ALERT_READ_API,
+  UPDATE_JIRA_ALERT_STATUS_API,
+  GET_ISSUES_BY_ID_API,
+  GET_ISSUES_BY_IDs_API,
+  JIRA_CONNECT_API,
+  GET_JIRA_CREDENTIALS_API,
+} = jiraendpoints;
 
 //approve/reject for alert
 export function updateJiraAlertStatus(issueId, alertId, operation) {
@@ -36,13 +45,13 @@ export function updateJiraAlertStatus(issueId, alertId, operation) {
         toast.error(response.data?.message || "Failed to update alert status");
       }
     } catch (error) {
-     // console.error("UPDATE_JIRA_ALERT_STATUS ERROR:", error);
+      // console.error("UPDATE_JIRA_ALERT_STATUS ERROR:", error);
       // toast.error(
       //   error?.response?.data?.message || "Failed to update Jira alert status"
       // );
     } finally {
       dispatch(setLoading(false));
-     // toast.dismiss(toastId);
+      // toast.dismiss(toastId);
     }
   };
 }
@@ -59,7 +68,7 @@ export function markJiraAlertRead(issueId, alertId) {
         alertId,
       });
 
-     // console.log("MARK_JIRA_ALERT_READ RESPONSE:", response);
+      // console.log("MARK_JIRA_ALERT_READ RESPONSE:", response);
 
       if (response.data?.success) {
         toast.success("Jira alert marked as read");
@@ -67,7 +76,7 @@ export function markJiraAlertRead(issueId, alertId) {
         toast.error(response.data?.message || "Failed to mark alert as read");
       }
     } catch (error) {
-     // console.error("MARK_JIRA_ALERT_READ ERROR:", error);
+      // console.error("MARK_JIRA_ALERT_READ ERROR:", error);
       toast.error(
         error?.response?.data?.message || "Failed to mark Jira alert as read"
       );
@@ -78,18 +87,17 @@ export function markJiraAlertRead(issueId, alertId) {
   };
 }
 
-
 // 🔁 APPROVE JIRA ISSUE
 export function approveJiraIssue(issueId, operation) {
   //console.log("loggg", issueId, operation, APPROVE_ISSUE_API);
   return async (dispatch) => {
     const toastId = toast.loading(
-      operation === "approved" ? "Approving Jira issue..." : "Rejecting Jira issue..."
+      operation === "approved"
+        ? "Approving Jira issue..."
+        : "Rejecting Jira issue..."
     );
 
     try {
-  
-
       const response = await apiConnector(
         "POST",
         APPROVE_ISSUE_API, // backend route
@@ -119,13 +127,11 @@ export function approveJiraIssue(issueId, operation) {
   };
 }
 
-
 // 🔁 GET JIRA ISSUE BY ID
 export function getJiraIssueById(issueId) {
   return async (dispatch) => {
     //const toastId = toast.loading("Fetching Jira issue...");
     try {
-
       const token = JSON.parse(localStorage.getItem("token"));
 
       const response = await apiConnector(
@@ -152,7 +158,70 @@ export function getJiraIssueById(issueId) {
       //toast.error(error?.response?.data?.message || "Failed to fetch Jira issue");
     } finally {
       dispatch(setLoading(false));
-    // toast.dismiss(toastId);
+      // toast.dismiss(toastId);
+    }
+  };
+}
+
+// 🔁 GET MULTIPLE JIRA ISSUES BY IDS
+export function getJiraIssuesByIds(issueIds) {
+  return async (dispatch) => {
+    try {
+      if (!issueIds || !issueIds.length) return [];
+
+      // Convert array to comma-separated string
+      const idsParam = issueIds.map((id) => id.trim()).join(",");
+
+      const response = await apiConnector(
+        "GET",
+        `${GET_ISSUES_BY_IDs_API}?ids=${idsParam}`
+      );
+
+      const issues = response.data?.issues;
+
+      if (!issues || !Array.isArray(issues)) {
+        throw new Error("Invalid response format: issues not found");
+      }
+
+      // Utility function to format date
+      const formatDate = (dateStr) => {
+        if (!dateStr) return "N/A";
+        const date = new Date(dateStr);
+        return date.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+      };
+
+      const formattedIssues = issues.map((res) => ({
+        _id: res._id,
+        id: res.key,
+        status: res.status || "Unknown",
+        priority: res.priority || "Medium",
+        assignee: res.assignee || "Unassigned",
+        dueDate: res.due_date ? formatDate(res.due_date) : "N/A",
+        lastInteraction: res.last_ai_interaction_day
+          ? formatDate(res.last_ai_interaction_day)
+          : "N/A",
+        aisummary: res.ai_summary || null,
+        originalEstimate: res.original_estimate || 0,
+        timeSpent: res.time_logged
+          ? parseInt(res.time_logged.replace("h", ""), 10)
+          : 0,
+        remainingEstimate: res.remaining_estimate || 0,
+        summary: res.summary,
+        labels: res.labels || [],
+        projectName: res.project_name,
+        marker: res.marker,
+      }));
+
+      return formattedIssues;
+    } catch (error) {
+      console.error("GET_JIRA_ISSUES_BY_IDS ERROR:", error);
+      return [];
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 }
@@ -166,7 +235,7 @@ export function fetchJiraCredentials() {
 
       const response = await apiConnector(
         "GET",
-        GET_JIRA_CREDENTIALS_API, 
+        GET_JIRA_CREDENTIALS_API,
         null,
         {
           Authorization: `Bearer ${token}`,
@@ -183,22 +252,21 @@ export function fetchJiraCredentials() {
         setJiraCredentials({
           jiraEmail: data.jira_email,
           jiraDomain: data.jira_domain,
-          jira_api_key: " Your API KEY IS SECURE"
-    
+          jira_api_key: " Your API KEY IS SECURE",
         })
       );
 
       //toast.success("Fetched Jira credentials");
     } catch (error) {
-     // console.error("Fetch Jira credentials error:", error);
-     // toast.error(error.response.data.message);
+      // console.error("Fetch Jira credentials error:", error);
+      // toast.error(error.response.data.message);
     } finally {
-     // toast.dismiss(toastId);
+      // toast.dismiss(toastId);
     }
   };
 }
 
-// connect jira 
+// connect jira
 export function jiraConnect(
   { jira_email, jira_domain, jira_api_key },
   onSuccess
@@ -229,13 +297,13 @@ export function jiraConnect(
         })
       );
 
-     toast.success("Jira Details updated successfully");
+      toast.success("Jira Details updated successfully");
       onSuccess && onSuccess(response.data.data);
     } catch (error) {
-     // console.error("JIRA_INFO ERROR:", error);
-     // toast.error(error?.response?.data?.message || "Failed to update jira");
+      // console.error("JIRA_INFO ERROR:", error);
+      // toast.error(error?.response?.data?.message || "Failed to update jira");
     } finally {
-     // toast.dismiss(toastId);
+      // toast.dismiss(toastId);
     }
   };
 }
@@ -248,16 +316,11 @@ export function getAllJiraIssues() {
     try {
       const token = JSON.parse(localStorage.getItem("token"));
 
-      const response = await apiConnector(
-        "GET",
-        GET_ISSUES_API,
-        null,
-        {
-          Authorization: `Bearer ${token}`,
-        }
-      );
+      const response = await apiConnector("GET", GET_ISSUES_API, null, {
+        Authorization: `Bearer ${token}`,
+      });
 
-     // console.log("GET_ISSUES_API RESPONSE:", response);
+      // console.log("GET_ISSUES_API RESPONSE:", response);
 
       const issues = response.data?.issues;
 
@@ -268,14 +331,45 @@ export function getAllJiraIssues() {
       // Optionally store in Redux
       // dispatch(setIssues(issues));
 
-     // toast.success("Jira issues loaded successfully");
+      // toast.success("Jira issues loaded successfully");
       return issues;
     } catch (error) {
-     // console.error("GET_ISSUES_API ERROR:", error);
-     // toast.error(error?.response?.data?.message || "Failed to fetch Jira issues");
+      // console.error("GET_ISSUES_API ERROR:", error);
+      // toast.error(error?.response?.data?.message || "Failed to fetch Jira issues");
     } finally {
-     // dispatch(setLoading(false));
-     // toast.dismiss(toastId);
+      // dispatch(setLoading(false));
+      // toast.dismiss(toastId);
+    }
+  };
+}
+
+// 🔁 GET ASSIGN JIRA ISSUES
+export function getAssignJiraIssues(userId) {
+  return async (dispatch) => {
+    //dispatch(setLoading(true));
+    //const toastId = toast.loading("Fetching Jira issues...");
+    try {
+      const response = await apiConnector("POST", GET_ASSIGN_ISSUES_API, { userId });
+
+      // console.log("GET_ISSUES_API RESPONSE:", response);
+
+      const issues = response.data?.issues;
+
+      if (!Array.isArray(issues)) {
+        throw new Error("Invalid response format: issues is not an array");
+      }
+
+      // Optionally store in Redux
+      // dispatch(setIssues(issues));
+
+      // toast.success("Jira issues loaded successfully");
+      return issues;
+    } catch (error) {
+      // console.error("GET_ISSUES_API ERROR:", error);
+      // toast.error(error?.response?.data?.message || "Failed to fetch Jira issues");
+    } finally {
+      // dispatch(setLoading(false));
+      // toast.dismiss(toastId);
     }
   };
 }

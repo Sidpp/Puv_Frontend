@@ -30,9 +30,14 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllGoogleDetails,
+  getAssignGoogleDetails,
   getGoogleSheetById,
 } from "../../../services/oprations/googleAPI";
-import { getAllJiraIssues,getJiraIssueById } from "../../../services/oprations/jiraAPI";
+import {
+  getAllJiraIssues,
+  getAssignJiraIssues,
+  getJiraIssueById,
+} from "../../../services/oprations/jiraAPI";
 
 const BudgetUtilizationView = ({ data }) => {
   const utilization =
@@ -302,21 +307,60 @@ function getPortfolioStatusData(source, googleData = [], jiraData = []) {
       },
     ];
   } else {
-    jiraData.forEach((issue) => {
-      const mapped = mapJiraStatus(issue.status);
-      if (mapped === "Delayed") {
+    const jiraStatusMap = {
+      Done: "Completed",
+      "To Do": "Delayed",
+      "In Progress": "In Progress",
+    };
+
+    // Group Jira issues by project
+    const groupedProjects = groupByJiraProject(jiraData);
+
+    groupedProjects.forEach((project) => {
+      // Count issue statuses for this project
+      const issueStatuses = project.ids.map((id) => {
+        const issue = jiraData.find((i) => i._id === id);
+        return jiraStatusMap[issue.status] || "In Progress";
+      });
+
+      const counts = issueStatuses.reduce(
+        (acc, status) => {
+          if (status === "Delayed") acc.Delayed++;
+          else if (status === "Completed") acc.Completed++;
+          else if (status === "In Progress") acc["In Progress"]++;
+          return acc;
+        },
+        { Delayed: 0, Completed: 0, "In Progress": 0 }
+      );
+
+      // Determine project status based on majority
+      let projectStatus = "In Progress"; // default
+      if (
+        counts.Delayed >= counts.Completed &&
+        counts.Delayed >= counts["In Progress"]
+      ) {
+        projectStatus = "Delayed";
+      } else if (
+        counts.Completed >= counts.Delayed &&
+        counts.Completed >= counts["In Progress"]
+      ) {
+        projectStatus = "Completed";
+      }
+
+      // Increment counters & add project ids
+      if (projectStatus === "Delayed") {
         delayed++;
-        statusBuckets.Delayed.push(issue._id);
-      } else if (mapped === "Completed") {
+        statusBuckets.Delayed.push(...project.ids);
+      } else if (projectStatus === "Completed") {
         completed++;
-        statusBuckets.Completed.push(issue._id);
-      } else if (mapped === "In Progress") {
+        statusBuckets.Completed.push(...project.ids);
+      } else {
         inProgress++;
-        statusBuckets["In Progress"].push(issue._id);
+        statusBuckets["In Progress"].push(...project.ids);
       }
     });
 
-    const total = jiraData.length || 1;
+    const total = groupedProjects.length || 1;
     return [
       {
         name: "Delayed",
@@ -339,7 +383,6 @@ function getPortfolioStatusData(source, googleData = [], jiraData = []) {
     ];
   }
 }
-
 
 function parseNumberSafe(value) {
   if (!value) return 0; // null, undefined, empty string
@@ -389,7 +432,6 @@ function getBudgetBarsData(googleData = []) {
   ];
 }
 
-
 function getForecastsData(googleData = []) {
   if (googleData.length === 0) return [];
 
@@ -419,7 +461,7 @@ function getForecastsData(googleData = []) {
 
     totalDeviation += deviation;
 
-   // console.log("logss", safePlanned, safeForecasted);
+    // console.log("logss", safePlanned, safeForecasted);
   });
 
   // Percentage deviation
@@ -430,7 +472,9 @@ function getForecastsData(googleData = []) {
 
   return [
     {
-      label: `${totalDeviation < 0 ? "" : "+"}$${totalDeviation.toLocaleString()}`,
+      label: `${
+        totalDeviation < 0 ? "" : "+"
+      }$${totalDeviation.toLocaleString()}`,
       needleRotation: Math.max(0, Math.min(180, 90 + deviationPercent)),
       sections: [{ color: "#22c55e", percentage: 100, offset: 0 }],
       isPositive: totalDeviation >= 0,
@@ -447,7 +491,6 @@ function getForecastsData(googleData = []) {
     },
   ];
 }
-
 
 function getRiskFactors(googleData = []) {
   let taskDelay = { count: 0, ids: [] };
@@ -813,78 +856,205 @@ const Home = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.profile);
 
+  // useEffect(() => {
+  //   const fetchGoogle = async () => {
+  //     if (user?.projectrole === "Team Leader") {
+  //       try {
+  //         const ids = user?.assignGoogleProjects || [];
+  //         let allData = [];
+
+  //         for (const id of ids) {
+  //           const res = await dispatch(getGoogleSheetById(id));
+  //           if (res) {
+  //             allData.push(res);
+  //           }
+  //           //console.log("allData", allData);
+  //         }
+
+  //         setGoogleData(allData);
+  //       } catch (error) {
+  //         // .error("Failed to fetch Google data:", error);
+  //       }
+  //     } else {
+  //       try {
+  //         const res = await dispatch(getAllGoogleDetails());
+  //         setGoogleData(Array.isArray(res) ? res : []);
+  //       } catch (error) {
+  //         //console.error("Failed to fetch Google data:", error);
+  //       }
+  //     }
+  //   };
+
+  //   fetchGoogle();
+  //   //console.log("GoogleData", googleData);
+  // }, [dispatch, user]);
+
+  // useEffect(() => {
+  //   const fetchJira = async () => {
+  //     if (user?.projectrole === "Team Leader") {
+  //       try {
+  //         const ids = user?.assignJiraProjects || [];
+  //         let allData = [];
+
+  //         for (const id of ids) {
+  //           const res = await dispatch(getJiraIssueById(id));
+  //           if (res) {
+  //             allData.push(res);
+  //           }
+  //          // console.log("allData", allData);
+  //         }
+
+  //         setJiraData(allData);
+  //       } catch (error) {
+  //        // console.error("Failed to fetch Jira issues:", error);
+  //       }
+  //     } else {
+  //       try {
+  //         const issues = await dispatch(getAllJiraIssues());
+  //         setJiraData(Array.isArray(issues) ? issues : []);
+  //       } catch (error) {
+  //         //console.error("Failed to fetch Jira issues:", error);
+  //         setJiraData([]);
+  //       }
+  //     }
+  //   };
+
+  //   fetchJira();
+  // }, [dispatch, user]);
+
   useEffect(() => {
     const fetchGoogle = async () => {
-      if (user?.projectrole === "Team Leader") {
-        try {
-          const ids = user?.assignGoogleProjects || [];
-          let allData = [];
+      // setLoadingGoogle(true);
+      try {
+        if (
+          [
+            "Portfolio Manager",
+            "Project Manager",
+            "Program Manager",
+            //"Executive",
+          ].includes(user?.projectrole)
+        ) {
+          const assignSheet = await dispatch(
+            getAssignGoogleDetails(user?.googleProjectAuthor)
+          );
+          //  console.log("sheet",assignSheet)
 
-          for (const id of ids) {
-            const res = await dispatch(getGoogleSheetById(id));
-            if (res) {
-              allData.push(res); 
-            }
-            //console.log("allData", allData);
+          const roleKey = user?.projectrole?.trim();
+          // console.log("role",roleKey)
+          // console.log("name",user?.name)
+
+          const filteredData = assignSheet.filter(
+            (proj) => proj?.source_data?.[roleKey] === user?.name
+          );
+          setGoogleData(filteredData);
+          //console.log("google data", filteredData);
+        } else if (user?.projectrole === "Executive") {
+          const allProjects = await dispatch(
+            getAssignGoogleDetails(user?.googleProjectAuthor)
+          );
+          if (!Array.isArray(allProjects)) {
+            setGoogleData([]);
+            return;
           }
-
-          setGoogleData(allData);
-        } catch (error) {
-          //console.error("Failed to fetch Google data:", error);
+          setGoogleData(allProjects);
+        } else {
+          const allProjects = await dispatch(getAllGoogleDetails());
+          if (!Array.isArray(allProjects)) {
+            setGoogleData([]);
+            return;
+          }
+          setGoogleData(allProjects);
         }
-      } else {
-        try {
-          const res = await dispatch(getAllGoogleDetails());
-          setGoogleData(Array.isArray(res) ? res : []);
-        } catch (error) {
-          //console.error("Failed to fetch Google data:", error);
-        }
+      } catch (err) {
+        // console.error("Failed to fetch Google projects:", err);
+        setGoogleData([]);
+      } finally {
+        //  setLoadingGoogle(false);
       }
     };
 
     fetchGoogle();
-    //console.log("GoogleData", googleData);
   }, [dispatch, user]);
 
+  // --- Jira Fetch ---
 
   useEffect(() => {
     const fetchJira = async () => {
-      if (user?.projectrole === "Team Leader") {
-        try {
+      // setLoadingJira(true);
+      try {
+        if (
+          user?.projectrole === "Team Leader" ||
+          user?.projectrole === "Project Manager"
+        ) {
           const ids = user?.assignJiraProjects || [];
-          let allData = [];
-                  
-          for (const id of ids) {
-            const res = await dispatch(getJiraIssueById(id));
-            if (res) {
-              allData.push(res);
-            }
-           // console.log("allData", allData);
-          }
+          // let allData = [];
+          // for (const id of ids) {
+          //   const res = await dispatch(getJiraIssueById(id));
+          //   if (res) allData.push(res);
+          // }
+          // setJiraData(allData);
+          try {
+            const results = await Promise.all(
+              ids.map((id) => dispatch(getJiraIssueById(id)))
+            );
 
-          setJiraData(allData);
-        } catch (error) {
-         // console.error("Failed to fetch Jira issues:", error);
-        }
-      } else {
-        try {
+            const allData = results.filter(Boolean); // remove null/undefined
+            setJiraData(allData);
+          } catch (error) {
+            console.error("Failed to fetch Jira issues:", error);
+            setJiraData([]);
+          }
+        } else if (user?.projectrole === "Portfolio Manager") {
+          const issues = await dispatch(
+            getAssignJiraIssues(user?.jiraProjectAuthor)
+          );
+          // console.log("data", issues);
+          setJiraData(Array.isArray(issues) ? issues : []);
+        } else {
           const issues = await dispatch(getAllJiraIssues());
           setJiraData(Array.isArray(issues) ? issues : []);
-        } catch (error) {
-          //console.error("Failed to fetch Jira issues:", error);
-          setJiraData([]);
         }
+      } catch (error) {
+        //console.error("Failed to fetch Jira issues:", error);
+        setJiraData([]);
+      } finally {
+        // setLoadingJira(false);
       }
     };
 
     fetchJira();
   }, [dispatch, user]);
 
+  //Check data
+  const availableSources = [];
+  if (googleData.length > 0) availableSources.push("Google");
+  if (jiraData.length > 0) availableSources.push("Jira");
+
   useEffect(() => {
     //console.log("Google data", googleData);
-   // console.log("Jira data", jiraData);
+    // console.log("Jira data", jiraData);
+    if (availableSources.length === 1) {
+      setPortfolioSource(availableSources[0]);
+    }
     setFinancialData(aggregateFinancials(googleData));
   }, [googleData, jiraData]);
+
+  const jiraProjectGroupedData = groupByJiraProject(jiraData);
+
+  const aiAvailableSources = React.useMemo(() => {
+    const sources = [];
+    if (googleData?.length > 0) sources.push("Google");
+    if (jiraProjectGroupedData?.length > 0) sources.push("Jira");
+    return sources;
+  }, [googleData, jiraProjectGroupedData]);
+
+  useEffect(() => {
+    if (aiAvailableSources.length === 1) {
+      setAiSource(aiAvailableSources[0]);
+    } else if (!aiSource && aiAvailableSources.length > 1) {
+      setAiSource(aiAvailableSources[0]); // default to first if both exist
+    }
+  }, [aiAvailableSources]);
 
   const financialOverviewItems = [
     "Budget Utilization %",
@@ -918,58 +1088,67 @@ const Home = () => {
 
   const PIE_COLORS = ["#ef4444", "#facc15", "#22c55e", "#6b7280"];
 
-const Gauge = ({ label, needleRotation, sections, isPositive }) => {
-  const radius = 40;
-  const circumference = Math.PI * radius;
-  const center = 50;
+  const Gauge = ({ label, needleRotation, sections, isPositive }) => {
+    const radius = 40;
+    const circumference = Math.PI * radius;
+    const center = 50;
 
-  return (
-    <div className="flex flex-col items-center">
-      <svg width="120" height="65" viewBox="0 0 100 55" className="mb-1">
-        {/* Background arc */}
-        <path
-          d={`M ${center - radius} 50 A ${radius} ${radius} 0 0 1 ${center + radius} 50`}
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth="10"
-        />
-        {/* Sections */}
-        {sections.map((section, index) => {
-          const dash = (section.percentage / 100) * circumference;
-          const offset = (section.offset / 100) * circumference;
-          return (
+    return (
+      <div className="flex flex-col items-center">
+        <svg width="120" height="65" viewBox="0 0 100 55" className="mb-1">
+          {/* Background arc */}
+          <path
+            d={`M ${center - radius} 50 A ${radius} ${radius} 0 0 1 ${
+              center + radius
+            } 50`}
+            fill="none"
+            stroke="#e5e7eb"
+            strokeWidth="10"
+          />
+          {/* Sections */}
+          {sections.map((section, index) => {
+            const dash = (section.percentage / 100) * circumference;
+            const offset = (section.offset / 100) * circumference;
+            return (
+              <path
+                key={index}
+                d={`M ${center - radius} 50 A ${radius} ${radius} 0 0 1 ${
+                  center + radius
+                } 50`}
+                fill="none"
+                stroke={section.color}
+                strokeWidth="10"
+                strokeDasharray={`${dash} ${circumference}`}
+                strokeDashoffset={-offset}
+              />
+            );
+          })}
+          {/* Needle */}
+          <g
+            style={{
+              transform: `rotate(${needleRotation}deg)`,
+              transformOrigin: `${center}px ${center}px`,
+              transition: "transform 0.5s ease-in-out",
+            }}
+          >
             <path
-              key={index}
-              d={`M ${center - radius} 50 A ${radius} ${radius} 0 0 1 ${center + radius} 50`}
-              fill="none"
-              stroke={section.color}
-              strokeWidth="10"
-              strokeDasharray={`${dash} ${circumference}`}
-              strokeDashoffset={-offset}
+              d={`M ${center} 50 L ${center} 15`}
+              strokeWidth="2"
+              stroke="black"
             />
-          );
-        })}
-        {/* Needle */}
-        <g
-          style={{
-            transform: `rotate(${needleRotation}deg)`,
-            transformOrigin: `${center}px ${center}px`,
-            transition: "transform 0.5s ease-in-out",
-          }}
+            <circle cx={center} cy={50} r="4" fill="black" />
+          </g>
+        </svg>
+        <span
+          className={`text-sm font-bold ${
+            isPositive ? "text-red-600" : "text-green-600"
+          }`}
         >
-          <path d={`M ${center} 50 L ${center} 15`} strokeWidth="2" stroke="black" />
-          <circle cx={center} cy={50} r="4" fill="black" />
-        </g>
-      </svg>
-      <span
-        className={`text-sm font-bold ${isPositive ? "text-red-600" : "text-green-600"}`}
-      >
-        {label}
-      </span>
-    </div>
-  );
-};
-
+          {label}
+        </span>
+      </div>
+    );
+  };
 
   // Renders the correct financial detail card based on state
   const renderFinancialDetailCard = () => {
@@ -996,7 +1175,6 @@ const Gauge = ({ label, needleRotation, sections, isPositive }) => {
     }
   };
 
-  const jiraProjectGroupedData = groupByJiraProject(jiraData);
   //console.log("databnn",jiraProjectGroupedData)
 
   return (
@@ -1019,45 +1197,47 @@ const Gauge = ({ label, needleRotation, sections, isPositive }) => {
                       % of Projects On Track/Delayed/At Risk
                     </CardTitle>
                     <div className="relative">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-28 justify-between"
-                        onClick={() =>
-                          setIsPortfolioDropdownOpen(!isPortfolioDropdownOpen)
-                        }
-                      >
-                        <span>{portfolioSource}</span>
-                        <ChevronDown
-                          className={`w-4 h-4 transition-transform ${
-                            isPortfolioDropdownOpen ? "rotate-180" : ""
-                          }`}
-                        />
-                      </Button>
-                      {isPortfolioDropdownOpen && (
-                        <div className="absolute top-full right-0 mt-1 w-28 bg-white border rounded-md shadow-lg z-10">
-                          <ul className="py-1">
-                            <li
-                              className="px-3 py-1 text-sm hover:bg-slate-100 cursor-pointer"
-                              onClick={() => {
-                                setPortfolioSource("Google");
-                                setIsPortfolioDropdownOpen(false);
-                              }}
-                            >
-                              Google
-                            </li>
-                            <li
-                              className="px-3 py-1 text-sm hover:bg-slate-100 cursor-pointer"
-                              onClick={() => {
-                                setPortfolioSource("Jira");
-                                setIsPortfolioDropdownOpen(false);
-                              }}
-                            >
-                              Jira
-                            </li>
-                          </ul>
-                        </div>
+                      {availableSources.length > 1 ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-28 justify-between"
+                          onClick={() =>
+                            setIsPortfolioDropdownOpen(!isPortfolioDropdownOpen)
+                          }
+                        >
+                          <span>{portfolioSource}</span>
+                          <ChevronDown
+                            className={`w-4 h-4 transition-transform ${
+                              isPortfolioDropdownOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        </Button>
+                      ) : (
+                        <span className="text-sm font-medium">
+                          {portfolioSource}
+                        </span>
                       )}
+
+                      {isPortfolioDropdownOpen &&
+                        availableSources.length > 1 && (
+                          <div className="absolute top-full right-0 mt-1 w-28 bg-white border rounded-md shadow-lg z-10">
+                            <ul className="py-1">
+                              {availableSources.map((src) => (
+                                <li
+                                  key={src}
+                                  className="px-3 py-1 text-sm hover:bg-slate-100 cursor-pointer"
+                                  onClick={() => {
+                                    setPortfolioSource(src);
+                                    setIsPortfolioDropdownOpen(false);
+                                  }}
+                                >
+                                  {src}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                     </div>
                   </div>
                 </CardHeader>
@@ -1145,40 +1325,39 @@ const Gauge = ({ label, needleRotation, sections, isPositive }) => {
                   <div className="flex justify-between items-center">
                     <CardTitle>AI Predicted Portfolio Risk Score</CardTitle>
                     <div className="relative">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-28 justify-between"
-                        onClick={() => setIsAiDropdownOpen(!isAiDropdownOpen)}
-                      >
-                        <span>{aiSource}</span>
-                        <ChevronDown
-                          className={`w-4 h-4 transition-transform ${
-                            isAiDropdownOpen ? "rotate-180" : ""
-                          }`}
-                        />
-                      </Button>
-                      {isAiDropdownOpen && (
+                      {aiAvailableSources.length > 1 ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-28 justify-between"
+                          onClick={() => setIsAiDropdownOpen(!isAiDropdownOpen)}
+                        >
+                          <span>{aiSource}</span>
+                          <ChevronDown
+                            className={`w-4 h-4 transition-transform ${
+                              isAiDropdownOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        </Button>
+                      ) : (
+                        <span className="text-sm font-medium">{aiSource}</span>
+                      )}
+
+                      {isAiDropdownOpen && aiAvailableSources.length > 1 && (
                         <div className="absolute top-full right-0 mt-1 w-28 bg-white border rounded-md shadow-lg z-10">
                           <ul className="py-1">
-                            <li
-                              className="px-3 py-1 text-sm hover:bg-slate-100 cursor-pointer"
-                              onClick={() => {
-                                setAiSource("Google");
-                                setIsAiDropdownOpen(false);
-                              }}
-                            >
-                              Google
-                            </li>
-                            <li
-                              className="px-3 py-1 text-sm hover:bg-slate-100 cursor-pointer"
-                              onClick={() => {
-                                setAiSource("Jira");
-                                setIsAiDropdownOpen(false);
-                              }}
-                            >
-                              Jira
-                            </li>
+                            {aiAvailableSources.map((src) => (
+                              <li
+                                key={src}
+                                className="px-3 py-1 text-sm hover:bg-slate-100 cursor-pointer"
+                                onClick={() => {
+                                  setAiSource(src);
+                                  setIsAiDropdownOpen(false);
+                                }}
+                              >
+                                {src}
+                              </li>
+                            ))}
                           </ul>
                         </div>
                       )}
@@ -1211,15 +1390,9 @@ const Gauge = ({ label, needleRotation, sections, isPositive }) => {
                               const ai = project.ai_predictions || {};
                               const s = project.source_data || {};
                               const isGoogle = aiSource === "Google";
-{/* 
+
                               const predictedDelay = isGoogle
-                                ? ((Number(ai.Forecasted_Deviation) || 0) /
-                                    (Number(s?.["Planned Cost"]) || 1)) *
-                                  100
-                                : (project.avg_delay_score ?? 0) * 100; */}
-                                
-                              const predictedDelay = isGoogle
-                                ? (ai.AI_Delay_Score)
+                                ? ai.AI_Delay_Score
                                 : (project.avg_delay_score ?? 0) * 100;
 
                               const confidence = calculateConfidence(ai);

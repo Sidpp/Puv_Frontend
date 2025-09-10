@@ -11,7 +11,8 @@ const {
   GET_GOOGLE_SHEET_BY_ID_API,
   APPROVE_GOOGLE_API,
   UPDATE_GOOGLE_ALERT_STATUS_API,
-  MARK_GOOGLE_ALERT_READ_API
+  MARK_GOOGLE_ALERT_READ_API,
+  GET_ASSIGNED_GOOGLE_DETAILS_API
 } = googleendpoints;
 
 // mark aproved/rejected for notification
@@ -233,6 +234,45 @@ export function getAllGoogleDetails() {
       return projects;
     } catch (error) {
       //console.error("GET_GOOGLE_DETAILS ERROR:", error);
+      // toast.error(
+      //   error?.response?.data?.message || "Failed to fetch Google Sheet details"
+      // );
+    } finally {
+      //dispatch(setLoading(false));
+      //toast.dismiss(toastId);
+    }
+  };
+}
+
+// 🔁 GET ASSIGN GOOGLE SHEET DETAILS
+export function getAssignGoogleDetails(userId) {
+  return async (dispatch) => {
+    //const toastId = toast.loading("Fetching Google Sheet details...");
+ // console.log("user",userId)
+    try {
+     
+
+      const response = await apiConnector(
+        "POST",
+        GET_ASSIGNED_GOOGLE_DETAILS_API,
+        {userId}
+      );
+
+      //console.log("GET_GOOGLE_DETAILS RESPONSE:", response);
+
+      const projects = response.data?.data;
+
+      if (!Array.isArray(projects)) {
+        throw new Error("Invalid response format: projects is not an array");
+      }
+
+      // Optional: dispatch to store it in Redux
+      // dispatch(setGoogleDetails(projects));
+
+     // toast.success("Google Sheet details loaded successfully");
+      return projects;
+    } catch (error) {
+     // console.error("GET_GOOGLE_DETAILS ERROR:", error);
       // toast.error(
       //   error?.response?.data?.message || "Failed to fetch Google Sheet details"
       // );

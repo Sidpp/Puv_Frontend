@@ -25,7 +25,7 @@ const {
   VERIFY_EMAIL_OTP_API,
   NOTIFICATION_API,
   JIRA_DELETE_API,
-  GOOGLE_DELETE_API
+  GOOGLE_DELETE_API,
 } = endpoints;
 
 // export function approveAlert(issueId, operation) {
@@ -36,7 +36,6 @@ const {
 //     );
 
 //     try {
-  
 
 //       const response = await apiConnector(
 //         "POST",
@@ -72,7 +71,9 @@ export function deleteUserJiraCredential(user_id) {
 
   return async (dispatch) => {
     try {
-      const response = await apiConnector("DELETE", JIRA_DELETE_API, { user_id });
+      const response = await apiConnector("DELETE", JIRA_DELETE_API, {
+        user_id,
+      });
       //console.log("DELETE JIRA RESPONSE:", response);
 
       const { success, message } = response.data;
@@ -92,13 +93,14 @@ export function deleteUserJiraCredential(user_id) {
   };
 }
 
-
 export function deleteUserGoogleCredential(user_id) {
- // console.log("delete Google credential for user:", user_id);
+  // console.log("delete Google credential for user:", user_id);
 
   return async (dispatch) => {
     try {
-      const response = await apiConnector("DELETE", GOOGLE_DELETE_API, { user_id });
+      const response = await apiConnector("DELETE", GOOGLE_DELETE_API, {
+        user_id,
+      });
       //console.log("DELETE GOOGLE RESPONSE:", response);
 
       const { success, message } = response.data;
@@ -112,26 +114,20 @@ export function deleteUserGoogleCredential(user_id) {
       return { success: true, message };
     } catch (error) {
       // Only log network errors or unexpected issues
-     // console.error("DELETE GOOGLE ERROR (network/unknown):", error);
+      // console.error("DELETE GOOGLE ERROR (network/unknown):", error);
       return { success: false, message: error.message || "Server error" };
     }
   };
 }
 
-
-
 export function globalSearch(query) {
   return async (dispatch) => {
     try {
-     // dispatch(setLoading(true));
+      // dispatch(setLoading(true));
 
-      const response = await apiConnector(
-        "POST",
-        SEARCH_API,
-        { query }
-      );
+      const response = await apiConnector("POST", SEARCH_API, { query });
 
-     // console.log("SEARCH RESPONSE:", response);
+      // console.log("SEARCH RESPONSE:", response);
 
       // Our backend returns { query, jira: [...], google: [...] }
       const { jira, google } = response.data;
@@ -140,12 +136,12 @@ export function globalSearch(query) {
         throw new Error("Invalid response format: no results found");
       }
 
-      return { jira, google };  // return both sets of results
+      return { jira, google }; // return both sets of results
     } catch (error) {
-     // console.error("GLOBAL_SEARCH ERROR:", error);
+      // console.error("GLOBAL_SEARCH ERROR:", error);
       return null;
     } finally {
-     // dispatch(setLoading(false));
+      // dispatch(setLoading(false));
     }
   };
 }
@@ -166,7 +162,7 @@ export function getNotification() {
       // return merged alerts array
       return alerts || [];
     } catch (error) {
-     // console.error("NOTIFICATION ERROR:", error);
+      // console.error("NOTIFICATION ERROR:", error);
       return [];
     } finally {
       // dispatch(setLoading(false));
@@ -174,14 +170,17 @@ export function getNotification() {
   };
 }
 
-
-export function deleteNotification(id,source,alert_id) {
+export function deleteNotification(id, source, alert_id) {
   //console.log("delete",id,source,alert_id)
   return async (dispatch) => {
     try {
-      const response = await apiConnector("DELETE", NOTIFICATION_API, { id, source, alert_id });
+      const response = await apiConnector("DELETE", NOTIFICATION_API, {
+        id,
+        source,
+        alert_id,
+      });
 
-     // console.log("DELETE NOTIFICATION RESPONSE:", response);
+      // console.log("DELETE NOTIFICATION RESPONSE:", response);
 
       const { success, message } = response.data;
 
@@ -198,7 +197,6 @@ export function deleteNotification(id,source,alert_id) {
     }
   };
 }
-
 
 export function updateImage(displayPicture, onSuccess) {
   return async (dispatch) => {
@@ -223,7 +221,7 @@ export function updateImage(displayPicture, onSuccess) {
       toast.success("Image updated successfully");
       onSuccess && onSuccess(response.data.data);
     } catch (error) {
-     // console.error("UPDATE_IMAGE ERROR:", error);
+      // console.error("UPDATE_IMAGE ERROR:", error);
       toast.error(error?.response?.data?.message || "Failed to update image");
     } finally {
       toast.dismiss(toastId);
@@ -255,18 +253,17 @@ export function updateBasicInfo({ name, email }, onSuccess) {
       //toast.success("Info updated successfully");
       onSuccess && onSuccess(response.data.data);
     } catch (error) {
-     // console.error("UPDATE_BASIC_INFO ERROR:", error);
-     // toast.error(error?.response?.data?.message || "Failed to update info");
+      // console.error("UPDATE_BASIC_INFO ERROR:", error);
+      // toast.error(error?.response?.data?.message || "Failed to update info");
     } finally {
       toast.dismiss(toastId);
     }
   };
 }
 
-
-//change password 
+//change password
 export function changePassword(oldPassword, newPassword, onSuccess) {
- // console.log("api",CHANGE_PASSWORD_API)
+  // console.log("api",CHANGE_PASSWORD_API)
   return async (dispatch) => {
     const toastId = toast.loading("Changing password...");
     //dispatch(setLoading(true));
@@ -290,8 +287,10 @@ export function changePassword(oldPassword, newPassword, onSuccess) {
       // Call optional success callback to do things like clear form
       if (onSuccess) onSuccess();
     } catch (error) {
-     // console.error("CHANGE_PASSWORD ERROR:", error);
-      toast.error(error?.response?.data?.message || "Failed to change password");
+      // console.error("CHANGE_PASSWORD ERROR:", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to change password"
+      );
     } finally {
       //  dispatch(setLoading(false));
       toast.dismiss(toastId);
@@ -314,12 +313,11 @@ export function getAllUsers() {
 
       return response.data.users;
     } catch (error) {
-     // console.error("GET_ALL_USERS ERROR:", error);
+      // console.error("GET_ALL_USERS ERROR:", error);
       return [];
     }
   };
 }
-
 
 //edit user
 export function editUser(userId, updatedData, onSuccess) {
@@ -328,9 +326,14 @@ export function editUser(userId, updatedData, onSuccess) {
     //dispatch(setLoading(true));
     try {
       const token = JSON.parse(localStorage.getItem("token"));
-      const response = await apiConnector("PUT", EDIT_USER_API(userId), updatedData, {
-        Authorization: `Bearer ${token}`,
-      });
+      const response = await apiConnector(
+        "PUT",
+        EDIT_USER_API(userId),
+        updatedData,
+        {
+          Authorization: `Bearer ${token}`,
+        }
+      );
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -339,11 +342,11 @@ export function editUser(userId, updatedData, onSuccess) {
       toast.success("User updated successfully");
       onSuccess && onSuccess(response.data.user); // Optional callback
     } catch (error) {
-     // console.error("EDIT_USER ERROR:", error);
+      // console.error("EDIT_USER ERROR:", error);
       toast.error(error?.response?.data?.message || "Failed to update user");
     }
     toast.dismiss(toastId);
-   // dispatch(setLoading(false));
+    // dispatch(setLoading(false));
   };
 }
 
@@ -354,9 +357,14 @@ export function deleteUser(userId, onSuccess) {
     //dispatch(setLoading(true));
     try {
       const token = JSON.parse(localStorage.getItem("token"));
-      const response = await apiConnector("DELETE", DELETE_USER_API(userId), null, {
-        Authorization: `Bearer ${token}`,
-      });
+      const response = await apiConnector(
+        "DELETE",
+        DELETE_USER_API(userId),
+        null,
+        {
+          Authorization: `Bearer ${token}`,
+        }
+      );
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -365,11 +373,11 @@ export function deleteUser(userId, onSuccess) {
       toast.success("User deleted successfully");
       onSuccess && onSuccess(); // Optional callback to refresh UI
     } catch (error) {
-     // console.error("DELETE_USER ERROR:", error);
+      // console.error("DELETE_USER ERROR:", error);
       toast.error(error?.response?.data?.message || "Failed to delete user");
     }
     toast.dismiss(toastId);
-   // dispatch(setLoading(false));
+    // dispatch(setLoading(false));
   };
 }
 
@@ -381,20 +389,15 @@ export function signUp(role, name, email, password, confirmPassword, navigate) {
     try {
       if (password !== confirmPassword) {
         throw new Error("Passwords do not match");
-        
       }
 
-      const response = await apiConnector(
-        "POST",
-        SIGNUP_API,
-        {
-          role,
-          name,
-          email,
-          password,
-          confirmPassword,
-        }
-      );
+      const response = await apiConnector("POST", SIGNUP_API, {
+        role,
+        name,
+        email,
+        password,
+        confirmPassword,
+      });
 
       //console.log("SIGNUP API RESPONSE............", response);
 
@@ -404,36 +407,53 @@ export function signUp(role, name, email, password, confirmPassword, navigate) {
       toast.success("Signup Successful");
       navigate("/");
     } catch (error) {
-     // console.log("SIGNUP API ERROR............", error);
-      toast.error(error?.response?.data?.message || error?.message || "Signup Failed");
+      // console.log("SIGNUP API ERROR............", error);
+      toast.error(
+        error?.response?.data?.message || error?.message || "Signup Failed"
+      );
     }
     //spatch(setLoading(false));
     toast.dismiss(toastId);
   };
 }
 
-
 //register
-export function register(role, projectrole,name, email, password, confirmPassword, navigate) {
+export function register(
+  role,
+  projectrole,
+  name,
+  source,
+  email,
+  password,
+  confirmPassword,
+  assignJiraProjects,
+  googleProjectAuthor,
+  jiraProjectAuthor,
+  navigate
+) {
+
   return async (dispatch) => {
     const toastId = toast.loading("Loading...");
     // dispatch(setLoading(true));
     try {
       if (password !== confirmPassword) {
         throw new Error("Passwords do not match");
-        
       }
       const token = JSON.parse(localStorage.getItem("token"));
       const response = await apiConnector(
         "POST",
         REGISTER_API,
         {
-          role,
-          projectrole,
           name,
           email,
           password,
+          source,
           confirmPassword,
+          role,
+          projectrole,
+          assignJiraProjects,
+          googleProjectAuthor,
+          jiraProjectAuthor
         },
         {
           Authorization: `Bearer ${token}`,
@@ -448,8 +468,10 @@ export function register(role, projectrole,name, email, password, confirmPasswor
       toast.success("Register Successful");
       navigate("/dashboard/settings/user-management");
     } catch (error) {
-     // console.log("REGISRATION API ERROR............", error);
-      toast.error(error?.response?.data?.message || error?.message || "Signup Failed");
+      console.log("REGISRATION API ERROR............", error);
+      toast.error(
+        error?.response?.data?.message || error?.message || "Signup Failed"
+      );
     }
     //spatch(setLoading(false));
     toast.dismiss(toastId);
@@ -484,7 +506,6 @@ export function getUserDetails() {
   };
 }
 
-
 export function getPasswordResetToken(email, setEmailSent) {
   return async (dispatch) => {
     const toastId = toast.loading("Loading...");
@@ -494,7 +515,7 @@ export function getPasswordResetToken(email, setEmailSent) {
         email,
       });
 
-     // console.log("RESETPASSTOKEN RESPONSE............", response);
+      // console.log("RESETPASSTOKEN RESPONSE............", response);
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -503,7 +524,7 @@ export function getPasswordResetToken(email, setEmailSent) {
       toast.success("Reset Email Sent");
       setEmailSent(true);
     } catch (error) {
-     // console.log("RESETPASSTOKEN ERROR............", error);
+      // console.log("RESETPASSTOKEN ERROR............", error);
       toast.error("Failed To Send Reset Email");
     }
     toast.dismiss(toastId);
@@ -522,7 +543,7 @@ export function resetPassword(password, confirmPassword, token, navigate) {
         token,
       });
 
-     // console.log("RESETPASSWORD RESPONSE............", response);
+      // console.log("RESETPASSWORD RESPONSE............", response);
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -588,9 +609,8 @@ export function sendEmailOtp(email) {
       }
 
       toast.success("OTP Sent Successfully");
-  
     } catch (error) {
-     // console.log("SENDOTP API ERROR............", error);
+      // console.log("SENDOTP API ERROR............", error);
       toast.error(error.response.data.message);
     }
     //dispatch(setLoading(false));
@@ -609,7 +629,7 @@ export function verifyEmailOtp(oldEmail, newEmail, otp) {
         otp,
       });
 
-     // console.log("VERIFICATION API RESPONSE............", response);
+      // console.log("VERIFICATION API RESPONSE............", response);
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -619,16 +639,14 @@ export function verifyEmailOtp(oldEmail, newEmail, otp) {
 
       //console.log("verify for setUser",response.data.updatedUser)
       dispatch(setUser({ ...response.data.updatedUser }));
-
     } catch (error) {
-     // console.log("verification ERROR............", error);
+      // console.log("verification ERROR............", error);
       toast.error(error.response?.data?.message || "Verification Failed");
     }
     dispatch(setLoading(false));
     toast.dismiss(toastId);
   };
 }
-
 
 export function signin(email, password, otp, navigate) {
   return async (dispatch) => {
@@ -641,7 +659,7 @@ export function signin(email, password, otp, navigate) {
         otp,
       });
 
-     // console.log("SIGNin API RESPONSE............", response);
+      // console.log("SIGNin API RESPONSE............", response);
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -654,7 +672,7 @@ export function signin(email, password, otp, navigate) {
       localStorage.setItem("token", JSON.stringify(response.data.token));
       navigate("/dashboard");
     } catch (error) {
-     // console.log("SIGNin API ERROR............", error);
+      // console.log("SIGNin API ERROR............", error);
       toast.error("Signin Failed");
       navigate("/");
     }

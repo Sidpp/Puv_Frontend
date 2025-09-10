@@ -75,7 +75,7 @@ export default function Notifications() {
     const handleNewNotification = (notif) => {
       // console.log("New notification (raw):", notif);
       // filter with same rules
-      if (!shouldShowNotif(notif)) {
+      if (!hasSourceAccess(notif)) {
         // console.log("Notification skipped by filter:", notif);
         return;
       }
@@ -118,7 +118,7 @@ export default function Notifications() {
       socket.off("delete-notification", handleDeleteNotification);
       socket.off("update-notification", handleUpdateNotification);
     };
-  }, []);
+  }, [user]);
   //---------------------------------------------------------
 
   // whenever notifications or isRead changes, filter
@@ -236,45 +236,123 @@ export default function Notifications() {
   // }, [dispatch, user]);
 
   // ---- Helper functions (place inside Notifications component, above useEffect) ----
+  // const hasSourceAccess = (notif) => {
+  //   if (!notif || !notif.source) return false;
+
+  //   if (notif.source === "Jira") {
+  //     const hasCred = !!user?.jira_credential_id;
+  //     const assigned =
+  //       Array.isArray(user?.assignJiraProjects) &&
+  //       user.assignJiraProjects.length > 0 &&
+  //       (user.assignJiraProjects.includes(notif.project) ||
+  //         user.assignJiraProjects.includes(notif._id));
+  //     return hasCred || assigned;
+  //   }
+
+  //   if (notif.source === "Google") {
+  //     const hasCred = !!user?.google_credential_id;
+  //     const assigned =
+  //       Array.isArray(user?.assignGoogleProjects) &&
+  //       user.assignGoogleProjects.length > 0 &&
+  //       (user.assignGoogleProjects.includes(notif.project) ||
+  //         user.assignGoogleProjects.includes(notif._id));
+  //     return hasCred || assigned;
+  //   }
+
+  //   return false;
+  // };
+
   const hasSourceAccess = (notif) => {
-    if (!notif || !notif.source) return false;
+    const notifProjectId = notif._id || notif.id;
 
-    if (notif.source === "Jira") {
-      const hasCred = !!user?.jira_credential_id;
-      const assigned =
-        Array.isArray(user?.assignJiraProjects) &&
-        user.assignJiraProjects.length > 0 &&
-        (user.assignJiraProjects.includes(notif.project) ||
-          user.assignJiraProjects.includes(notif._id));
-      return hasCred || assigned;
+    if (user?.role === "User") {
+      if (notif?.source === "Jira") {
+        // normalize assigned projects (both Jira & Google) into one array
+        const assignedProjects = [
+          ...(user?.assignJiraProjects || []),
+          ...(user?.assignGoogleProjects || []),
+        ];
+
+        // ✅ check if notifProjectId exists in user's assigned projects
+        const isAssigned =
+          assignedProjects.length > 0 &&
+          assignedProjects.some(
+            (proj) => proj?.toString() === notifProjectId?.toString()
+          );
+
+        if (!isAssigned) return false; // block if user isn’t assigned to this project
+      }
+
+      switch (user?.projectrole) {
+        case "Portfolio Manager":
+          if (notif.source === "Google") {
+            // only Google alerts for same role
+            return notif.role === "Portfolio Manager";
+          }
+          if (notif.source === "Jira") {
+            // show all Jira alerts
+            return true;
+          }
+          return false;
+        //return true;
+
+        case "Program Manager":
+          // only Google alerts for Program Manager
+          return notif.role === "Program Manager" && notif.source === "Google";
+
+        case "Project Manager":
+          if (user?.source === "Google") {
+            return (
+              notif.role === "Project Manager" && notif.source === "Google"
+            );
+          } else {
+            return notif.role === "Project Manager" && notif.source === "Jira";
+          }
+
+        case "Executive":
+          // only Google notifications for Executives
+          return notif.role === "Executive" && notif.source === "Google";
+
+        default:
+          // fallback → Jira issues for Team Leader
+          return notif.role === "Team Leader" && notif.source === "Jira";
+      }
+    } else {
+      if (user?.google_credential_id && user?.jira_credential_id) {
+        // user has both → allow both sources
+        return true;
+      }
+
+      if (user?.google_credential_id) {
+        return notif.source === "Google";
+      }
+
+      if (user?.jira_credential_id) {
+        return notif.source === "Jira";
+      }
+
+      // fallback (no credentials, maybe admin or system)
+      return true;
     }
-
-    if (notif.source === "Google") {
-      const hasCred = !!user?.google_credential_id;
-      const assigned =
-        Array.isArray(user?.assignGoogleProjects) &&
-        user.assignGoogleProjects.length > 0 &&
-        (user.assignGoogleProjects.includes(notif.project) ||
-          user.assignGoogleProjects.includes(notif._id));
-      return hasCred || assigned;
-    }
-
-    return false;
   };
 
   const roleMatches = (notif) => {
-    // only show if both user.projectrole and notif.role exist and match
-    if (!user?.projectrole) return false;
-    if (!notif?.role) return false;
+    if (!user?.projectrole) {
+      // user has no project role → show everything
+      return true;
+    }
+
+    // user has a project role → only show matching role
     return (
+      notif?.role &&
       notif.role.toString().toLowerCase().trim() ===
-      user.projectrole.toString().toLowerCase().trim()
+        user.projectrole.toString().toLowerCase().trim()
     );
   };
 
   const shouldShowNotif = (notif) => {
     // 1) source must be allowed by credentials or assigned projects
-    if (!hasSourceAccess(notif)) return false;
+    // if (!hasSourceAccess(notif)) return false;
     // 2) role must exist and match user's role
     if (!roleMatches(notif)) return false;
     return true;
@@ -301,10 +379,11 @@ export default function Notifications() {
         );
 
         // apply filter that enforces: source allowed AND role match
-        // const filtered = res.filter((notif) => shouldShowNotif(notif));
-
-        setNotifications(res);
-        setLatestNotif(res.length ? res[0] : null);
+        const filtered = res.filter((notif) => hasSourceAccess(notif));
+        //console.log("filtered", filtered);
+        setNotifications(filtered);
+        setLatestNotif(filtered.length ? res[0] : null);
+        // console.log("messages", filtered);
       } catch (error) {
         // console.error("Failed to load notifications", error);
       } finally {

@@ -38,7 +38,9 @@ export const jiraendpoints = {
   UPDATE_JIRA_ALERT_STATUS_API: BASE_URL + "/jira/alert/status",
 
   GET_ISSUES_API: BASE_URL + "/jira/issues",
+  GET_ASSIGN_ISSUES_API: BASE_URL + "/jira/issues/assigned",
   GET_ISSUES_BY_ID_API: BASE_URL + "/jira/issues",
+  GET_ISSUES_BY_IDs_API: BASE_URL + "/jira/issuesids",
   JIRA_CONNECT_API: BASE_URL + "/jira/connect",
   GET_JIRA_CREDENTIALS_API: BASE_URL + "/jira/credentials",
 };
@@ -50,6 +52,8 @@ export const googleendpoints = {
   UPDATE_GOOGLE_ALERT_STATUS_API: BASE_URL + "/google/alert/status",
 
   GET_ALL_GOOGLE_DETAILS_API: BASE_URL + "/google",
+  GET_ASSIGNED_GOOGLE_DETAILS_API: BASE_URL + "/google/assigned",
+
   GET_GOOGLE_SHEET_BY_ID_API: BASE_URL + "/google",
   GET_GOOGLE_CREDENTIALS_API: BASE_URL + "/google/credentials",
 };

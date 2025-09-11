@@ -21,7 +21,7 @@ const AiInsights = () => {
   const [googleData, setGoogleData] = useState([]);
   const [loadingJira, setLoadingJira] = useState(true);
   const [loadingGoogle, setLoadingGoogle] = useState(true);
-  const [selectedView, setSelectedView] = useState("google");
+  const [selectedView, setSelectedView] = useState();
   const [selectedFilter, setSelectedFilter] = useState("All");
   const { user } = useSelector((state) => state.profile);
 
@@ -120,10 +120,10 @@ const AiInsights = () => {
           );
           setGoogleData(filteredData);
           //console.log("google data", filteredData);
-        } else if (
-          user?.projectrole === "Executive"
-        ) {
-          const allProjects = await dispatch(getAssignGoogleDetails(user?.googleProjectAuthor));
+        } else if (user?.projectrole === "Executive") {
+          const allProjects = await dispatch(
+            getAssignGoogleDetails(user?.googleProjectAuthor)
+          );
           if (!Array.isArray(allProjects)) {
             setGoogleData([]);
             return;
@@ -141,7 +141,7 @@ const AiInsights = () => {
         // console.error("Failed to fetch Google projects:", err);
         setGoogleData([]);
       } finally {
-        setLoadingGoogle(false);
+       // setLoadingGoogle(false);
       }
     };
 
@@ -185,6 +185,7 @@ const AiInsights = () => {
         setJiraData([]);
       } finally {
         setLoadingJira(false);
+        setLoadingGoogle(false);
       }
     };
 
@@ -192,22 +193,17 @@ const AiInsights = () => {
   }, [dispatch, user]);
 
   useEffect(() => {
-  if (jiraData.length > 0 && googleData.length > 0) {
-    // keep dropdown, default stays "google"
-    if (selectedView !== "jira" && selectedView !== "google") {
+    if (jiraData.length > 0 && googleData.length > 0) {
+      // keep dropdown, default stays "google"
+      if (selectedView !== "jira" && selectedView !== "google") {
+        setSelectedView("google");
+      }
+    } else if (jiraData.length > 0) {
+      setSelectedView("jira");
+    } else if (googleData.length > 0) {
       setSelectedView("google");
     }
-  } else if (jiraData.length > 0) {
-    setSelectedView("jira");
-  } else if (googleData.length > 0) {
-    setSelectedView("google");
-  }
-}, [jiraData, googleData]);
-
-
-
-    
-  
+  }, [jiraData, googleData]);
 
   const handleViewChange = (e) => {
     const value = e.target.value;
@@ -338,7 +334,6 @@ const AiInsights = () => {
   const isGoogleEmpty = !filteredGoogle || filteredGoogle.length === 0;
   const isJiraEmpty = !filteredJira || filteredJira.length === 0;
 
-  
   // --- Count calculation ---
   const getCounts = (data, source) => {
     const counts = {
@@ -372,6 +367,40 @@ const AiInsights = () => {
       : getCounts(googleData, "google");
 
   // --- Loading checks ---
+
+  if (loadingGoogle && loadingJira) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <p className="text-lg font-semibold">Loading Data...</p>
+      </div>
+    );
+  }
+
+  if (isJiraEmpty && isGoogleEmpty) {
+    if(user?.role === "Admin"){
+          return (
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-xl font-semibold mb-4">No data found.</p>
+          <button
+            className="px-6 py-3 bg-[#00254D] text-white rounded-md hover:bg-[#003366] transition"
+            onClick={() => {
+              navigate("/dashboard/settings/profile-management");
+            }}
+          >
+            Connect 
+          </button>
+        </div>
+    );
+    }else{
+          return (
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-xl font-semibold mb-4"> You haven't assigned with any Projects</p>
+
+        </div>
+    );
+    }
+  }
+
   if (selectedView === "jira" && loadingJira) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -387,9 +416,6 @@ const AiInsights = () => {
       </div>
     );
   }
-
-
-
 
   return (
     <div className="max-w-[1200px] mx-auto p-6">
@@ -460,20 +486,19 @@ const AiInsights = () => {
         )}
 
         {/* View Switcher */}
-{/* View Switcher - only show if both have data */}
-{jiraData.length > 0 && googleData.length > 0 && (
-  <div className="ml-auto">
-    <select
-      value={selectedView}
-      onChange={handleViewChange}
-      className="appearance-none border border-blue-300 rounded-full px-6 py-2 shadow-md"
-    >
-      <option value="jira">Jira View</option>
-      <option value="google">Google View</option>
-    </select>
-  </div>
-)}
-
+        {/* View Switcher - only show if both have data */}
+        {jiraData.length > 0 && googleData.length > 0 && (
+          <div className="ml-auto">
+            <select
+              value={selectedView}
+              onChange={handleViewChange}
+              className="appearance-none border border-blue-300 rounded-full px-6 py-2 shadow-md"
+            >
+              <option value="jira">Jira View</option>
+              <option value="google">Google View</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Data Grid */}

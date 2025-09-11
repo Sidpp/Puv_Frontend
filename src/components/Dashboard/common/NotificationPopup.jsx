@@ -117,27 +117,33 @@ export default function NotificationPopup({ onClose, alerts, setAlerts }) {
                 className="border-b pb-3 cursor-pointer last:border-b-0"
                 onClick={() => handleClick(notif)}
               >
-                {/* Title Row */}
-                <div className="flex items-center gap-2 font-medium text-sm mb-1">
-                  <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0 mt-1"></span>
-                  <h3 className="text-blue-900 font-semibold">
-                    {notif.alert_type}
-                  </h3>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      sourceStyles[notif.source] || "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {notif.source}
-                  </span>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      sourceStyles[notif.role] || "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {notif.role}
-                  </span>
-                </div>
+{/* Title Row */}
+<div className="flex flex-wrap items-center gap-2 font-medium text-sm mb-1">
+  {/* Colored dot */}
+  <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0 mt-1"></span>
+
+  {/* Title takes remaining space */}
+  <h3 className="text-blue-900 font-semibold flex-1 min-w-0">
+    {notif.alert_type}
+  </h3>
+
+  {/* Badges */}
+  <span
+    className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+      sourceStyles[notif.source] || "bg-gray-100 text-gray-700"
+    }`}
+  >
+    {notif.source}
+  </span>
+  <span
+    className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+      sourceStyles[notif.role] || "bg-gray-100 text-gray-700"
+    }`}
+  >
+    {notif.role}
+  </span>
+</div>
+
 
                 {/* Message */}
                 <div className="flex items-start gap-2 mb-1">

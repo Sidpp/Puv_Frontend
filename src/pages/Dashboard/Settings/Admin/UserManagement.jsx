@@ -423,25 +423,25 @@ export default function UserManagement() {
                         {editUserData.source === "Jira" ? (
                           <>
                             <option value="Project Manager">
-                              Project Manager (Jira)
+                              Project Manager 
                             </option>
                             <option value="Team Leader">
-                              Team Leader (Jira)
+                              Team Leader 
                             </option>
                           </>
                         ) : (
                           <>
                             <option value="Portfolio Manager">
-                              Portfolio Manager (Google)
+                              Portfolio Manager 
                             </option>
                             <option value="Program Manager">
-                              Program Manager (Google)
+                              Program Manager 
                             </option>
                             <option value="Project Manager">
-                              Project Manager (Google)
+                              Project Manager 
                             </option>
                             <option value="Executive">
-                              Executive (Google)
+                              Executive 
                             </option>
                           </>
                         )}

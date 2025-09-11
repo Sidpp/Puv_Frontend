@@ -672,8 +672,8 @@ export function signin(email, password, otp, navigate) {
       localStorage.setItem("token", JSON.stringify(response.data.token));
       navigate("/dashboard");
     } catch (error) {
-      // console.log("SIGNin API ERROR............", error);
-      toast.error("Signin Failed");
+       console.log("SIGNin API ERROR............", error);
+      toast.error(error.response.data.message);
       navigate("/");
     }
     dispatch(setLoading(false));

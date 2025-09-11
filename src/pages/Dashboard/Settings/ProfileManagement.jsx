@@ -88,7 +88,7 @@ const ProfileSettings = () => {
         sheetRange: googleCredentials.sheetRange || "",
       });
     }
-   // console.log("google credentila", googleCredentials, googleSheet);
+    // console.log("google credentila", googleCredentials, googleSheet);
   }, [googleCredentials]);
 
   // Cleanup avatar preview on unmount
@@ -143,7 +143,7 @@ const ProfileSettings = () => {
     if (profile.name.trim()) {
       dispatch(
         updateBasicInfo({ name: profile.name.trim() }, (updatedUser) => {
-         // console.log("Basic info updated:", updatedUser);
+          // console.log("Basic info updated:", updatedUser);
         })
       );
     }
@@ -151,7 +151,7 @@ const ProfileSettings = () => {
     if (profile.email.trim()) {
       dispatch(
         updateBasicInfo({ email: profile.email.trim() }, (updatedUser) => {
-         // console.log("Basic info updated:", updatedUser);
+          // console.log("Basic info updated:", updatedUser);
         })
       );
     }
@@ -159,7 +159,7 @@ const ProfileSettings = () => {
     if (profile.avatar) {
       dispatch(
         updateImage(profile.avatar, (updatedUser) => {
-         // console.log("Image updated:", updatedUser);
+          // console.log("Image updated:", updatedUser);
         })
       );
     }
@@ -187,12 +187,12 @@ const ProfileSettings = () => {
       };
 
       const encodedState = encodeURIComponent(JSON.stringify(stateObj));
-     // console.log("encoded", encodedState);
+      // console.log("encoded", encodedState);
 
       const baseUrl = process.env.REACT_APP_GOOGLE_BACKEND_URL;
       window.location.href = `${baseUrl}/auth/google?state=${encodedState}`;
     } else {
-     // console.log("Please fill all Google Sheet fields before connecting.");
+      // console.log("Please fill all Google Sheet fields before connecting.");
     }
   };
 
@@ -203,7 +203,7 @@ const ProfileSettings = () => {
       const result = await dispatch(deleteUserJiraCredential(user._id));
 
       if (result.success) {
-       // console.log("Jira disconnected successfully");
+        // console.log("Jira disconnected successfully");
         toast.success(result.message || "Jira disconnected successfully"); // show backend message
         dispatch(clearJiraCredentials());
       } else {
@@ -211,7 +211,7 @@ const ProfileSettings = () => {
         toast.error(result.message || "Failed to disconnect Jira");
       }
     } catch (error) {
-     // console.error("Unexpected error disconnecting Jira:", error);
+      // console.error("Unexpected error disconnecting Jira:", error);
       toast.error("An unexpected error occurred while disconnecting Jira");
     }
   };
@@ -221,9 +221,9 @@ const ProfileSettings = () => {
 
     const result = await dispatch(deleteUserGoogleCredential(user._id));
     if (result.success) {
-     // console.log("Google disconnected successfully");
+      // console.log("Google disconnected successfully");
       toast.success(result.message);
-           dispatch(clearGoogleCredentials()); 
+      dispatch(clearGoogleCredentials());
     } else {
       //console.error("Failed to disconnect Google:", result.message);
       toast.error(result.message || "Failed to disconnect Google");
@@ -240,12 +240,12 @@ const ProfileSettings = () => {
             jira_api_key: jira.jiraApiKey,
           },
           (updatedJIRA) => {
-          //  console.log("Jira updated:", updatedJIRA);
+            //  console.log("Jira updated:", updatedJIRA);
           }
         )
       );
     } else {
-     // console.log("Please fill all Jira fields before submitting.");
+      // console.log("Please fill all Jira fields before submitting.");
     }
   };
 
@@ -375,161 +375,172 @@ const ProfileSettings = () => {
 
         {/* Connections Section */}
         <div className="flex flex-col md:flex-row md:space-x-6 space-y-6 md:space-y-0">
-          {/* Google Sheet */}
-          <div className="bg-[#f3f7f6] rounded-xl p-6 flex flex-col space-y-4 flex-1 shadow-md">
-            <p className="text-[#001f3f] font-semibold text-sm flex items-center gap-2">
-              Google Sheet connection
-              {googleCredentials ? (
-                <>
-                  <FaCheckCircle
-                    className="text-green-500 text-base"
-                    title="Connected"
+          {user?.role === "Admin" && (
+            <>
+              {/* Google Sheet */}
+              <div className="bg-[#f3f7f6] rounded-xl p-6 flex flex-col space-y-4 flex-1 shadow-md">
+                <p className="text-[#001f3f] font-semibold text-sm flex items-center gap-2">
+                  Google Sheet connection
+                  {googleCredentials ? (
+                    <>
+                      <FaCheckCircle
+                        className="text-green-500 text-base"
+                        title="Connected"
+                      />
+                      <span className="text-green-600 text-xs">Online</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaTimesCircle
+                        className="text-red-500 text-base"
+                        title="Not connected"
+                      />
+                      <span className="text-red-600 text-xs">Offline</span>
+                    </>
+                  )}
+                </p>
+
+                <div>
+                  <label
+                    htmlFor="sheetId"
+                    className="block text-[#6b6b6b] font-semibold mb-1"
+                  >
+                    Google Sheet ID
+                  </label>
+                  <input
+                    type="text"
+                    id="sheetId"
+                    value={googleSheet.sheetId}
+                    onChange={handleGoogleChange}
+                    placeholder="Your Google Sheet ID"
+                    className="w-full rounded-xl py-3 px-4 text-gray-400 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-[#001f3f]"
                   />
-                  <span className="text-green-600 text-xs">Online</span>
-                </>
-              ) : (
-                <>
-                  <FaTimesCircle
-                    className="text-red-500 text-base"
-                    title="Not connected"
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="sheetRange"
+                    className="block text-[#6b6b6b] font-semibold mb-1"
+                  >
+                    Google Sheet Range
+                  </label>
+                  <input
+                    type="text"
+                    id="sheetRange"
+                    value={googleSheet.sheetRange}
+                    onChange={handleGoogleChange}
+                    placeholder="e.g. Sheet1!A1:C10"
+                    className="w-full rounded-xl py-3 px-4 text-gray-400 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-[#001f3f]"
                   />
-                  <span className="text-red-600 text-xs">Offline</span>
-                </>
-              )}
-            </p>
+                </div>
 
-            <div>
-              <label
-                htmlFor="sheetId"
-                className="block text-[#6b6b6b] font-semibold mb-1"
-              >
-                Google Sheet ID
-              </label>
-              <input
-                type="text"
-                id="sheetId"
-                value={googleSheet.sheetId}
-                onChange={handleGoogleChange}
-                placeholder="Your Google Sheet ID"
-                className="w-full rounded-xl py-3 px-4 text-gray-400 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-[#001f3f]"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="sheetRange"
-                className="block text-[#6b6b6b] font-semibold mb-1"
-              >
-                Google Sheet Range
-              </label>
-              <input
-                type="text"
-                id="sheetRange"
-                value={googleSheet.sheetRange}
-                onChange={handleGoogleChange}
-                placeholder="e.g. Sheet1!A1:C10"
-                className="w-full rounded-xl py-3 px-4 text-gray-400 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-[#001f3f]"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={
-                googleCredentials ? handleGoogleDisConnect : handleGoogleConnect
-              }
-              className={`w-fit ${
-                googleCredentials
-                  ? "bg-red-400 hover:bg-red-500"
-                  : "bg-[#001f3f] hover:shadow-lg"
-              } text-white font-semibold rounded-full px-8 py-3 shadow-md transition-shadow`}
-            >
-              {googleCredentials ? "Disconnect" : "Connect to Google Sheet"}
-            </button>
-          </div>
+                <button
+                  type="button"
+                  onClick={
+                    googleCredentials
+                      ? handleGoogleDisConnect
+                      : handleGoogleConnect
+                  }
+                  className={`w-fit ${
+                    googleCredentials
+                      ? "bg-red-400 hover:bg-red-500"
+                      : "bg-[#001f3f] hover:shadow-lg"
+                  } text-white font-semibold rounded-full px-8 py-3 shadow-md transition-shadow`}
+                >
+                  {googleCredentials ? "Disconnect" : "Connect to Google Sheet"}
+                </button>
+              </div>
 
-          {/* Jira Connection */}
-          <form className="bg-[#f3f7f6] rounded-xl p-6 flex flex-col space-y-4 flex-1 shadow-md">
-            <p className="text-[#001f3f] font-semibold text-sm flex items-center gap-2">
-              Jira connection
-              {credentials ? (
-                <>
-                  <FaCheckCircle
-                    className="text-green-500 text-base"
-                    title="Connected"
+              {/* Jira Connection */}
+              <form className="bg-[#f3f7f6] rounded-xl p-6 flex flex-col space-y-4 flex-1 shadow-md">
+                <p className="text-[#001f3f] font-semibold text-sm flex items-center gap-2">
+                  Jira connection
+                  {credentials ? (
+                    <>
+                      <FaCheckCircle
+                        className="text-green-500 text-base"
+                        title="Connected"
+                      />
+                      <span className="text-green-600 text-xs">Online</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaTimesCircle
+                        className="text-red-500 text-base"
+                        title="Not connected"
+                      />
+                      <span className="text-red-600 text-xs">Offline</span>
+                    </>
+                  )}
+                </p>
+
+                <div>
+                  <label
+                    htmlFor="jiraEmail"
+                    className="block text-[#6b6b6b] font-semibold mb-1"
+                  >
+                    Jira Email Address
+                  </label>
+                  <input
+                    type="email"
+                    id="jiraEmail"
+                    value={jira.jiraEmail}
+                    onChange={handleJiraChange}
+                    placeholder="demo@gmail.com"
+                    className="w-full rounded-xl py-3 px-4 text-gray-400 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-[#001f3f]"
                   />
-                  <span className="text-green-600 text-xs">Online</span>
-                </>
-              ) : (
-                <>
-                  <FaTimesCircle
-                    className="text-red-500 text-base"
-                    title="Not connected"
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="jiraDomain"
+                    className="block text-[#6b6b6b] font-semibold mb-1"
+                  >
+                    Jira Site URL
+                  </label>
+                  <input
+                    type="text"
+                    id="jiraDomain"
+                    value={jira.jiraDomain}
+                    onChange={handleJiraChange}
+                    placeholder="https://yoursite.atlassian.net"
+                    className="w-full rounded-xl py-3 px-4 text-gray-400 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-[#001f3f]"
                   />
-                  <span className="text-red-600 text-xs">Offline</span>
-                </>
-              )}
-            </p>
+                </div>
 
-            <div>
-              <label
-                htmlFor="jiraEmail"
-                className="block text-[#6b6b6b] font-semibold mb-1"
-              >
-                Jira Email Address
-              </label>
-              <input
-                type="email"
-                id="jiraEmail"
-                value={jira.jiraEmail}
-                onChange={handleJiraChange}
-                placeholder="demo@gmail.com"
-                className="w-full rounded-xl py-3 px-4 text-gray-400 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-[#001f3f]"
-              />
-            </div>
+                <div>
+                  <label
+                    htmlFor="jiraApiKey"
+                    className="block text-[#6b6b6b] font-semibold mb-1"
+                  >
+                    Jira API Key
+                  </label>
+                  <input
+                    type="text"
+                    id="jiraApiKey"
+                    value={jira.jiraApiKey}
+                    onChange={handleJiraChange}
+                    placeholder="your-api-key"
+                    className="w-full rounded-xl py-3 px-4 text-gray-400 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-[#001f3f]"
+                  />
+                </div>
 
-            <div>
-              <label
-                htmlFor="jiraDomain"
-                className="block text-[#6b6b6b] font-semibold mb-1"
-              >
-                Jira Site URL
-              </label>
-              <input
-                type="text"
-                id="jiraDomain"
-                value={jira.jiraDomain}
-                onChange={handleJiraChange}
-                placeholder="https://yoursite.atlassian.net"
-                className="w-full rounded-xl py-3 px-4 text-gray-400 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-[#001f3f]"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="jiraApiKey"
-                className="block text-[#6b6b6b] font-semibold mb-1"
-              >
-                Jira API Key
-              </label>
-              <input
-                type="text"
-                id="jiraApiKey"
-                value={jira.jiraApiKey}
-                onChange={handleJiraChange}
-                placeholder="your-api-key"
-                className="w-full rounded-xl py-3 px-4 text-gray-400 placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-[#001f3f]"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={credentials ? handleJiraDisConnect : handleJiraConnect}
-              className={`w-fit ${
-                credentials
-                  ? "bg-red-400 hover:bg-red-500"
-                  : "bg-[#001f3f] hover:shadow-lg"
-              } text-white font-semibold rounded-full px-8 py-3 shadow-md transition-shadow`}
-            >
-              {credentials ? "Disconnect" : "Connect to Jira"}
-            </button>
-          </form>
+                <button
+                  type="button"
+                  onClick={
+                    credentials ? handleJiraDisConnect : handleJiraConnect
+                  }
+                  className={`w-fit ${
+                    credentials
+                      ? "bg-red-400 hover:bg-red-500"
+                      : "bg-[#001f3f] hover:shadow-lg"
+                  } text-white font-semibold rounded-full px-8 py-3 shadow-md transition-shadow`}
+                >
+                  {credentials ? "Disconnect" : "Connect to Jira"}
+                </button>
+              </form>
+            </>
+          )}
         </div>
 
         {/* Save Button */}

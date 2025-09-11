@@ -188,22 +188,22 @@ const AddUserForm = () => {
                   {form.source === "Jira" ? (
                     <>
                       <option value="Project Manager">
-                        Project Manager (Jira)
+                        Project Manager 
                       </option>
-                      <option value="Team Leader">Team Leader (Jira)</option>
+                      <option value="Team Leader">Team Leader </option>
                     </>
                   ) : (
                     <>
                       <option value="Portfolio Manager">
-                        Portfolio Manager (Google)
+                        Portfolio Manager 
                       </option>
                       <option value="Program Manager">
-                        Program Manager (Google)
+                        Program Manager 
                       </option>
                       <option value="Project Manager">
-                        Project Manager (Google)
+                        Project Manager 
                       </option>
-                      <option value="Executive">Executive (Google)</option>
+                      <option value="Executive">Executive </option>
                     </>
                   )}
                 </select>
@@ -269,6 +269,7 @@ const AddUserForm = () => {
               <label className="text-sm font-semibold text-gray-700">
                 Confirm Password
               </label>
+              
               <input
                 name="confirmPassword"
                 value={form.confirmPassword}

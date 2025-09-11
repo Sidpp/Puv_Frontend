@@ -18,11 +18,11 @@ const {
 // mark aproved/rejected for notification
 export function updateGoogleAlertStatus(projectId, alertId, operation) {
   return async (dispatch) => {
-    const toastId = toast.loading(
-      operation === "approved"
-        ? "Approving Google alert..."
-        : "Rejecting Google alert..."
-    );
+    // const toastId = toast.loading(
+    //   operation === "approved"
+    //     ? "Approving Google alert..."
+    //     : "Rejecting Google alert..."
+    // );
 
     try {
       const response = await apiConnector("PUT", UPDATE_GOOGLE_ALERT_STATUS_API, {
@@ -34,22 +34,22 @@ export function updateGoogleAlertStatus(projectId, alertId, operation) {
      // console.log("UPDATE_GOOGLE_ALERT_STATUS RESPONSE:", response);
 
       if (response.data?.success) {
-        toast.success(
-          operation === "approved"
-            ? "Google alert approved successfully"
-            : "Google alert rejected successfully"
-        );
+        // toast.success(
+        //   operation === "approved"
+        //     ? "Google alert approved successfully"
+        //     : "Google alert rejected successfully"
+        // );
       } else {
-        toast.error(response.data?.message || "Failed to update Google alert status");
+       // toast.error(response.data?.message || "Failed to update Google alert status");
       }
     } catch (error) {
       //console.error("UPDATE_GOOGLE_ALERT_STATUS ERROR:", error);
-      toast.error(
-        error?.response?.data?.message || "Failed to update Google alert status"
-      );
+      // toast.error(
+      //   error?.response?.data?.message || "Failed to update Google alert status"
+      // );
     } finally {
       dispatch(setLoading(false));
-      toast.dismiss(toastId);
+     // toast.dismiss(toastId);
     }
   };
 }
@@ -57,7 +57,7 @@ export function updateGoogleAlertStatus(projectId, alertId, operation) {
 //mark read for notification
 export function markGoogleAlertRead(projectId, alertId) {
   return async (dispatch) => {
-    const toastId = toast.loading("Marking Google alert as read...");
+   // const toastId = toast.loading("Marking Google alert as read...");
 
     try {
       const response = await apiConnector("PUT", MARK_GOOGLE_ALERT_READ_API, {
@@ -68,18 +68,18 @@ export function markGoogleAlertRead(projectId, alertId) {
      // console.log("MARK_GOOGLE_ALERT_READ RESPONSE:", response);
 
       if (response.data?.success) {
-        toast.success("Google alert marked as read");
+       // toast.success("Google alert marked as read");
       } else {
-        toast.error(response.data?.message || "Failed to mark Google alert as read");
+       // toast.error(response.data?.message || "Failed to mark Google alert as read");
       }
     } catch (error) {
       //console.error("MARK_GOOGLE_ALERT_READ ERROR:", error);
-      toast.error(
-        error?.response?.data?.message || "Failed to mark Google alert as read"
-      );
+      // toast.error(
+      //   error?.response?.data?.message || "Failed to mark Google alert as read"
+      // );
     } finally {
       dispatch(setLoading(false));
-      toast.dismiss(toastId);
+     // toast.dismiss(toastId);
     }
   };
 }
@@ -88,11 +88,11 @@ export function markGoogleAlertRead(projectId, alertId) {
 export function approveGoogleSumary(projectId, operation) {
  // console.log("project ",projectId, operation)
   return async (dispatch) => {
-    const toastId = toast.loading(
-      operation === "approved"
-        ? "Approving..."
-        : "Rejecting..."
-    );
+    // const toastId = toast.loading(
+    //   operation === "approved"
+    //     ? "Approving..."
+    //     : "Rejecting..."
+    // );
 
     try {
       const response = await apiConnector(
@@ -104,22 +104,22 @@ export function approveGoogleSumary(projectId, operation) {
      // console.log("UPDATE_GOOGLE_SUMMARY_STATUS RESPONSE:", response);
 
       if (response.data?.success) {
-        toast.success(
-          operation === "approved"
-            ? "Approved successfully"
-            : "Rejected successfully"
-        );
+        // toast.success(
+        //   operation === "approved"
+        //     ? "Approved successfully"
+        //     : "Rejected successfully"
+        // );
       } else {
-        toast.error(response.data?.message || "Failed to update Google issue status");
+       // toast.error(response.data?.message || "Failed to update Google issue status");
       }
     } catch (error) {
      // console.error("UPDATE_GOOGLE_SUMMARY_STATUS ERROR:", error);
-      toast.error(
-        error?.response?.data?.message || "Failed to update Google summary status"
-      );
+      // toast.error(
+      //   error?.response?.data?.message || "Failed to update Google summary status"
+      // );
     } finally {
       dispatch(setLoading(false));
-      toast.dismiss(toastId);
+     // toast.dismiss(toastId);
     }
   };
 }

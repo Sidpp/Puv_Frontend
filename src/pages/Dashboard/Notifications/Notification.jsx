@@ -265,8 +265,8 @@ export default function Notifications() {
   const hasSourceAccess = (notif) => {
     const notifProjectId = notif._id || notif.id;
 
-    if (user?.role === "User") {
-      if (notif?.source === "Jira") {
+    if (user?.role === "User" ) {
+      if (notif?.source === "Jira" && user?.projectrole !== "Portfolio Manager") {
         // normalize assigned projects (both Jira & Google) into one array
         const assignedProjects = [
           ...(user?.assignJiraProjects || []),
@@ -331,8 +331,6 @@ export default function Notifications() {
         return notif.source === "Jira";
       }
 
-      // fallback (no credentials, maybe admin or system)
-      return true;
     }
   };
 

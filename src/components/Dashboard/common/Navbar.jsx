@@ -38,18 +38,18 @@ const Navbar = () => {
 
   const hasSourceAccess = (notif) => {
     const notifProjectId = notif._id || notif.id;
-    console.log("notif", notif);
+    // console.log("notif", notif);
 
-    console.log("id", notifProjectId);
+    // console.log("id", notifProjectId);
 
     if (user?.role === "User") {
-      console.log("role user", user?.role);
-      if (notif?.source === "Jira") {
-        console.log("notif source", notif?.source);
+     // console.log("role user", user?.role);
+      if (notif?.source === "Jira" && user?.projectrole !== "Portfolio Manager") {
+       // console.log("notif source", notif?.source);
         // normalize assigned projects (both Jira & Google) into one array
-        console.log("asssifn projets1", user?.assignJiraProjects);
+       // console.log("asssifn projets1", user?.assignJiraProjects);
         const assignedProjects = [...(user?.assignJiraProjects || [])];
-        console.log("asssifn projets", assignedProjects);
+       // console.log("asssifn projets", assignedProjects);
 
         // ✅ check if notifProjectId exists in user's assigned projects
         const isAssigned =
@@ -58,10 +58,10 @@ const Navbar = () => {
             (proj) => proj?.toString() === notifProjectId?.toString()
           );
 
-        console.log("isassign", isAssigned);
+       // console.log("isassign", isAssigned);
 
         if (!isAssigned) return false; // block if user isn’t assigned to this project
-        console.log("last", isAssigned);
+       // console.log("last", isAssigned);
       }
 
       switch (user?.projectrole) {

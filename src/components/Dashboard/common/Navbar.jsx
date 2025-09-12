@@ -17,6 +17,7 @@ import { markGoogleAlertRead } from "../../../services/oprations/googleAPI";
 //   path: "/socket.io",
 // });
 
+const newLogo = "https://demo.portfolio-vue.com/static/media/PortfolioVue_logo.8efcdb20091b196009ee.png" || logo
 const BASE_URL = process.env.REACT_APP_SOCKET_URL;
 const socket = io(BASE_URL, {
   transports: ["websocket", "polling"],
@@ -221,7 +222,7 @@ const Navbar = () => {
     // };
 
     const handleNewNotification = (notif) => {
-      console.log("New popup (raw):", notif);
+     // console.log("New popup (raw):", notif);
 
       // check if this notif should be visible
       if (!hasSourceAccess(notif)) return;
@@ -647,7 +648,7 @@ const Navbar = () => {
       {/* Left: Logo + Title */}
       <div className="flex items-center">
         <img
-          src={logo}
+          src={newLogo}
           alt="PortfolioVue Logo"
           className="h-14 ml-16 sm:-ml-3 rounded-md"
         />

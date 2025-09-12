@@ -26,6 +26,7 @@ const {
   NOTIFICATION_API,
   JIRA_DELETE_API,
   GOOGLE_DELETE_API,
+  MARK_ALL_ALERT_AS_READED
 } = endpoints;
 
 // export function approveAlert(issueId, operation) {
@@ -65,6 +66,36 @@ const {
 //     }
 //   };
 // }
+
+// mark multiple Jira + Google alerts as read
+export function markAllAlertsRead(jiraAlerts = [], googleAlerts = []) {
+  return async (dispatch) => {
+    // const toastId = toast.loading("Marking alerts as read...");
+    try {
+      const response = await apiConnector("PUT", MARK_ALL_ALERT_AS_READED, {
+        jiraAlerts,   // [{ issueId, alertId }]
+        googleAlerts, // [{ projectId, alertId }]
+      });
+
+     // console.log("MARK_ALERTS_READ RESPONSE:", response);
+
+      if (response.data?.success) {
+       //  toast.success("Selected alerts marked as read");
+      } else {
+       //  toast.error(response.data?.message || "Failed to mark alerts as read");
+      }
+    } catch (error) {
+      // console.error("MARK_ALERTS_READ ERROR:", error);
+      // toast.error(
+      //   error?.response?.data?.message || "Failed to mark alerts as read"
+      // );
+    } finally {
+      dispatch(setLoading(false));
+      // toast.dismiss(toastId);
+    }
+  };
+}
+
 
 export function deleteUserJiraCredential(user_id) {
   //console.log("delete Jira credential for user:", user_id);

@@ -8,6 +8,7 @@ export const endpoints = {
   SEARCH_API: BASE_URL + "/search",
   NOTIFICATION_API: BASE_URL + "/alerts",
   FEEDBACK_API: BASE_URL + "/feedback",
+  MARK_ALL_ALERT_AS_READED: BASE_URL + "/alerts/allmakred",
 
   SENDOTP_API: BASE_URL + "/auth/sendotp",
   REGISTER_API: BASE_URL + "/auth/register",

@@ -9,7 +9,10 @@ import {
   faClock,
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
-import { deleteNotification } from "../../../services/oprations/authAPI";
+import {
+  deleteNotification,
+  markAllAlertsRead,
+} from "../../../services/oprations/authAPI";
 import { useDispatch } from "react-redux";
 import { markJiraAlertRead } from "../../../services/oprations/jiraAPI";
 import { markGoogleAlertRead } from "../../../services/oprations/googleAPI";
@@ -35,6 +38,29 @@ export default function NotificationPopup({ onClose, alerts, setAlerts }) {
   //     setAlerts((prev) => prev.filter((a) => a.id !== notif.id));
   //   }
   // };
+
+  // inside NotificationPopup component
+ 
+  const handleMarkAllAsRead = () => {
+    // collect all unread Jira + Google alerts from alerts prop
+    const jiraAlerts = alerts
+      .filter((n) => n.source === "Jira" &&  String(n.readed) === "false")
+      .map((n) => ({ issueId: n._id || n.id, alertId: n.alert_id }));
+
+     // console.log("jiraalert",jiraAlerts)
+      //console.log("alert",alerts)
+
+    const googleAlerts = alerts
+      .filter((n) => n.source === "Google" && !n.readed)
+      .map((n) => ({ projectId: n._id || n.id, alertId: n.alert_id }));
+
+      //console.log("googleAlerts",googleAlerts)
+
+    dispatch(markAllAlertsRead(jiraAlerts, googleAlerts));
+
+    // Optimistically update UI to mark them as read
+    setAlerts((prev) => prev.map((a) => ({ ...a, readed: true })));
+  };
 
   const handleClick = async (notif) => {
     if (!notif) return;
@@ -117,33 +143,32 @@ export default function NotificationPopup({ onClose, alerts, setAlerts }) {
                 className="border-b pb-3 cursor-pointer last:border-b-0"
                 onClick={() => handleClick(notif)}
               >
-{/* Title Row */}
-<div className="flex flex-wrap items-center gap-2 font-medium text-sm mb-1">
-  {/* Colored dot */}
-  <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0 mt-1"></span>
+                {/* Title Row */}
+                <div className="flex flex-wrap items-center gap-2 font-medium text-sm mb-1">
+                  {/* Colored dot */}
+                  <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0 mt-1"></span>
 
-  {/* Title takes remaining space */}
-  <h3 className="text-blue-900 font-semibold flex-1 min-w-0">
-    {notif.alert_type}
-  </h3>
+                  {/* Title takes remaining space */}
+                  <h3 className="text-blue-900 font-semibold flex-1 min-w-0">
+                    {notif.alert_type}
+                  </h3>
 
-  {/* Badges */}
-  <span
-    className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-      sourceStyles[notif.source] || "bg-gray-100 text-gray-700"
-    }`}
-  >
-    {notif.source}
-  </span>
-  <span
-    className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-      sourceStyles[notif.role] || "bg-gray-100 text-gray-700"
-    }`}
-  >
-    {notif.role}
-  </span>
-</div>
-
+                  {/* Badges */}
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                      sourceStyles[notif.source] || "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {notif.source}
+                  </span>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                      sourceStyles[notif.role] || "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {notif.role}
+                  </span>
+                </div>
 
                 {/* Message */}
                 <div className="flex items-start gap-2 mb-1">
@@ -195,7 +220,7 @@ export default function NotificationPopup({ onClose, alerts, setAlerts }) {
       </div>
 
       {/* Footer */}
-      <div className="text-center mt-2 flex-shrink-0">
+      <div className="flex justify-between text-center mt-2 flex-shrink-0 space-x-4">
         <button
           onClick={() => {
             onClose?.();
@@ -204,6 +229,12 @@ export default function NotificationPopup({ onClose, alerts, setAlerts }) {
           className="text-blue-700 hover:underline text-sm font-medium"
         >
           Show all notifications
+        </button>
+        <button
+          onClick={handleMarkAllAsRead}
+          className="text-green-600 hover:underline text-sm font-medium"
+        >
+          Mark all as Read
         </button>
       </div>
     </div>

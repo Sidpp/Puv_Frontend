@@ -1,4 +1,5 @@
 import React from "react";
+import logo from "../../assets/PortfolioVue_Brand.png";
 
 const AuthLeftPanel = () => {
   return (
@@ -12,7 +13,7 @@ const AuthLeftPanel = () => {
     >
       <div className="absolute top-60 ml-48 flex flex-col items-center text-white px-30">
         <img
-          src="/PortfolioVue_logo.png"
+          src={logo}
           alt="PortfolioVue Logo"
           className="mb-6 w-64 lg:w-96"
         />

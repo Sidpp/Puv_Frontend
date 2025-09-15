@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import { getAllJiraIssues } from "../../../../services/oprations/jiraAPI";
 
 const AddUserForm = () => {
-    const { user } = useSelector((state) => state.profile);
+  const { user } = useSelector((state) => state.profile);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [jiraData, setJiraData] = useState([]);
@@ -22,6 +22,7 @@ const AddUserForm = () => {
     password: "",
     confirmPassword: "",
     assignJiraProjects: "",
+    assignJiraProject: [],
   });
 
   useEffect(() => {
@@ -80,7 +81,7 @@ const AddUserForm = () => {
       );
       return;
     }
-    //console.log("formdata",form)
+   // console.log("formdata",form)
 
     dispatch(
       register(
@@ -94,6 +95,7 @@ const AddUserForm = () => {
         form.assignJiraProjects,
         form.source === "Google" ? user?._id : null, // googleProjectAuthor
         form.projectrole === "Portfolio Manager" ? user?._id : null, //jiraProjectAuthor
+        form.assignJiraProject,
         navigate
       )
     );
@@ -187,23 +189,16 @@ const AddUserForm = () => {
                   </option>
                   {form.source === "Jira" ? (
                     <>
-                      <option value="Project Manager">
-                        Project Manager 
-                      </option>
+                      <option value="Project Manager">Project Manager</option>
                       <option value="Team Leader">Team Leader </option>
                     </>
                   ) : (
                     <>
                       <option value="Portfolio Manager">
-                        Portfolio Manager 
+                        Portfolio Manager
                       </option>
-                      <option value="Program Manager">
-                        Program Manager 
-                      </option>
-                      <option value="Project Manager">
-                        Project Manager 
-                      </option>
-                      
+                      <option value="Program Manager">Program Manager</option>
+                      <option value="Project Manager">Project Manager</option>
                     </>
                   )}
                 </select>
@@ -218,32 +213,28 @@ const AddUserForm = () => {
                 </label>
                 <Select
                   isMulti
-                  value={filteredJira
-                    .filter((proj) =>
-                      // Check if any id from this project is in form.assignJiraProjects
-                      proj.ids.some((id) =>
-                        (form.assignJiraProjects || []).includes(id)
-                      )
-                    )
-                    .map((proj) => ({
-                      value: proj.project_name,
-                      label: proj.project_name,
-                    }))}
+                  value={(form.assignJiraProject || []).map((proj) => ({
+                    value: proj.jiraProjectName,
+                    label: proj.jiraProjectName,
+                  }))}
                   options={filteredJira.map((proj) => ({
                     value: proj.project_name,
                     label: proj.project_name,
                   }))}
                   onChange={(selected) => {
-                    // Collect all issue IDs from all selected projects
-                    const allIds = selected.flatMap((s) => {
+                    const newProjects = selected.map((s) => {
                       const proj = filteredJira.find(
                         (p) => p.project_name === s.value
                       );
-                      return proj ? proj.ids : [];
+                      return {
+                        jiraProjectName: proj.project_name,
+                        jiraProjectCredentials: user?.jira_credential_id, // 👈 attach credential
+                      };
                     });
+
                     setForm((prev) => ({
                       ...prev,
-                      assignJiraProjects: allIds,
+                      assignJiraProject: newProjects, // 👈 save objects instead of just IDs
                     }));
                   }}
                 />
@@ -269,7 +260,7 @@ const AddUserForm = () => {
               <label className="text-sm font-semibold text-gray-700">
                 Confirm Password
               </label>
-              
+
               <input
                 name="confirmPassword"
                 value={form.confirmPassword}

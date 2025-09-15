@@ -5,6 +5,7 @@ import { jiraendpoints } from "../apis";
 import { setJiraCredentials } from "../../slices/jiraDetailSlice";
 
 const {
+  ASSIGN_ALL_ISSUE_API,
   GET_ISSUES_API,
   APPROVE_ISSUE_API,
   GET_ASSIGN_ISSUES_API,
@@ -42,7 +43,7 @@ export function updateJiraAlertStatus(issueId, alertId, operation) {
         //     : "Jira alert rejected successfully"
         // );
       } else {
-       // toast.error(response.data?.message || "Failed to update alert status");
+        // toast.error(response.data?.message || "Failed to update alert status");
       }
     } catch (error) {
       // console.error("UPDATE_JIRA_ALERT_STATUS ERROR:", error);
@@ -60,7 +61,7 @@ export function updateJiraAlertStatus(issueId, alertId, operation) {
 export function markJiraAlertRead(issueId, alertId) {
   //console.log("backend..",issueId,alertId);
   return async (dispatch) => {
-   // const toastId = toast.loading("Marking Jira alert as read...");
+    // const toastId = toast.loading("Marking Jira alert as read...");
 
     try {
       const response = await apiConnector("PUT", MARK_JIRA_ALERT_READ_API, {
@@ -71,9 +72,9 @@ export function markJiraAlertRead(issueId, alertId) {
       // console.log("MARK_JIRA_ALERT_READ RESPONSE:", response);
 
       if (response.data?.success) {
-       // toast.success("Jira alert marked as read");
+        // toast.success("Jira alert marked as read");
       } else {
-       // toast.error(response.data?.message || "Failed to mark alert as read");
+        // toast.error(response.data?.message || "Failed to mark alert as read");
       }
     } catch (error) {
       // console.error("MARK_JIRA_ALERT_READ ERROR:", error);
@@ -82,7 +83,7 @@ export function markJiraAlertRead(issueId, alertId) {
       // );
     } finally {
       dispatch(setLoading(false));
-     // toast.dismiss(toastId);
+      // toast.dismiss(toastId);
     }
   };
 }
@@ -113,7 +114,7 @@ export function approveJiraIssue(issueId, operation) {
         //     : "Issue rejected successfully"
         // );
       } else {
-       // toast.error(response.data?.message || "Failed to update issue status");
+        // toast.error(response.data?.message || "Failed to update issue status");
       }
     } catch (error) {
       //console.error("UPDATE_JIRA_ISSUE_STATUS ERROR:", error);
@@ -343,13 +344,44 @@ export function getAllJiraIssues() {
   };
 }
 
+// 🔁 GET JIRA ISSUES BY ASSIGNED PROJECTS
+export function getJiraAllIssuesByAssign(assignJiraProject) {
+  //console.log("assign project",assignJiraProject)
+  return async (dispatch) => {
+    try {
+      if (!assignJiraProject || !assignJiraProject.length) return [];
+
+      const response = await apiConnector("POST", ASSIGN_ALL_ISSUE_API, 
+        {assignJiraProject});
+
+
+      const issue = response.data?.issues;
+     // console.log("projects",response)
+
+      if (!issue || typeof issue !== "object") {
+        throw new Error("Invalid response format: issue not found");
+      }
+
+     // console.log("projects 2",issue)
+
+      //toast.success("Jira issue loaded successfully");
+      return issue;
+    } catch (error) {
+     // console.error("GET_JIRA_ISSUES_BY_ASSIGN ERROR:", error);
+      return [];
+    }
+  };
+}
+
 // 🔁 GET ASSIGN JIRA ISSUES
 export function getAssignJiraIssues(userId) {
   return async (dispatch) => {
     //dispatch(setLoading(true));
     //const toastId = toast.loading("Fetching Jira issues...");
     try {
-      const response = await apiConnector("POST", GET_ASSIGN_ISSUES_API, { userId });
+      const response = await apiConnector("POST", GET_ASSIGN_ISSUES_API, {
+        userId,
+      });
 
       // console.log("GET_ISSUES_API RESPONSE:", response);
 

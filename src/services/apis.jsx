@@ -38,6 +38,8 @@ export const jiraendpoints = {
   MARK_JIRA_ALERT_READ_API: BASE_URL + "/jira/alert/read",
   UPDATE_JIRA_ALERT_STATUS_API: BASE_URL + "/jira/alert/status",
 
+
+  ASSIGN_ALL_ISSUE_API: BASE_URL + "/jira/issues/assign",
   GET_ISSUES_API: BASE_URL + "/jira/issues",
   GET_ASSIGN_ISSUES_API: BASE_URL + "/jira/issues/assigned",
   GET_ISSUES_BY_ID_API: BASE_URL + "/jira/issues",

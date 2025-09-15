@@ -352,6 +352,7 @@ export function getAllUsers() {
 
 //edit user
 export function editUser(userId, updatedData, onSuccess) {
+  
   return async (dispatch) => {
     const toastId = toast.loading("Updating user...");
     //dispatch(setLoading(true));
@@ -460,6 +461,7 @@ export function register(
   assignJiraProjects,
   googleProjectAuthor,
   jiraProjectAuthor,
+  assignJiraProject,
   navigate
 ) {
 
@@ -484,7 +486,8 @@ export function register(
           projectrole,
           assignJiraProjects,
           googleProjectAuthor,
-          jiraProjectAuthor
+          jiraProjectAuthor,
+          assignJiraProject
         },
         {
           Authorization: `Bearer ${token}`,

@@ -6,6 +6,7 @@ import FilterTab from "../../../components/Dashboard/AiInsights/FilterTab";
 import {
   getAllJiraIssues,
   getAssignJiraIssues,
+  getJiraAllIssuesByAssign,
   getJiraIssueById,
 } from "../../../services/oprations/jiraAPI";
 import {
@@ -120,7 +121,7 @@ const AiInsights = () => {
           );
           setGoogleData(filteredData);
           //console.log("google data", filteredData);
-        }else {
+        } else {
           const allProjects = await dispatch(getAllGoogleDetails());
           if (!Array.isArray(allProjects)) {
             setGoogleData([]);
@@ -132,7 +133,7 @@ const AiInsights = () => {
         // console.error("Failed to fetch Google projects:", err);
         setGoogleData([]);
       } finally {
-       // setLoadingGoogle(false);
+        // setLoadingGoogle(false);
       }
     };
 
@@ -149,16 +150,19 @@ const AiInsights = () => {
           user?.projectrole === "Team Leader" ||
           user?.projectrole === "Project Manager"
         ) {
-          const ids = user?.assignJiraProjects || [];
+          const projects = user?.assignJiraProject || [];
           try {
             const results = await Promise.all(
-              ids.map((id) => dispatch(getJiraIssueById(id)))
+              projects.map((proj) =>
+                dispatch(getJiraAllIssuesByAssign(user?.assignJiraProject))
+              )
             );
 
-            const allData = results.filter(Boolean);
+            const allData = results.flat().filter(Boolean); 
+
             setJiraData(allData);
           } catch (error) {
-            console.error("Failed to fetch Jira issues:", error);
+           // console.error("Failed to fetch Jira issues:", error);
             setJiraData([]);
           }
         } else if (user?.projectrole === "Portfolio Manager") {
@@ -368,8 +372,8 @@ const AiInsights = () => {
   }
 
   if (isJiraEmpty && isGoogleEmpty) {
-    if(user?.role === "Admin"){
-          return (
+    if (user?.role === "Admin") {
+      return (
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-xl font-semibold mb-4">No data found.</p>
           <button
@@ -378,17 +382,19 @@ const AiInsights = () => {
               navigate("/dashboard/settings/profile-management");
             }}
           >
-            Connect 
+            Connect
           </button>
         </div>
-    );
-    }else{
-          return (
+      );
+    } else {
+      return (
         <div className="flex flex-col items-center justify-center py-20">
-          <p className="text-xl font-semibold mb-4"> You haven't assigned with any Projects</p>
-
+          <p className="text-xl font-semibold mb-4">
+            {" "}
+            You haven't assigned with any Projects
+          </p>
         </div>
-    );
+      );
     }
   }
 

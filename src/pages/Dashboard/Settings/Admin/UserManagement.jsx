@@ -98,6 +98,7 @@ export default function UserManagement() {
       source: user.source,
       projectrole: user.projectrole || "",
       assignJiraProjects: user.assignJiraProjects || [],
+      assignJiraProject: user.assignJiraProject || [],
     });
     setIsEditModalOpen(true);
   };
@@ -115,11 +116,13 @@ export default function UserManagement() {
       role: editUserData.role,
       source: editUserData.source,
       projectrole: editUserData.projectrole,
-      assignJiraProjects: editUserData.assignJiraProjects || [],
+      assignJiraProjects: [],
       googleProjectAuthor: editUserData.source === "Google" ? user?._id : null,
-      jiraProjectAuthor: editUserData.projectrole === "Portfolio Manager" ? user?._id : null,
+      jiraProjectAuthor:
+        editUserData.projectrole === "Portfolio Manager" ? user?._id : null,
+      assignJiraProject: editUserData.assignJiraProject || [],
     };
-
+     //console.log("data",editUserData)
     dispatch(editUser(editUserData._id, payload, fetchUsers));
     setIsEditModalOpen(false);
   };
@@ -423,24 +426,21 @@ export default function UserManagement() {
                         {editUserData.source === "Jira" ? (
                           <>
                             <option value="Project Manager">
-                              Project Manager 
+                              Project Manager
                             </option>
-                            <option value="Team Leader">
-                              Team Leader 
-                            </option>
+                            <option value="Team Leader">Team Leader</option>
                           </>
                         ) : (
                           <>
                             <option value="Portfolio Manager">
-                              Portfolio Manager 
+                              Portfolio Manager
                             </option>
                             <option value="Program Manager">
-                              Program Manager 
+                              Program Manager
                             </option>
                             <option value="Project Manager">
-                              Project Manager 
+                              Project Manager
                             </option>
-
                           </>
                         )}
                       </select>
@@ -458,10 +458,8 @@ export default function UserManagement() {
                           isMulti
                           value={filteredJira
                             .filter((proj) =>
-                              proj.ids.some((id) =>
-                                (
-                                  editUserData.assignJiraProjects || []
-                                ).includes(id)
+                              (editUserData.assignJiraProject || []).some(
+                                (p) => p.jiraProjectName === proj.project_name
                               )
                             )
                             .map((proj) => ({
@@ -473,15 +471,20 @@ export default function UserManagement() {
                             label: proj.project_name,
                           }))}
                           onChange={(selected) => {
-                            const allIds = selected.flatMap((s) => {
+                            const newProjects = selected.map((s) => {
                               const proj = filteredJira.find(
                                 (p) => p.project_name === s.value
                               );
-                              return proj ? proj.ids : [];
+                              return {
+                                jiraProjectName: proj.project_name,
+                                jiraProjectCredentials:
+                                  user?.jira_credential_id, // ✅ assign credential
+                              };
                             });
+
                             setEditUserData((prev) => ({
                               ...prev,
-                              assignJiraProjects: allIds,
+                              assignJiraProject: newProjects, // ✅ save full objects
                             }));
                           }}
                         />

@@ -8,7 +8,7 @@ import { Bell } from "lucide-react";
 import logo from "../../../assets/PortfolioVue_logo.png";
 import SearchComponent from "./SearchComponent";
 import { getNotification } from "../../../services/oprations/authAPI";
-import { markJiraAlertRead } from "../../../services/oprations/jiraAPI";
+import { getJiraAllIssuesByAssign, markJiraAlertRead } from "../../../services/oprations/jiraAPI";
 import { markGoogleAlertRead } from "../../../services/oprations/googleAPI";
 
 // const BASE_URL = process.env.REACT_APP_BASE_URL.replace("/api", "");
@@ -28,6 +28,7 @@ const Navbar = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [alerts, setAlerts] = useState([]);
+  const [jiraData,setJiraData] = useState([]);
   const { user } = useSelector((state) => state.profile);
   const notificationRef = useRef();
   const dispatch = useDispatch();
@@ -44,13 +45,35 @@ const Navbar = () => {
     // console.log("id", notifProjectId);
 
     if (user?.role === "User") {
-     // console.log("role user", user?.role);
-      if (notif?.source === "Jira" && user?.projectrole !== "Portfolio Manager") {
-       // console.log("notif source", notif?.source);
+    //  // console.log("role user", user?.role);
+    //   if (notif?.source === "Jira" && user?.projectrole !== "Portfolio Manager") {
+    //    // console.log("notif source", notif?.source);
+    //     // normalize assigned projects (both Jira & Google) into one array
+    //    // console.log("asssifn projets1", user?.assignJiraProjects);
+    //     const assignedProjects = [...(user?.assignJiraProjects || [])];
+    //    // console.log("asssifn projets", assignedProjects);
+
+    //     // ✅ check if notifProjectId exists in user's assigned projects
+    //     const isAssigned =
+    //       assignedProjects.length > 0 &&
+    //       assignedProjects.some(
+    //         (proj) => proj?.toString() === notifProjectId?.toString()
+    //       );
+
+    //    // console.log("isassign", isAssigned);
+
+    //     if (!isAssigned) return false; // block if user isn’t assigned to this project
+    //    // console.log("last", isAssigned);
+    //   }
+          if (
+        notif?.source === "Jira" &&
+        user?.projectrole !== "Portfolio Manager"
+      ) {
         // normalize assigned projects (both Jira & Google) into one array
-       // console.log("asssifn projets1", user?.assignJiraProjects);
-        const assignedProjects = [...(user?.assignJiraProjects || [])];
-       // console.log("asssifn projets", assignedProjects);
+        const assignedProjects = [
+          ...(jiraData?.map((issue) => issue._id?.toString()) || []),
+        ];
+        //console.log("jira data",assignedProjects)
 
         // ✅ check if notifProjectId exists in user's assigned projects
         const isAssigned =
@@ -58,11 +81,7 @@ const Navbar = () => {
           assignedProjects.some(
             (proj) => proj?.toString() === notifProjectId?.toString()
           );
-
-       // console.log("isassign", isAssigned);
-
         if (!isAssigned) return false; // block if user isn’t assigned to this project
-       // console.log("last", isAssigned);
       }
 
       switch (user?.projectrole) {
@@ -118,6 +137,34 @@ const Navbar = () => {
       return true;
     }
   };
+
+    useEffect(() => {
+      const fetchJira = async () => {
+        try {
+          if (
+            user?.projectrole === "Team Leader" ||
+            user?.projectrole === "Project Manager"
+          ) {
+            const projects = user?.assignJiraProject || [];
+  
+            if (!projects.length) {
+              setJiraData([]);
+              return;
+            }
+  
+            const issues = await dispatch(getJiraAllIssuesByAssign(projects));
+  
+            setJiraData(issues || []);
+            //console.log("data..",jiraData,issues)
+          }
+        } catch (error) {
+          // console.error("Failed to fetch Jira issues:", error);
+          setJiraData([]);
+        }
+      };
+  
+      fetchJira();
+    }, [dispatch, user]);
 
   useEffect(() => {
     // Request notification permission
@@ -222,7 +269,7 @@ const Navbar = () => {
     // };
 
     const handleNewNotification = (notif) => {
-     // console.log("New popup (raw):", notif);
+      console.log("New popup (raw):", notif);
 
       // check if this notif should be visible
       if (!hasSourceAccess(notif)) return;
@@ -383,7 +430,7 @@ const Navbar = () => {
       socket.off("delete-notification", handleDeleteNotification);
       socket.off("update-notification", handleUpdateNotification);
     };
-  }, [user]);
+  }, [user,jiraData]);
   //-----------------------------------------------------------------
   //old
   // useEffect(() => {
@@ -508,7 +555,7 @@ const Navbar = () => {
     };
 
     fetchNotifications();
-  }, [dispatch, user, navigate]);
+  }, [dispatch, user, navigate,jiraData]);
 
   // useEffect(() => {
   //   const fetchNotifications = async () => {

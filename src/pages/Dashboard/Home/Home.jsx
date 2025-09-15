@@ -37,6 +37,7 @@ import {
 import {
   getAllJiraIssues,
   getAssignJiraIssues,
+  getJiraAllIssuesByAssign,
   getJiraIssueById,
 } from "../../../services/oprations/jiraAPI";
 
@@ -1126,22 +1127,19 @@ const Home = () => {
           user?.projectrole === "Team Leader" ||
           user?.projectrole === "Project Manager"
         ) {
-          const ids = user?.assignJiraProjects || [];
-          // let allData = [];
-          // for (const id of ids) {
-          //   const res = await dispatch(getJiraIssueById(id));
-          //   if (res) allData.push(res);
-          // }
-          // setJiraData(allData);
+          const projects = user?.assignJiraProject || [];
           try {
             const results = await Promise.all(
-              ids.map((id) => dispatch(getJiraIssueById(id)))
+              projects.map((proj) =>
+                dispatch(getJiraAllIssuesByAssign(user?.assignJiraProject))
+              )
             );
 
-            const allData = results.filter(Boolean); // remove null/undefined
+            const allData = results.flat().filter(Boolean);
+
             setJiraData(allData);
           } catch (error) {
-            console.error("Failed to fetch Jira issues:", error);
+            // console.error("Failed to fetch Jira issues:", error);
             setJiraData([]);
           }
         } else if (user?.projectrole === "Portfolio Manager") {

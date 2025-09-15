@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { createFeedback } from "../../../services/oprations/feedbackAPI";
 import toast from "react-hot-toast";
 import {
+  getJiraAllIssuesByAssign,
   markJiraAlertRead,
   updateJiraAlertStatus,
 } from "../../../services/oprations/jiraAPI";
@@ -53,6 +54,7 @@ export default function Notifications() {
   const [isRead, setIsRead] = useState(false);
   const [filteredNotifications, setFilteredNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [jiraData, setJiraData] = useState([]);
   //--------------------------------------------------------
   const [isConnected, setIsConnected] = useState(socket.connected);
   useEffect(() => {
@@ -118,7 +120,7 @@ export default function Notifications() {
       socket.off("delete-notification", handleDeleteNotification);
       socket.off("update-notification", handleUpdateNotification);
     };
-  }, [user]);
+  }, [user,jiraData]);
   //---------------------------------------------------------
 
   // whenever notifications or isRead changes, filter
@@ -131,147 +133,48 @@ export default function Notifications() {
     );
   }, [notifications, isRead]);
 
-  // useEffect(() => {
-  //   if ("Notification" in window) {
-  //     Notification.requestPermission().then((permission) => {
-  //       console.log("Notification permission:", permission);
-  //     });
-  //   }
-  // }, []);
+  useEffect(() => {
+    const fetchJira = async () => {
+      try {
+        if (
+          user?.projectrole === "Team Leader" ||
+          user?.projectrole === "Project Manager"
+        ) {
+          const projects = user?.assignJiraProject || [];
 
-  // const showDesktopNotification = (notif) => {
-  //   if (Notification.permission === "granted") {
-  //     const notification = new Notification(
-  //       notif.alert_type || "New Notification",
-  //       {
-  //         body: notif.message,
-  //         icon: logo,
-  //       }
-  //     );
+          if (!projects.length) {
+            setJiraData([]);
+            return;
+          }
 
-  //     notification.onclick = async () => {
-  //       window.focus();
+          const issues = await dispatch(getJiraAllIssuesByAssign(projects));
 
-  //       if (!notif) return;
+          setJiraData(issues || []);
+          //console.log("data..",jiraData,issues)
+        }
+      } catch (error) {
+        // console.error("Failed to fetch Jira issues:", error);
+        setJiraData([]);
+      }
+    };
 
-  //       if (notif.source === "Jira") {
-  //         await dispatch(markJiraAlertRead(notif._id, notif.alert_id));
-  //         window.location.href = `/dashboard/insights/jira-details/${
-  //           notif._id || notif.id
-  //         }`;
-  //       } else if (notif.source === "Google") {
-  //         await dispatch(markGoogleAlertRead(notif._id, notif.alert_id));
-  //         window.location.href = `/dashboard/insights/google-details/${
-  //           notif._id || notif.id
-  //         }`;
-  //       }
+    fetchJira();
+  }, [dispatch, user]);
 
-  //       notification.close();
-  //     };
-  //   }
-  // };
-
-  //old
-  // useEffect(() => {
-  //   let intervalId;
-  //   let lastShownIdRef = null;
-
-  //   const fetchNotifications = async () => {
-  //     try {
-  //       const res = await dispatch(getNotification());
-  //       if (res.length > 0) {
-  //         res.sort(
-  //           (a, b) =>
-  //             new Date(b.timestamp || b.alert_timestamp) -
-  //             new Date(a.timestamp || a.alert_timestamp)
-  //         );
-
-  //         // Filtering for Team Leader
-  //         let filtered = res;
-  //         if (user?.projectrole === "Team Leader") {
-  //           filtered = res.filter(
-  //             (notif) => notif.role?.toLowerCase().trim() === "team leader"
-  //           );
-
-  //           const googleIds = user?.assignGoogleProjects || [];
-  //           const jiraIds = user?.assignJiraProjects || [];
-
-  //           filtered = filtered.filter((notif) => {
-  //             if (notif.source === "Google") {
-  //               return (
-  //                 googleIds.includes(notif.project) ||
-  //                 googleIds.includes(notif._id)
-  //               );
-  //             }
-  //             if (notif.source === "Jira") {
-  //               return (
-  //                 jiraIds.includes(notif.project) || jiraIds.includes(notif._id)
-  //               );
-  //             }
-  //             return false;
-  //           });
-  //         }
-
-  //         setLatestNotif(filtered);
-  //         setNotifications(filtered);
-
-  //         // ✅ Show desktop notif only for new ones
-  //         // const latestNew = filtered[0];
-  //         // if (latestNew && lastShownIdRef !== latestNew._id) {
-  //         //   showDesktopNotification(latestNew);
-  //         //   lastShownIdRef = latestNew._id;
-  //         // }
-  //       }
-  //     } catch (error) {
-  //       console.error("Failed to load notifications", error);
-  //     }
-  //   };
-
-  //   // if (user) {
-  //   //   fetchNotifications();
-  //   //   intervalId = setInterval(fetchNotifications, 5000);
-  //   // }
-  //   fetchNotifications();
-  //   return () => clearInterval(intervalId);
-  // }, [dispatch, user]);
-
-  // ---- Helper functions (place inside Notifications component, above useEffect) ----
-  // const hasSourceAccess = (notif) => {
-  //   if (!notif || !notif.source) return false;
-
-  //   if (notif.source === "Jira") {
-  //     const hasCred = !!user?.jira_credential_id;
-  //     const assigned =
-  //       Array.isArray(user?.assignJiraProjects) &&
-  //       user.assignJiraProjects.length > 0 &&
-  //       (user.assignJiraProjects.includes(notif.project) ||
-  //         user.assignJiraProjects.includes(notif._id));
-  //     return hasCred || assigned;
-  //   }
-
-  //   if (notif.source === "Google") {
-  //     const hasCred = !!user?.google_credential_id;
-  //     const assigned =
-  //       Array.isArray(user?.assignGoogleProjects) &&
-  //       user.assignGoogleProjects.length > 0 &&
-  //       (user.assignGoogleProjects.includes(notif.project) ||
-  //         user.assignGoogleProjects.includes(notif._id));
-  //     return hasCred || assigned;
-  //   }
-
-  //   return false;
-  // };
 
   const hasSourceAccess = (notif) => {
     const notifProjectId = notif._id || notif.id;
 
-    if (user?.role === "User" ) {
-      if (notif?.source === "Jira" && user?.projectrole !== "Portfolio Manager") {
+    if (user?.role === "User") {
+      if (
+        notif?.source === "Jira" &&
+        user?.projectrole !== "Portfolio Manager"
+      ) {
         // normalize assigned projects (both Jira & Google) into one array
         const assignedProjects = [
-          ...(user?.assignJiraProjects || []),
-          ...(user?.assignGoogleProjects || []),
+          ...(jiraData?.map((issue) => issue._id?.toString()) || []),
         ];
+        //console.log("jira data",assignedProjects)
 
         // ✅ check if notifProjectId exists in user's assigned projects
         const isAssigned =
@@ -279,7 +182,6 @@ export default function Notifications() {
           assignedProjects.some(
             (proj) => proj?.toString() === notifProjectId?.toString()
           );
-
         if (!isAssigned) return false; // block if user isn’t assigned to this project
       }
 
@@ -330,7 +232,6 @@ export default function Notifications() {
       if (user?.jira_credential_id) {
         return notif.source === "Jira";
       }
-
     }
   };
 
@@ -390,7 +291,7 @@ export default function Notifications() {
     };
 
     fetchNotifications();
-  }, [dispatch, user]);
+  }, [dispatch, user, jiraData]);
 
   //   useEffect(() => {
   //   const fetchNotifications = async () => {

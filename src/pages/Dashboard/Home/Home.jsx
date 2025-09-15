@@ -1079,12 +1079,9 @@ const Home = () => {
       // setLoadingGoogle(true);
       try {
         if (
-          [
-            "Portfolio Manager",
-            "Project Manager",
-            "Program Manager",
-            //"Executive",
-          ].includes(user?.projectrole)
+          ["Portfolio Manager", "Project Manager", "Program Manager"].includes(
+            user?.projectrole
+          )
         ) {
           const assignSheet = await dispatch(
             getAssignGoogleDetails(user?.googleProjectAuthor)
@@ -1100,15 +1097,6 @@ const Home = () => {
           );
           setGoogleData(filteredData);
           //console.log("google data", filteredData);
-        } else if (user?.projectrole === "Executive") {
-          const allProjects = await dispatch(
-            getAssignGoogleDetails(user?.googleProjectAuthor)
-          );
-          if (!Array.isArray(allProjects)) {
-            setGoogleData([]);
-            return;
-          }
-          setGoogleData(allProjects);
         } else {
           const allProjects = await dispatch(getAllGoogleDetails());
           if (!Array.isArray(allProjects)) {
@@ -1750,7 +1738,7 @@ const Home = () => {
                           className="flex items-center justify-between p-3 border rounded-lg bg-gray-50/50 cursor-pointer hover:bg-gray-100"
                           onClick={() =>
                             navigate(
-                              googleRiskFactors.length > 0
+                              googleData.length > 0
                                 ? `/dashboard/insights/google-summary/${factor.ids.join(
                                     ","
                                   )}`

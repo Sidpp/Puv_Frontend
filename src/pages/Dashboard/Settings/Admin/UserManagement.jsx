@@ -440,9 +440,7 @@ export default function UserManagement() {
                             <option value="Project Manager">
                               Project Manager 
                             </option>
-                            <option value="Executive">
-                              Executive 
-                            </option>
+
                           </>
                         )}
                       </select>

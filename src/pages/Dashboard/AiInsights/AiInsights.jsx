@@ -120,16 +120,7 @@ const AiInsights = () => {
           );
           setGoogleData(filteredData);
           //console.log("google data", filteredData);
-        } else if (user?.projectrole === "Executive") {
-          const allProjects = await dispatch(
-            getAssignGoogleDetails(user?.googleProjectAuthor)
-          );
-          if (!Array.isArray(allProjects)) {
-            setGoogleData([]);
-            return;
-          }
-          setGoogleData(allProjects);
-        } else {
+        }else {
           const allProjects = await dispatch(getAllGoogleDetails());
           if (!Array.isArray(allProjects)) {
             setGoogleData([]);

@@ -6,6 +6,7 @@ import {
   Flame,
   ChevronDown,
 } from "lucide-react";
+import { AlertTriangle, Clock } from "lucide-react";
 import {
   XAxis,
   YAxis,
@@ -492,7 +493,7 @@ function getForecastsData(googleData = []) {
   ];
 }
 
-function getRiskFactors(googleData = []) {
+function getGoogleRiskFactors(googleData = []) {
   let taskDelay = { count: 0, ids: [] };
   let teamInactivity = { count: 0, ids: [] };
   let dependencyConflict = { count: 0, ids: [] };
@@ -607,6 +608,119 @@ function getRiskFactors(googleData = []) {
   ];
 }
 
+function getJiraRiskFactors(jiraData = []) {
+  let taskDelay = { count: 0, ids: [] };
+  let highPriority = { count: 0, ids: [] };
+  let burnoutRisk = { count: 0, ids: [] };
+  let inactivity = { count: 0, ids: [] };
+
+  jiraData.forEach((issue) => {
+    if (issue.status?.toLowerCase().includes("to do")) {
+      taskDelay.count++;
+      taskDelay.ids.push(issue._id);
+    }
+
+    if (
+      issue.priority?.toLowerCase() === "highest" ||
+      Number(issue.ai_priority_score || 0) > 0.8
+    ) {
+      highPriority.count++;
+      highPriority.ids.push(issue._id);
+    }
+
+    //  Burnout Risk (from burnout_flag)
+    if (issue.burnout_flag === "true") {
+      burnoutRisk.count++;
+      burnoutRisk.ids.push(issue._id);
+    }
+
+    //  Inactivity (only if due_date has passed by 3+ days)
+    if (issue.due_date) {
+      const dueDate = new Date(issue.due_date);
+      const today = new Date();
+
+      // difference in days (positive only if overdue)
+      const diffDays = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
+
+      if (diffDays >= 1) {
+        inactivity.count++;
+        inactivity.ids.push(issue._id);
+      }
+    }
+  });
+
+  return [
+    {
+      icon: Clock,
+      label: "Task Delay",
+      sublabel:
+        taskDelay.count > 3 ? "High" : taskDelay.count > 1 ? "Moderate" : "Low",
+      count: taskDelay.count,
+      ids: taskDelay.ids,
+      color:
+        taskDelay.count > 3
+          ? "text-red-500"
+          : taskDelay.count > 1
+          ? "text-amber-500"
+          : "text-green-500",
+    },
+    {
+      icon: AlertTriangle,
+      label: "High Priority Risks",
+      sublabel:
+        highPriority.count > 3
+          ? "Critical"
+          : highPriority.count > 1
+          ? "Moderate"
+          : "Low",
+      count: highPriority.count,
+      ids: highPriority.ids,
+      color:
+        highPriority.count > 3
+          ? "text-red-600"
+          : highPriority.count > 1
+          ? "text-amber-500"
+          : "text-green-500",
+    },
+    {
+      icon: Flame,
+      label: "Burnout Risk",
+      sublabel:
+        burnoutRisk.count > 3
+          ? "High"
+          : burnoutRisk.count > 1
+          ? "Moderate"
+          : "Low",
+      count: burnoutRisk.count,
+      ids: burnoutRisk.ids,
+      color:
+        burnoutRisk.count > 3
+          ? "text-red-500"
+          : burnoutRisk.count > 1
+          ? "text-amber-500"
+          : "text-green-500",
+    },
+    {
+      icon: Users,
+      label: "Team Inactivity",
+      sublabel:
+        inactivity.count > 3
+          ? "High"
+          : inactivity.count > 1
+          ? "Moderate"
+          : "Low",
+      count: inactivity.count,
+      ids: inactivity.ids,
+      color:
+        inactivity.count > 3
+          ? "text-red-500"
+          : inactivity.count > 1
+          ? "text-amber-500"
+          : "text-green-500",
+    },
+  ];
+}
+
 function getSlippageData(projects = []) {
   const monthMap = {};
 
@@ -664,7 +778,7 @@ function getSlippageData(projects = []) {
   }));
 }
 
-function getRagPieData(googleData = []) {
+function getGoogleRagPieData(googleData = []) {
   const statusCounts = {
     Red: 0,
     Yellow: 0,
@@ -675,6 +789,44 @@ function getRagPieData(googleData = []) {
     const status = project.ai_predictions?.["Project_Status"]?.trim();
     if (status && statusCounts[status] !== undefined) {
       statusCounts[status] += 1;
+    }
+  });
+
+  const labelMap = {
+    Red: "High",
+    Yellow: "Medium",
+    Green: "Low",
+  };
+
+  const colorMap = {
+    Red: "#ef4444", // Tailwind red-500
+    Yellow: "#facc15", // Tailwind yellow-400
+    Green: "#22c55e", // Tailwind green-500
+  };
+
+  return Object.keys(statusCounts).map((key) => ({
+    name: `Open Issues (${statusCounts[key]} - ${labelMap[key]})`,
+    value: statusCounts[key],
+    fill: colorMap[key],
+  }));
+}
+
+function getJiraRagPieData(jiraData = []) {
+  const statusCounts = {
+    Red: 0,
+    Yellow: 0,
+    Green: 0,
+  };
+
+  jiraData.forEach((issue) => {
+    const status = issue.status?.trim();
+
+    if (status === "Done") {
+      statusCounts.Green += 1;
+    } else if (status === "To Do") {
+      statusCounts.Red += 1;
+    } else if (status === "In Progress") {
+      statusCounts.Yellow += 1;
     }
   });
 
@@ -1080,11 +1232,13 @@ const Home = () => {
 
   const forecastsData = getForecastsData(googleData);
 
-  const riskFactors = getRiskFactors(googleData);
+  const googleRiskFactors = getGoogleRiskFactors(googleData);
+  const jiraRiskFactors = getJiraRiskFactors(jiraData);
 
   const slippageData = getSlippageData(googleData);
 
-  const pieData = getRagPieData(googleData);
+  const googlePieData = getGoogleRagPieData(googleData);
+  const jiraPieData = getJiraRagPieData(jiraData);
 
   const PIE_COLORS = ["#ef4444", "#facc15", "#22c55e", "#6b7280"];
 
@@ -1585,7 +1739,10 @@ const Home = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {riskFactors.map((factor) => {
+                    {(googleData.length > 0
+                      ? googleRiskFactors
+                      : jiraRiskFactors
+                    ).map((factor) => {
                       const Icon = factor.icon;
                       return (
                         <div
@@ -1593,9 +1750,13 @@ const Home = () => {
                           className="flex items-center justify-between p-3 border rounded-lg bg-gray-50/50 cursor-pointer hover:bg-gray-100"
                           onClick={() =>
                             navigate(
-                              `/dashboard/insights/google-summary/${factor.ids.join(
-                                ","
-                              )}`
+                              googleRiskFactors.length > 0
+                                ? `/dashboard/insights/google-summary/${factor.ids.join(
+                                    ","
+                                  )}`
+                                : `/dashboard/insights/jira-summary/${factor.ids.join(
+                                    ","
+                                  )}`
                             )
                           }
                         >
@@ -1726,7 +1887,9 @@ const Home = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={pieData}
+                          data={
+                            googleData.length > 0 ? googlePieData : jiraPieData
+                          }
                           dataKey="value"
                           cx="50%"
                           cy="50%"
@@ -1754,7 +1917,10 @@ const Home = () => {
                             );
                           }}
                         >
-                          {pieData.map((entry, index) => (
+                          {(googleData.length > 0
+                            ? googlePieData
+                            : jiraPieData
+                          ).map((entry, index) => (
                             <Cell
                               key={`cell-${index}`}
                               fill={PIE_COLORS[index]}
@@ -1767,16 +1933,19 @@ const Home = () => {
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
+
                   <div className="mt-4 space-y-2 text-sm">
-                    {pieData.map((entry, index) => (
-                      <div key={entry.name} className="flex items-center">
-                        <span
-                          className="w-3 h-3 rounded-full mr-3"
-                          style={{ backgroundColor: PIE_COLORS[index] }}
-                        ></span>
-                        <span className="text-gray-700">{entry.name}</span>
-                      </div>
-                    ))}
+                    {(googleData.length > 0 ? googlePieData : jiraPieData).map(
+                      (entry, index) => (
+                        <div key={entry.name} className="flex items-center">
+                          <span
+                            className="w-3 h-3 rounded-full mr-3"
+                            style={{ backgroundColor: PIE_COLORS[index] }}
+                          ></span>
+                          <span className="text-gray-700">{entry.name}</span>
+                        </div>
+                      )
+                    )}
                   </div>
                 </CardContent>
               </Card>

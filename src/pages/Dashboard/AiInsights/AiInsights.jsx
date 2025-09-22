@@ -26,74 +26,6 @@ const AiInsights = () => {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const { user } = useSelector((state) => state.profile);
 
-  // useEffect(() => {
-  //   const fetchGoogle = async () => {
-  //     if (user?.role === "User") {
-  //       try {
-  //         const ids = user?.assignGoogleProjects || [];
-  //         let allData = [];
-  //         //console.log("id",ids)
-
-  //         for (const id of ids) {
-  //           const res = await dispatch(getGoogleSheetById(id));
-  //           if (res) {
-  //             allData.push(res);
-  //           }
-  //          // console.log("allData", allData);
-  //         }
-
-  //         setGoogleData(allData);
-  //       } catch (error) {
-  //         console.error("Failed to fetch Google data:", error);
-  //       }
-  //     } else {
-  //       try {
-  //         const res = await dispatch(getAllGoogleDetails());
-  //         setGoogleData(Array.isArray(res) ? res : []);
-  //       } catch (error) {
-  //         console.error("Failed to fetch Google data:", error);
-  //       }
-  //     }
-  //   };
-
-  //   fetchGoogle();
-  //   console.log("GoogleData", googleData);
-  // }, [dispatch, user]);
-
-  // useEffect(() => {
-  //   const fetchJira = async () => {
-  //     if (user?.projectrole === "Team Leader") {
-  //       try {
-  //         const ids = user?.assignJiraProjects || [];
-  //         let allData = [];
-
-  //         for (const id of ids) {
-  //           const res = await dispatch(getJiraIssueById(id));
-  //           if (res) {
-  //             allData.push(res);
-  //           }
-  //           // console.log("allData", allData);
-  //         }
-
-  //         setJiraData(allData);
-  //       } catch (error) {
-  //         console.error("Failed to fetch Jira issues:", error);
-  //       }
-  //     } else {
-  //       try {
-  //         const issues = await dispatch(getAllJiraIssues());
-  //         setJiraData(Array.isArray(issues) ? issues : []);
-  //       } catch (error) {
-  //         console.error("Failed to fetch Jira issues:", error);
-  //         setJiraData([]);
-  //       }
-  //     }
-  //   };
-
-  //   fetchJira();
-  // }, [dispatch, user]);
-
-  //  --- Google Fetch ---
 
   useEffect(() => {
     const fetchGoogle = async () => {
@@ -158,11 +90,11 @@ const AiInsights = () => {
               )
             );
 
-            const allData = results.flat().filter(Boolean); 
+            const allData = results.flat().filter(Boolean);
 
             setJiraData(allData);
           } catch (error) {
-           // console.error("Failed to fetch Jira issues:", error);
+            // console.error("Failed to fetch Jira issues:", error);
             setJiraData([]);
           }
         } else if (user?.projectrole === "Portfolio Manager") {
@@ -187,9 +119,9 @@ const AiInsights = () => {
     fetchJira();
   }, [dispatch, user]);
 
-  useEffect(() => {
+   useEffect(() => {
+    // Use presence of raw data (not filtered) to set default view
     if (jiraData.length > 0 && googleData.length > 0) {
-      // keep dropdown, default stays "google"
       if (selectedView !== "jira" && selectedView !== "google") {
         setSelectedView("google");
       }
@@ -239,7 +171,6 @@ const AiInsights = () => {
   };
 
   const applyFilterAndJiraGrouped = (data) => {
-    // 1. First filter issues normally
     let filteredIssues = data;
 
     if (selectedFilter !== "All") {
@@ -254,7 +185,6 @@ const AiInsights = () => {
       });
     }
 
-    // 2. Group issues by project_name
     const grouped = {};
 
     filteredIssues.forEach((item) => {
@@ -266,7 +196,7 @@ const AiInsights = () => {
           ai_delay_scores: [],
           ai_summary: [],
           ids: [],
-          priority: item.priority || "Default", // can decide priority rule later
+          priority: item.priority || "Default",
           issueKey: item.key || "",
         };
       }
@@ -282,54 +212,20 @@ const AiInsights = () => {
       }
     });
 
-    // 3. Convert grouped object → array
     return Object.values(grouped);
   };
 
   const filteredJira = applyFilterAndJiraGrouped(jiraData);
-
-  // const groupByProject = (data) => {
-  //   const grouped = {};
-
-  //   data.forEach((item) => {
-  //     const projectName = item.project_name || "Unknown";
-
-  //     if (!grouped[projectName]) {
-  //       grouped[projectName] = {
-  //         project_name: projectName,
-  //         ai_delay_scores: [],
-  //         ai_summary: [],
-  //         ids: [],
-  //       };
-  //     }
-
-  //     // Collect scores and ids
-  //     if (item.ai_delay_score !== undefined) {
-  //       grouped[projectName].ai_delay_scores.push(item.ai_delay_score);
-  //     }
-  //     if (item.ai_summary !== undefined) {
-  //       grouped[projectName].ai_summary.push(item.ai_summary);
-  //     }
-  //     if (item._id) {
-  //       grouped[projectName].ids.push(item._id);
-  //     }
-  //   });
-
-  //   // Convert back to array
-  //   return Object.values(grouped);
-  // };
-  // // Usage
-  // const filteredJira = applyFilter(jiraData);
-  // const groupedJiraData = groupByProject(filteredJira);
-
-  //console.log("group data ", groupedJiraData);
-
   const filteredGoogle = applyFilter(googleData);
 
-  const isGoogleEmpty = !filteredGoogle || filteredGoogle.length === 0;
-  const isJiraEmpty = !filteredJira || filteredJira.length === 0;
+  // --- Distinguish global presence vs filtered emptiness ---
+  const hasJiraData = Array.isArray(jiraData) && jiraData.length > 0;
+  const hasGoogleData = Array.isArray(googleData) && googleData.length > 0;
 
-  // --- Count calculation ---
+  const isJiraFilteredEmpty = !filteredJira || filteredJira.length === 0;
+  const isGoogleFilteredEmpty = !filteredGoogle || filteredGoogle.length === 0;
+
+  // --- Count calculation (based on raw data) ---
   const getCounts = (data, source) => {
     const counts = {
       All: data.length,
@@ -362,7 +258,6 @@ const AiInsights = () => {
       : getCounts(googleData, "google");
 
   // --- Loading checks ---
-
   if (loadingGoogle && loadingJira) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -371,7 +266,8 @@ const AiInsights = () => {
     );
   }
 
-  if (isJiraEmpty && isGoogleEmpty) {
+  // <-- GLOBAL empty check: only true when BOTH sources have no data at all -->
+  if (!hasJiraData && !hasGoogleData) {
     if (user?.role === "Admin") {
       return (
         <div className="flex flex-col items-center justify-center py-20">
@@ -390,7 +286,6 @@ const AiInsights = () => {
       return (
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-xl font-semibold mb-4">
-            {" "}
             You haven't assigned with any Projects
           </p>
         </div>
@@ -482,9 +377,8 @@ const AiInsights = () => {
           </>
         )}
 
-        {/* View Switcher */}
         {/* View Switcher - only show if both have data */}
-        {jiraData.length > 0 && googleData.length > 0 && (
+        {hasJiraData && hasGoogleData && (
           <div className="ml-auto">
             <select
               value={selectedView}
@@ -498,8 +392,10 @@ const AiInsights = () => {
         )}
       </div>
 
-      {/* Data Grid */}
-      {selectedView === "jira" && isJiraEmpty && (
+      {/* If the selected view has NO global data at all, show Connect buttons.
+          NOTE: this uses hasJiraData / hasGoogleData (global check), not the filtered emptiness.
+      */}
+      {selectedView === "jira" && !hasJiraData && (
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-xl font-semibold mb-4">No Jira data found.</p>
           <button
@@ -513,7 +409,7 @@ const AiInsights = () => {
         </div>
       )}
 
-      {selectedView === "google" && isGoogleEmpty && (
+      {selectedView === "google" && !hasGoogleData && (
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-xl font-semibold mb-4">No Google data found.</p>
           <button
@@ -527,22 +423,31 @@ const AiInsights = () => {
         </div>
       )}
 
-      {!(
-        (selectedView === "jira" && isJiraEmpty) ||
-        (selectedView === "google" && isGoogleEmpty)
-      ) && (
-        <div
-          className={`grid grid-cols-1 sm:grid-cols-2 ${
-            selectedView === "google" ? "lg:grid-cols-3" : "lg:grid-cols-4"
-          } gap-6`}
-        >
-          {selectedView === "jira"
-            ? filteredJira.map((item) => <JiraCard key={item._id} {...item} />)
-            : filteredGoogle.map((item) => (
-                <GoogleCard key={item._id} {...item} />
-              ))}
-        </div>
-      )}
+      {/* Data Grid — always render the grid (so tabs remain visible).
+          Only render cards when filtered lists are non-empty; when filter yields zero items,
+          the grid will be blank but filter tabs remain, so user can switch filters/views.
+      */}
+      {!(selectedView === "jira" && !hasJiraData) &&
+        !(selectedView === "google" && !hasGoogleData) && (
+          <div
+            className={`grid grid-cols-1 sm:grid-cols-2 ${
+              selectedView === "google" ? "lg:grid-cols-3" : "lg:grid-cols-4"
+            } gap-6`}
+          >
+            {selectedView === "jira" ? (
+              isJiraFilteredEmpty ? null : filteredJira.map((item) => (
+                <JiraCard
+                  key={item.project_name || item.issueKey}
+                  {...item}
+                />
+              ))
+            ) : (
+              isGoogleFilteredEmpty ? null : filteredGoogle.map((item) => (
+                <GoogleCard key={item._id || item.project_name} {...item} />
+              ))
+            )}
+          </div>
+        )}
     </div>
   );
 };

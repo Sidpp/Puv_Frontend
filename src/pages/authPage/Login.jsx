@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 import AuthLeftPanel from "../../components/Auth/AuthLeftPanel";
@@ -17,6 +18,8 @@ const Login = () => {
     password: "",
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+
   const handleSendOtp = (e) => {
     e.preventDefault();
 
@@ -31,7 +34,7 @@ const Login = () => {
     dispatch(setSigninData({ email, password }));
 
     // Send OTP and navigate to /verify-email
-    dispatch(sendOtp(email,password, navigate));
+    dispatch(sendOtp(email, password, navigate));
   };
 
   return (
@@ -57,18 +60,28 @@ const Login = () => {
             />
           </div>
 
+          {/* Password Input with Eye Toggle */}
           <div>
             <label className="block text-sm font-medium mb-1">Password</label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              placeholder="******"
-              className="w-full border px-4 py-2 rounded-md shadow-sm"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                placeholder="******"
+                className="w-full border px-4 py-2 rounded-md shadow-sm pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500"
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
           </div>
 
           <button

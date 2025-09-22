@@ -146,13 +146,10 @@ const Sidebar = () => {
       {/* Sidebar */}
       <div
         className={`h-full w-56 bg-[#00254D] text-white flex flex-col justify-between gap-4 px-4 py-8 rounded-r-3xl text-base 
-                           fixed lg:static lg:translate-x-0 z-40
-                           transition-transform duration-300 ease-in-out
-                           ${
-                             isMobileNavOpen
-                               ? "translate-x-0"
-                               : "-translate-x-full"
-                           }`}
+              fixed lg:static lg:translate-x-0 z-40
+              transition-transform duration-300 ease-in-out
+              ${isMobileNavOpen ? "translate-x-0" : "-translate-x-full"}
+              overflow-y-auto max-h-screen`}
       >
         <div>
           {/* Close button for mobile view */}

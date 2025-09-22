@@ -41,6 +41,17 @@ import {
   getJiraIssueById,
 } from "../../../services/oprations/jiraAPI";
 
+const formatDate = (dateString) => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
 const BudgetUtilizationView = ({ data }) => {
   const utilization =
     data.contractTargetPrice > 0
@@ -213,7 +224,7 @@ const SpendAndAccrualsView = ({ data }) => (
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
         <CardTitle>Spend and Accruals</CardTitle>
         <span className="text-xs text-slate-500 flex-shrink-0">
-          Update Date: {data.updateDate || "-"}
+          Update Date: {formatDate(data.updateDate)}
         </span>
       </div>
     </CardHeader>
@@ -394,7 +405,23 @@ function parseNumberSafe(value) {
 }
 
 function getBudgetBarsData(googleData = []) {
-  if (googleData.length === 0) return [];
+  if (googleData.length === 0) {
+    // return dummy values
+    return [
+      {
+        label: "Approved Budget",
+        value: "$2,625,839",
+        barWidthPercent: 80,
+        barColorClass: "bg-teal-600",
+      },
+      {
+        label: "Actual Spend",
+        value: "$1,502,480",
+        barWidthPercent: 20,
+        barColorClass: "bg-blue-500",
+      },
+    ];
+  }
 
   let totalApprovedBudget = 0;
   let totalActualSpend = 0;
@@ -435,7 +462,27 @@ function getBudgetBarsData(googleData = []) {
 }
 
 function getForecastsData(googleData = []) {
-  if (googleData.length === 0) return [];
+  if (googleData.length === 0) {
+    // return dummy data
+    return [
+      {
+        label: "+$47,578",
+        needleRotation: 90, // neutral position
+        sections: [{ color: "#22c55e", percentage: 100, offset: 0 }],
+        isPositive: true,
+      },
+      {
+        label: "1.0%",
+        needleRotation: 90, // neutral position
+        sections: [
+          { color: "#22c55e", percentage: 50, offset: 0 },
+          { color: "#facc15", percentage: 25, offset: 50 },
+          { color: "#ef4444", percentage: 25, offset: 75 },
+        ],
+        isPositive: true,
+      },
+    ];
+  }
 
   let totalDeviation = 0;
   let totalPlanned = 0;
@@ -723,6 +770,33 @@ function getJiraRiskFactors(jiraData = []) {
 }
 
 function getSlippageData(projects = []) {
+  if (projects.length === 0) {
+    // return dummy slippage data
+    return [
+      {
+        month: "Jan",
+        plan: 100000,
+        actual: 95000,
+        forecast: 102000,
+        deviation: 2000,
+      },
+      {
+        month: "Feb",
+        plan: 120000,
+        actual: 118000,
+        forecast: 121000,
+        deviation: 1000,
+      },
+      {
+        month: "Mar",
+        plan: 110000,
+        actual: 112000,
+        forecast: 113000,
+        deviation: 3000,
+      },
+    ];
+  }
+
   const monthMap = {};
 
   projects.forEach((project) => {
@@ -851,6 +925,27 @@ function getJiraRagPieData(jiraData = []) {
 }
 
 const aggregateFinancials = (projects) => {
+  const parseNumber = (val) => {
+    if (!val) return 0;
+    return Number(String(val).replace(/[^0-9.-]+/g, "")) || 0;
+  };
+
+  // If no projects, return dummy data
+  if (projects.length === 0) {
+    return {
+      contractTargetPrice: 500000,
+      actualContractSpend: 200000,
+      contractCeilingPrice: 600000,
+      forecastedCost: 480000,
+      actualCost: 210000,
+      plannedCost: 450000,
+      forecastDeviation: 30000,
+      varianceAtCompletion: -20000,
+      updateDate: new Date().toISOString(),
+    };
+  }
+
+
   return projects.reduce(
     (acc, p) => {
       const s = p.source_data || {};
@@ -860,9 +955,9 @@ const aggregateFinancials = (projects) => {
       acc.actualContractSpend += Number(s["Actual Contract Spend"]) || 0;
       acc.contractCeilingPrice += Number(s["Contract Ceiling Price"]) || 0;
 
-      acc.forecastedCost += Number(a["Forecasted_Cost"]) || 0;
+      acc.forecastedCost += Number(s["Forecasted Cost"]) || 0;
       acc.actualCost += Number(s["Actual Cost"]) || 0;
-      acc.plannedCost += Number(s["Planned Cost"]) || 0;
+      acc.plannedCost += parseNumber(s["Planned Cost"]);
 
       acc.forecastDeviation +=
         Number(s["Forecast Deviation"]) || Number(a.Forecasted_Deviation) || 0;
@@ -1008,72 +1103,6 @@ const Home = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.profile);
-
-  // useEffect(() => {
-  //   const fetchGoogle = async () => {
-  //     if (user?.projectrole === "Team Leader") {
-  //       try {
-  //         const ids = user?.assignGoogleProjects || [];
-  //         let allData = [];
-
-  //         for (const id of ids) {
-  //           const res = await dispatch(getGoogleSheetById(id));
-  //           if (res) {
-  //             allData.push(res);
-  //           }
-  //           //console.log("allData", allData);
-  //         }
-
-  //         setGoogleData(allData);
-  //       } catch (error) {
-  //         // .error("Failed to fetch Google data:", error);
-  //       }
-  //     } else {
-  //       try {
-  //         const res = await dispatch(getAllGoogleDetails());
-  //         setGoogleData(Array.isArray(res) ? res : []);
-  //       } catch (error) {
-  //         //console.error("Failed to fetch Google data:", error);
-  //       }
-  //     }
-  //   };
-
-  //   fetchGoogle();
-  //   //console.log("GoogleData", googleData);
-  // }, [dispatch, user]);
-
-  // useEffect(() => {
-  //   const fetchJira = async () => {
-  //     if (user?.projectrole === "Team Leader") {
-  //       try {
-  //         const ids = user?.assignJiraProjects || [];
-  //         let allData = [];
-
-  //         for (const id of ids) {
-  //           const res = await dispatch(getJiraIssueById(id));
-  //           if (res) {
-  //             allData.push(res);
-  //           }
-  //          // console.log("allData", allData);
-  //         }
-
-  //         setJiraData(allData);
-  //       } catch (error) {
-  //        // console.error("Failed to fetch Jira issues:", error);
-  //       }
-  //     } else {
-  //       try {
-  //         const issues = await dispatch(getAllJiraIssues());
-  //         setJiraData(Array.isArray(issues) ? issues : []);
-  //       } catch (error) {
-  //         //console.error("Failed to fetch Jira issues:", error);
-  //         setJiraData([]);
-  //       }
-  //     }
-  //   };
-
-  //   fetchJira();
-  // }, [dispatch, user]);
 
   useEffect(() => {
     const fetchGoogle = async () => {

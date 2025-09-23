@@ -251,7 +251,7 @@ const SpendAndAccrualsView = ({ data }) => (
       </div>
       <SummaryBanner
         label="Forecasted Deviation"
-        value={`$${data.forecastDeviation.toLocaleString()}`}
+        value={`${data.forecastDeviation.toLocaleString()}` + '%'}
       />
     </CardContent>
   </Card>

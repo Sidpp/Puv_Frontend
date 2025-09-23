@@ -22,6 +22,7 @@ const AiInsights = () => {
   const [googleData, setGoogleData] = useState([]);
   const [loadingJira, setLoadingJira] = useState(true);
   const [loadingGoogle, setLoadingGoogle] = useState(true);
+  const [showLoading, setShowLoading] = useState(true);
   const [selectedView, setSelectedView] = useState();
   const [selectedFilter, setSelectedFilter] = useState("All");
   const { user } = useSelector((state) => state.profile);
@@ -64,7 +65,7 @@ const AiInsights = () => {
         // console.error("Failed to fetch Google projects:", err);
         setGoogleData([]);
       } finally {
-        // setLoadingGoogle(false);
+         setLoadingGoogle(false);
       }
     };
 
@@ -111,7 +112,6 @@ const AiInsights = () => {
         setJiraData([]);
       } finally {
         setLoadingJira(false);
-        setLoadingGoogle(false);
       }
     };
 
@@ -130,6 +130,11 @@ const AiInsights = () => {
       setSelectedView("google");
     }
   }, [jiraData, googleData]);
+
+useEffect(() => {
+  const timer = setTimeout(() => setShowLoading(false), 1000); // show loading at least 1s
+  return () => clearTimeout(timer);
+}, []);
 
   const handleViewChange = (e) => {
     const value = e.target.value;
@@ -256,41 +261,41 @@ const AiInsights = () => {
       ? getCounts(jiraData, "jira")
       : getCounts(googleData, "google");
 
-  // --- Loading checks ---
-  if (loadingGoogle && loadingJira) {
+// Show loading if any source is loading OR global min delay is active
+if ((loadingJira || loadingGoogle || showLoading) && (jiraData.length === 0 && googleData.length === 0)) {
+  return (
+    <div className="flex justify-center items-center py-20">
+      <p className="text-lg font-semibold">Loading Data...</p>
+    </div>
+  );
+}
+
+// Only show empty state AFTER loading completes
+if (!loadingJira && !loadingGoogle && !showLoading && !hasJiraData && !hasGoogleData) {
+  if (user?.role === "Admin") {
     return (
-      <div className="flex justify-center items-center py-20">
-        <p className="text-lg font-semibold">Loading Data...</p>
+      <div className="flex flex-col items-center justify-center py-20">
+        <p className="text-xl font-semibold mb-4">No data found.</p>
+        <button
+          className="px-6 py-3 bg-[#00254D] text-white rounded-md hover:bg-[#003366] transition"
+          onClick={() => navigate("/dashboard/settings/profile-management")}
+        >
+          Connect
+        </button>
+      </div>
+    );
+  } else {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <p className="text-xl font-semibold mb-4">
+          You haven't assigned with any Projects
+        </p>
       </div>
     );
   }
+}
 
-  // <-- GLOBAL empty check: only true when BOTH sources have no data at all -->
-  if (!hasJiraData && !hasGoogleData) {
-    if (user?.role === "Admin") {
-      return (
-        <div className="flex flex-col items-center justify-center py-20">
-          <p className="text-xl font-semibold mb-4">No data found.</p>
-          <button
-            className="px-6 py-3 bg-[#00254D] text-white rounded-md hover:bg-[#003366] transition"
-            onClick={() => {
-              navigate("/dashboard/settings/profile-management");
-            }}
-          >
-            Connect
-          </button>
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex flex-col items-center justify-center py-20">
-          <p className="text-xl font-semibold mb-4">
-            You haven't assigned with any Projects
-          </p>
-        </div>
-      );
-    }
-  }
+
 
   if (selectedView === "jira" && loadingJira) {
     return (

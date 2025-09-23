@@ -370,7 +370,7 @@ const GoogleDetails = () => {
               },
               {
                 label: "Forecasted Cost",
-                amount: issue?.ai_predictions?.["Forecasted_Cost"],
+                amount: issue?.source_data?.["Forecasted Cost"],
               },
               {
                 label: "Actual Cost",
@@ -378,7 +378,7 @@ const GoogleDetails = () => {
               },
               {
                 label: "Forecasted Deviation",
-                amount: issue?.ai_predictions?.["Forecasted_Deviation"],
+                amount: issue?.ai_predictions?.["Forecasted_Deviation"] + '%',
               },
               {
                 label: "Variance At Completion",

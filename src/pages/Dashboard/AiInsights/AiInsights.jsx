@@ -26,7 +26,6 @@ const AiInsights = () => {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const { user } = useSelector((state) => state.profile);
 
-
   useEffect(() => {
     const fetchGoogle = async () => {
       setLoadingGoogle(true);
@@ -79,8 +78,8 @@ const AiInsights = () => {
       setLoadingJira(true);
       try {
         if (
-          user?.projectrole === "Team Leader" ||
-          user?.projectrole === "Project Manager"
+          (user?.projectrole === "Team Leader" && user?.source === "Jira" ) ||
+          (user?.projectrole === "Project Manager" && user?.source === "Jira")
         ) {
           const projects = user?.assignJiraProject || [];
           try {
@@ -119,7 +118,7 @@ const AiInsights = () => {
     fetchJira();
   }, [dispatch, user]);
 
-   useEffect(() => {
+  useEffect(() => {
     // Use presence of raw data (not filtered) to set default view
     if (jiraData.length > 0 && googleData.length > 0) {
       if (selectedView !== "jira" && selectedView !== "google") {
@@ -434,18 +433,20 @@ const AiInsights = () => {
               selectedView === "google" ? "lg:grid-cols-3" : "lg:grid-cols-4"
             } gap-6`}
           >
-            {selectedView === "jira" ? (
-              isJiraFilteredEmpty ? null : filteredJira.map((item) => (
-                <JiraCard
-                  key={item.project_name || item.issueKey}
-                  {...item}
-                />
-              ))
-            ) : (
-              isGoogleFilteredEmpty ? null : filteredGoogle.map((item) => (
-                <GoogleCard key={item._id || item.project_name} {...item} />
-              ))
-            )}
+            {selectedView === "jira"
+              ? isJiraFilteredEmpty
+                ? null
+                : filteredJira.map((item) => (
+                    <JiraCard
+                      key={item.project_name || item.issueKey}
+                      {...item}
+                    />
+                  ))
+              : isGoogleFilteredEmpty
+              ? null
+              : filteredGoogle.map((item) => (
+                  <GoogleCard key={item._id || item.project_name} {...item} />
+                ))}
           </div>
         )}
     </div>

@@ -117,7 +117,7 @@ const VarianceByProjectView = ({ data }) => (
       <div className="grid grid-cols-2 gap-4">
         <DataBox
           label="Forecasted Deviation"
-          value={`$${data.forecastDeviation.toLocaleString()}`}
+          value={`${data.forecastDeviation.toLocaleString()}%`}
         />
         <DataBox
           label="Variance at Completion"
@@ -945,7 +945,6 @@ const aggregateFinancials = (projects) => {
     };
   }
 
-
   return projects.reduce(
     (acc, p) => {
       const s = p.source_data || {};
@@ -959,8 +958,7 @@ const aggregateFinancials = (projects) => {
       acc.actualCost += Number(s["Actual Cost"]) || 0;
       acc.plannedCost += parseNumber(s["Planned Cost"]);
 
-      acc.forecastDeviation +=
-        Number(s["Forecast Deviation"]) || Number(a.Forecasted_Deviation) || 0;
+      acc.forecastDeviation += Number(a.Forecasted_Deviation) || 0;
 
       acc.varianceAtCompletion += Number(a["Variance_At_Completion"]) || 0;
 
@@ -1116,11 +1114,11 @@ const Home = () => {
           const assignSheet = await dispatch(
             getAssignGoogleDetails(user?.googleProjectAuthor)
           );
-          //  console.log("sheet",assignSheet)
+           //console.log("sheet",assignSheet)
 
           const roleKey = user?.projectrole?.trim();
-          // console.log("role",roleKey)
-          // console.log("name",user?.name)
+          //console.log("role",roleKey)
+          //console.log("name",user?.name)
 
           const filteredData = assignSheet.filter(
             (proj) => proj?.source_data?.[roleKey] === user?.name
@@ -1153,8 +1151,8 @@ const Home = () => {
       // setLoadingJira(true);
       try {
         if (
-          user?.projectrole === "Team Leader" ||
-          user?.projectrole === "Project Manager"
+          (user?.projectrole === "Team Leader" && user?.source === "Jira") ||
+          (user?.projectrole === "Project Manager" && user?.source === "Jira")
         ) {
           const projects = user?.assignJiraProject || [];
           try {
@@ -1163,7 +1161,6 @@ const Home = () => {
                 dispatch(getJiraAllIssuesByAssign(user?.assignJiraProject))
               )
             );
-
             const allData = results.flat().filter(Boolean);
 
             setJiraData(allData);
@@ -1188,7 +1185,6 @@ const Home = () => {
         // setLoadingJira(false);
       }
     };
-
     fetchJira();
   }, [dispatch, user]);
 

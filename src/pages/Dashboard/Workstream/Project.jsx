@@ -10,7 +10,6 @@ import {
   Line,
   ComposedChart,
 } from "recharts";
-import { projectsData } from "../../../data/projectData";
 
 const ITEMS_PER_PAGE = 6;
 const MAX_HOUR_SPEND = 200;
@@ -18,37 +17,50 @@ const MAX_HOUR_SPEND = 200;
 const statsData = [
   {
     title: "Growth",
-    value: 29,
+    value: 2,
     borderColor: "border-l-blue-500",
     valueColor: "text-blue-500",
   },
   {
     title: "Enterprise",
-    value: 40,
+    value: 4,
     borderColor: "border-l-red-500",
     valueColor: "text-red-500",
   },
   {
     title: "Innovation",
-    value: 31,
+    value: 4,
     borderColor: "border-l-yellow-400",
     valueColor: "text-yellow-400",
   },
   {
     title: "In Progress",
-    value: 35,
+    value: 1,
     borderColor: "border-l-green-500",
     valueColor: "text-green-500",
   },
   {
     title: "Done",
-    value: 37,
+    value: 6,
     borderColor: "border-l-teal-500",
     valueColor: "text-teal-500",
   },
 ];
 const chartData = [
-  { name: "Q3 2025", planned: 10026098, actual: 8981187, forecast: 10134036 },
+  { name: "Q3 2025", planned: 1069877, actual: 828856, forecast: 1085784 },
+];
+
+const projectsData = [
+  { id: 'C-524', portfolio: 'Enterprise', project: 'Project A', status: 'Green', updateDate: '6/28/2024', hourSpend: 60, burnoutRisk: 60, milestone: 'Delayed' },
+  { id: 'C-699', portfolio: 'Growth', project: 'Project D', status: 'Yellow', updateDate: '6/29/2024', hourSpend: 75, burnoutRisk: 60, milestone: 'Delayed' },
+  { id: 'C-147', portfolio: 'Innovation', project: 'Project D', status: 'Green', updateDate: '6/30/2024', hourSpend: 50, burnoutRisk: 20, milestone: 'Completed' },
+  { id: 'C-972', portfolio: 'Enterprise', project: 'Project B', status: 'Red', updateDate: '7/1/2024', hourSpend: 80, burnoutRisk: 20, milestone: 'Completed' },
+  { id: 'C-252', portfolio: 'Enterprise', project: 'Project C', status: 'Yellow', updateDate: '7/2/2024', hourSpend: 65, burnoutRisk: 20, milestone: 'Completed' },
+  { id: 'C-474', portfolio: 'Growth', project: 'Project D', status: 'Yellow', updateDate: '7/3/2024', hourSpend: 70, burnoutRisk: 40, milestone: 'On Track' },
+  { id: 'C-104', portfolio: 'Enterprise', project: 'Project A', status: 'Red', updateDate: '7/4/2024', hourSpend: 55, burnoutRisk: 20, milestone: 'Completed' },
+  { id: 'C-627', portfolio: 'Innovation', project: 'Project A', status: 'Red', updateDate: '7/5/2024', hourSpend: 85, burnoutRisk: 20, milestone: 'Completed' },
+  { id: 'C-965', portfolio: 'Innovation', project: 'Project D', status: 'Red', updateDate: '7/6/2024', hourSpend: 90, burnoutRisk: 20, milestone: 'Completed' },
+  { id: 'C-659', portfolio: 'Innovation', project: 'Project C', status: 'Red', updateDate: '7/7/2024', hourSpend: 60, burnoutRisk: 60, milestone: 'Delayed' }
 ];
 
 
@@ -89,7 +101,6 @@ const ProgressBar = React.memo(({ value }) => {
     </div>
   );
 });
-
 
 const BurnoutRiskIndicator = React.memo(({ value }) => {
   const getRiskColor = (val) =>

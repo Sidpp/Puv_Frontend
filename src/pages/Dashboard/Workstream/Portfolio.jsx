@@ -10,7 +10,6 @@ import {
   Line,
   ComposedChart,
 } from "recharts";
-import { projectsData } from "../../../data/projectData";
 
 const ITEMS_PER_PAGE = 6;
 const MAX_HOUR_SPEND = 200;
@@ -18,37 +17,49 @@ const MAX_HOUR_SPEND = 200;
 const statsData = [
   {
     title: "Growth",
-    value: 29,
+    value: 3,
     borderColor: "border-l-blue-500",
     valueColor: "text-blue-500",
   },
   {
     title: "Enterprise",
-    value: 40,
+    value: 2,
     borderColor: "border-l-red-500",
     valueColor: "text-red-500",
   },
   {
     title: "Innovation",
-    value: 31,
+    value: 5,
     borderColor: "border-l-yellow-400",
     valueColor: "text-yellow-400",
   },
   {
     title: "In Progress",
-    value: 35,
+    value: 4,
     borderColor: "border-l-green-500",
     valueColor: "text-green-500",
   },
   {
     title: "Done",
-    value: 37,
+    value: 3,
     borderColor: "border-l-teal-500",
     valueColor: "text-teal-500",
   },
 ];
 const chartData = [
-  { name: "Q3 2025", planned: 10026098, actual: 8981187, forecast: 10134036 },
+  { name: "Q3 2025", planned: 1107117, actual: 894961, forecast: 1088744 },
+];
+const projectsData = [
+  { id: 'C-665', portfolio: 'Growth', project: 'Project B', status: 'Yellow', updateDate: '6/9/2024', hourSpend: 75, burnoutRisk: 40, milestone: 'Completed' },
+  { id: 'C-563', portfolio: 'Enterprise', project: 'Project A', status: 'Red', updateDate: '6/10/2024', hourSpend: 60, burnoutRisk: 20, milestone: 'Completed' },
+  { id: 'C-170', portfolio: 'Growth', project: 'Project D', status: 'Green', updateDate: '6/11/2024', hourSpend: 55, burnoutRisk: 20, milestone: 'Completed' },
+  { id: 'C-759', portfolio: 'Growth', project: 'Project B', status: 'Yellow', updateDate: '6/12/2024', hourSpend: 80, burnoutRisk: 40, milestone: 'On Track' },
+  { id: 'C-767', portfolio: 'Enterprise', project: 'Project B', status: 'Yellow', updateDate: '6/13/2024', hourSpend: 90, burnoutRisk: 60, milestone: 'Delayed' },
+  { id: 'C-638', portfolio: 'Innovation', project: 'Project A', status: 'Green', updateDate: '6/14/2024', hourSpend: 50, burnoutRisk: 40, milestone: 'On Track' },
+  { id: 'C-211', portfolio: 'Innovation', project: 'Project C', status: 'Green', updateDate: '6/15/2024', hourSpend: 65, burnoutRisk: 40, milestone: 'On Track' },
+  { id: 'C-470', portfolio: 'Innovation', project: 'Project D', status: 'Green', updateDate: '6/16/2024', hourSpend: 70, burnoutRisk: 60, milestone: 'Delayed' },
+  { id: 'C-721', portfolio: 'Innovation', project: 'Project D', status: 'Red', updateDate: '6/17/2024', hourSpend: 85, burnoutRisk: 60, milestone: 'Delayed' },
+  { id: 'C-726', portfolio: 'Innovation', project: 'Project C', status: 'Red', updateDate: '6/18/2024', hourSpend: 45, burnoutRisk: 40, milestone: 'On Track' }
 ];
 
 

@@ -769,7 +769,7 @@ exports.projectsData = [
     status: "Red",
     milestone: "Delayed",
     hourSpend: 66,
-    burnoutRisk: "High",
+    burnoutRisk: "25",
     updateDate: "6/9/2025",
   },
   {
@@ -779,7 +779,7 @@ exports.projectsData = [
     status: "Red",
     milestone: "Completed",
     hourSpend: 72,
-    burnoutRisk: "Low",
+    burnoutRisk: "20",
     updateDate: "6/9/2025",
   },
   {
@@ -789,7 +789,7 @@ exports.projectsData = [
     status: "Green",
     milestone: "On Track",
     hourSpend: 54,
-    burnoutRisk: "Medium",
+    burnoutRisk: "50",
     updateDate: "6/9/2025",
   },
 ];

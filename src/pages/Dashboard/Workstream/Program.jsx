@@ -48,8 +48,11 @@ const statsData = [
   },
 ];
 const chartData = [
-  { name: "Q3 2025", planned: 862411, actual: 841269, forecast: 876252 },
+  { name: "Q1 2025", planned: 750000, actual: 430000, forecast: 760000 },
+  { name: "Q2 2025", planned: 810000, actual: 800000, forecast: 825000 },
+  { name: "Q3 2025", planned: 862411, actual: 1041269, forecast: 876252 },
 ];
+
 
 const projectsData = [
   { id: 'C-883', portfolio: 'Growth', project: 'Project A', status: 'Red', updateDate: '6/19/2024', hourSpend: 65, burnoutRisk: 20, milestone: 'Completed' },

@@ -47,8 +47,11 @@ const statsData = [
   },
 ];
 const chartData = [
-  { name: "Q3 2025", planned: 1107117, actual: 894961, forecast: 1088744 },
+  { name: "Q1 2025", planned: 720000, actual: 711000, forecast: 735000 }, // baseline
+  { name: "Q2 2025", planned: 690000, actual: 700000, forecast: 705000 }, // down from Q1
+  { name: "Q3 2025", planned: 870000, actual: 790000, forecast: 860000 }, // up from Q2
 ];
+
 const projectsData = [
   { id: 'C-665', portfolio: 'Growth', project: 'Project B', status: 'Yellow', updateDate: '6/9/2024', hourSpend: 75, burnoutRisk: 40, milestone: 'Completed' },
   { id: 'C-563', portfolio: 'Enterprise', project: 'Project A', status: 'Red', updateDate: '6/10/2024', hourSpend: 60, burnoutRisk: 20, milestone: 'Completed' },

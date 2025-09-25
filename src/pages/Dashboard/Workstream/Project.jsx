@@ -47,7 +47,9 @@ const statsData = [
   },
 ];
 const chartData = [
-  { name: "Q3 2025", planned: 1069877, actual: 828856, forecast: 1085784 },
+  { name: "Q1 2025", planned: 10769877, actual: 10028856, forecast: 10085784 },
+  { name: "Q2 2025", planned: 19009877, actual: 8288756, forecast: 20085784 },
+  { name: "Q3 2025", planned: 12369877, actual: 83428856, forecast: 106585784 },
 ];
 
 const projectsData = [

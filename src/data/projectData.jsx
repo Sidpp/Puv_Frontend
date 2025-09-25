@@ -729,7 +729,7 @@ exports.projectsData = [
     status: "Yellow",
     milestone: "Completed",
     hourSpend: 45,
-    burnoutRisk: "Low",
+    burnoutRisk: "5",
     updateDate: "6/9/2025",
   },
   {
@@ -739,7 +739,7 @@ exports.projectsData = [
     status: "Yellow",
     milestone: "Completed",
     hourSpend: 49,
-    burnoutRisk: "Low",
+    burnoutRisk: "3",
     updateDate: "6/9/2025",
   },
   {
@@ -749,7 +749,7 @@ exports.projectsData = [
     status: "Yellow",
     milestone: "On Track",
     hourSpend: 86,
-    burnoutRisk: "Medium",
+    burnoutRisk: "40",
     updateDate: "6/9/2025",
   },
   {
@@ -759,7 +759,7 @@ exports.projectsData = [
     status: "Green",
     milestone: "On Track",
     hourSpend: 33,
-    burnoutRisk: "Medium",
+    burnoutRisk: "25",
     updateDate: "6/9/2025",
   },
   {

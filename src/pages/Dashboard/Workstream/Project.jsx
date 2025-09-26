@@ -71,17 +71,19 @@ const chartData = [
 ];
 
 const projectsData = [
-  { id: 'C-524', portfolio: 'Enterprise', project: 'Project A', status: 'Green', updateDate: '6/28/2024', hourSpend: 60, burnoutRisk: 60, milestone: 'Delayed' },
-  { id: 'C-699', portfolio: 'Growth', project: 'Project D', status: 'Yellow', updateDate: '6/29/2024', hourSpend: 75, burnoutRisk: 60, milestone: 'Delayed' },
-  { id: 'C-147', portfolio: 'Innovation', project: 'Project D', status: 'Green', updateDate: '6/30/2024', hourSpend: 50, burnoutRisk: 20, milestone: 'Completed' },
-  { id: 'C-972', portfolio: 'Enterprise', project: 'Project B', status: 'Red', updateDate: '7/1/2024', hourSpend: 80, burnoutRisk: 20, milestone: 'Completed' },
-  { id: 'C-252', portfolio: 'Enterprise', project: 'Project C', status: 'Yellow', updateDate: '7/2/2024', hourSpend: 65, burnoutRisk: 20, milestone: 'Completed' },
-  { id: 'C-474', portfolio: 'Growth', project: 'Project D', status: 'Yellow', updateDate: '7/3/2024', hourSpend: 70, burnoutRisk: 40, milestone: 'On Track' },
-  { id: 'C-104', portfolio: 'Enterprise', project: 'Project A', status: 'Red', updateDate: '7/4/2024', hourSpend: 55, burnoutRisk: 20, milestone: 'Completed' },
-  { id: 'C-627', portfolio: 'Innovation', project: 'Project A', status: 'Red', updateDate: '7/5/2024', hourSpend: 85, burnoutRisk: 20, milestone: 'Completed' },
-  { id: 'C-965', portfolio: 'Innovation', project: 'Project D', status: 'Red', updateDate: '7/6/2024', hourSpend: 90, burnoutRisk: 20, milestone: 'Completed' },
-  { id: 'C-659', portfolio: 'Innovation', project: 'Project C', status: 'Red', updateDate: '7/7/2024', hourSpend: 60, burnoutRisk: 60, milestone: 'Delayed' }
+  { id: 'CNT-2024-002', portfolio: 'Financial Services', project: 'TechFlow Mobile Banking', status: 'Green', updateDate: '7/1/2024', hourSpend: 58, burnoutRisk: 25, milestone: 'Completed' },
+  { id: 'CNT-2024-003', portfolio: 'Medical Systems', project: 'MedCenter EHR Implementation', status: 'Red', updateDate: '7/2/2024', hourSpend: 87, burnoutRisk: 70, milestone: 'Delayed' },
+  { id: 'CNT-2024-004', portfolio: 'Medical Systems', project: 'MedCenter EHR Implementation', status: 'Amber', updateDate: '7/3/2024', hourSpend: 66, burnoutRisk: 50, milestone: 'On Track' },
+  { id: 'CNT-2024-005', portfolio: 'Supply Chain', project: 'FlexTech Supply Chain Optimization', status: 'Red', updateDate: '7/4/2024', hourSpend: 92, burnoutRisk: 75, milestone: 'Delayed' },
+  { id: 'CNT-2024-006', portfolio: 'Supply Chain', project: 'FlexTech Supply Chain Optimization', status: 'Amber', updateDate: '7/5/2024', hourSpend: 71, burnoutRisk: 55, milestone: 'On Track' },
+  { id: 'CNT-2024-007', portfolio: 'Financial Services', project: 'TechFlow AI Enhancement', status: 'Green', updateDate: '7/6/2024', hourSpend: 49, burnoutRisk: 30, milestone: 'Completed' },
+  { id: 'CNT-2024-008', portfolio: 'Medical Systems', project: 'MedCenter AI Integration', status: 'Green', updateDate: '7/7/2024', hourSpend: 60, burnoutRisk: 35, milestone: 'Completed' },
+  { id: 'CNT-2024-009', portfolio: 'Supply Chain', project: 'FlexTech AI Coordination', status: 'Green', updateDate: '7/8/2024', hourSpend: 52, burnoutRisk: 28, milestone: 'Completed' },
+  { id: 'CNT-2024-010', portfolio: 'Cloud Migration', project: 'Global Cloud Transformation', status: 'Green', updateDate: '7/9/2024', hourSpend: 77, burnoutRisk: 20, milestone: 'Completed' },
+  { id: 'CNT-2024-011', portfolio: 'Cloud Migration', project: 'Global Cloud Transformation', status: 'Amber', updateDate: '7/10/2024', hourSpend: 68, burnoutRisk: 45, milestone: 'On Track' },
+  { id: 'CNT-2024-012', portfolio: 'Customer Experience', project: 'Customer Portal Redesign', status: 'Green', updateDate: '7/11/2024', hourSpend: 55, burnoutRisk: 30, milestone: 'Completed' }
 ];
+
 
 
 const StatCard = React.memo(({ title, value, borderColor, valueColor }) => (

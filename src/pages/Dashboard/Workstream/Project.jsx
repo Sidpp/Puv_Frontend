@@ -16,40 +16,58 @@ const MAX_HOUR_SPEND = 200;
 
 const statsData = [
   {
-    title: "Growth",
-    value: 2,
+    title: "TechFlow Mobile Banking",
+    value: 1,
     borderColor: "border-l-blue-500",
     valueColor: "text-blue-500",
   },
   {
-    title: "Enterprise",
-    value: 4,
+    title: "MedCenter EHR Implementation",
+    value: 2,
     borderColor: "border-l-red-500",
     valueColor: "text-red-500",
   },
   {
-    title: "Innovation",
-    value: 4,
+    title: "FlexTech Supply Chain Optimization",
+    value: 2,
     borderColor: "border-l-yellow-400",
     valueColor: "text-yellow-400",
   },
   {
-    title: "In Progress",
+    title: "TechFlow AI Enhancement",
     value: 1,
     borderColor: "border-l-green-500",
     valueColor: "text-green-500",
-  },
-  {
-    title: "Done",
-    value: 6,
-    borderColor: "border-l-teal-500",
-    valueColor: "text-teal-500",
-  },
+   },
+  // {
+  //   title: "MedCenter AI Integration",
+  //   value: 6,
+  //   borderColor: "border-l-teal-500",
+  //   valueColor: "text-teal-500",
+  // },
+  //   {
+  //   title: "FlexTech AI Coordination",
+  //   value: 1,
+  //   borderColor: "border-l-green-500",
+  //   valueColor: "text-green-500",
+  // },
+  // {
+  //   title: "Global Cloud Transformation",
+  //   value: 6,
+  //   borderColor: "border-l-teal-500",
+  //   valueColor: "text-teal-500",
+  // },
+  //   {
+  //   title: "Customer Portal Redesign",
+  //   value: 6,
+  //   borderColor: "border-l-teal-500",
+  //   valueColor: "text-teal-500",
+  // },
 ];
 const chartData = [
-  { name: "Q1 2025", planned: 10769877, actual: 10028856, forecast: 10085784 },
+  { name: "Q1 2025", planned: 2005000, actual: 1939250, forecast: 2107000 },
   { name: "Q2 2025", planned: 19009877, actual: 8288756, forecast: 20085784 },
-  { name: "Q3 2025", planned: 12369877, actual: 83428856, forecast: 106585784 },
+  { name: "Q3 2025", planned: 1236987, actual: 8328856, forecast: 10658784 },
 ];
 
 const projectsData = [
@@ -85,7 +103,7 @@ const ProgressBar = React.memo(({ value }) => {
       case "Green":
         return { color: "bg-green-500", width: "100%" };
       default:
-        return { color: "bg-gray-400", width: "0%" };
+        return { color: "bg-amber-400", width: "60%" };
     }
   };
 

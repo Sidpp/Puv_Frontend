@@ -17,54 +17,53 @@ const MAX_HOUR_SPEND = 200;
 
 const statsData = [
   {
-    title: "Growth",
+    title: "Digital Innovation",
     value: 1,
     borderColor: "border-l-blue-500",
     valueColor: "text-blue-500",
   },
   {
-    title: "Enterprise",
+    title: "Digital Banking",
     value: 5,
     borderColor: "border-l-red-500",
     valueColor: "text-red-500",
   },
   {
-    title: "Innovation",
-    value: 3,
+    title: "Smart Manufacturing",
+    value: 4,
     borderColor: "border-l-yellow-400",
     valueColor: "text-yellow-400",
   },
   {
-    title: "In Progress",
-    value: 4,
+    title: "Digital Transformation",
+    value: 1,
     borderColor: "border-l-green-500",
     valueColor: "text-green-500",
   },
-  {
-    title: "Done",
-    value: 4,
-    borderColor: "border-l-teal-500",
-    valueColor: "text-teal-500",
-  },
+
 ];
+
 const chartData = [
-  { name: "Q1 2025", planned: 750000, actual: 430000, forecast: 760000 },
-  { name: "Q2 2025", planned: 810000, actual: 800000, forecast: 825000 },
-  { name: "Q3 2025", planned: 862411, actual: 1041269, forecast: 876252 },
+  { name: "Q1 2025", planned: 18720000, actual: 19210000, forecast: 20240000 },
+  { name: "Q2 2025", planned: 81000000, actual: 80000000, forecast: 82500000 },
+  { name: "Q3 2025", planned: 86241100, actual: 104126900, forecast: 87625200 },
 ];
 
 
 const projectsData = [
-  { id: 'C-883', portfolio: 'Growth', project: 'Project A', status: 'Red', updateDate: '6/19/2024', hourSpend: 65, burnoutRisk: 20, milestone: 'Completed' },
-  { id: 'C-468', portfolio: 'Enterprise', project: 'Project B', status: 'Red', updateDate: '6/20/2024', hourSpend: 80, burnoutRisk: 20, milestone: 'Completed' },
-  { id: 'C-540', portfolio: 'Enterprise', project: 'Project B', status: 'Green', updateDate: '6/21/2024', hourSpend: 55, burnoutRisk: 40, milestone: 'On Track' },
-  { id: 'C-155', portfolio: 'Innovation', project: 'Project D', status: 'Yellow', updateDate: '6/22/2024', hourSpend: 90, burnoutRisk: 60, milestone: 'Delayed' },
-  { id: 'C-783', portfolio: 'Innovation', project: 'Project C', status: 'Yellow', updateDate: '6/23/2024', hourSpend: 70, burnoutRisk: 40, milestone: 'On Track' },
-  { id: 'C-897', portfolio: 'Enterprise', project: 'Project B', status: 'Red', updateDate: '6/24/2024', hourSpend: 60, burnoutRisk: 20, milestone: 'Completed' },
-  { id: 'C-270', portfolio: 'Enterprise', project: 'Project A', status: 'Green', updateDate: '6/25/2024', hourSpend: 50, burnoutRisk: 40, milestone: 'On Track' },
-  { id: 'C-477', portfolio: 'Innovation', project: 'Project C', status: 'Red', updateDate: '6/26/2024', hourSpend: 85, burnoutRisk: 40, milestone: 'On Track' },
-  { id: 'C-108', portfolio: 'Enterprise', project: 'Project C', status: 'Green', updateDate: '6/27/2024', hourSpend: 75, burnoutRisk: 20, milestone: 'Completed' }
+  { id: 'SEC-2024-007', portfolio: 'Infrastructure', project: 'Cybersecurity Enhancement', status: 'Green', updateDate: '6/20/2024', hourSpend: 61, burnoutRisk: 25, milestone: 'Completed' },
+  { id: 'IOT-2024-201', portfolio: 'Production Systems', project: 'IoT Sensor Network', status: 'Red', updateDate: '6/21/2024', hourSpend: 84, burnoutRisk: 70, milestone: 'Delayed' },
+  { id: 'MES-2024-202', portfolio: 'Production Systems', project: 'MES Implementation', status: 'Green', updateDate: '6/22/2024', hourSpend: 52, burnoutRisk: 30, milestone: 'Completed' },
+  { id: 'QCS-2024-203', portfolio: 'Quality Systems', project: 'AI Quality Control', status: 'Amber', updateDate: '6/23/2024', hourSpend: 73, burnoutRisk: 55, milestone: 'On Track' },
+  { id: 'PDM-2024-204', portfolio: 'Quality Systems', project: 'Predictive Maintenance', status: 'Amber', updateDate: '6/24/2024', hourSpend: 65, burnoutRisk: 45, milestone: 'On Track' },
+  { id: 'CSR-2024-301', portfolio: 'Core Banking', project: 'Core System Replacement', status: 'Red', updateDate: '6/25/2024', hourSpend: 95, burnoutRisk: 75, milestone: 'Delayed' },
+  { id: 'PPU-2024-302', portfolio: 'Core Banking', project: 'Payment Processing Upgrade', status: 'Amber', updateDate: '6/26/2024', hourSpend: 79, burnoutRisk: 50, milestone: 'On Track' },
+  { id: 'MBA-2024-303', portfolio: 'Customer Channels', project: 'Mobile Banking App', status: 'Green', updateDate: '6/27/2024', hourSpend: 47, burnoutRisk: 35, milestone: 'Completed' },
+  { id: 'OBP-2024-304', portfolio: 'Customer Channels', project: 'Online Banking Portal', status: 'Green', updateDate: '6/28/2024', hourSpend: 62, burnoutRisk: 20, milestone: 'Completed' },
+  { id: 'FDS-2024-305', portfolio: 'Risk Management', project: 'Fraud Detection System', status: 'Red', updateDate: '6/29/2024', hourSpend: 90, burnoutRisk: 68, milestone: 'Delayed' },
+  { id: 'CNT-2024-001', portfolio: 'Financial Services', project: 'TechFlow Mobile Banking', status: 'Red', updateDate: '6/30/2024', hourSpend: 82, burnoutRisk: 72, milestone: 'Delayed' }
 ];
+
 
 
 const StatCard = React.memo(({ title, value, borderColor, valueColor }) => (
@@ -81,8 +80,8 @@ const ProgressBar = React.memo(({ value }) => {
     switch (status) {
       case "Red":
         return { color: "bg-red-500", width: "30%" };
-      case "Yellow":
-        return { color: "bg-yellow-500", width: "60%" };
+      case "Amber":
+        return { color: "bg-amber-500", width: "60%" };
       case "Green":
         return { color: "bg-green-500", width: "100%" };
       default:

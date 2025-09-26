@@ -16,54 +16,57 @@ const MAX_HOUR_SPEND = 200;
 
 const statsData = [
   {
-    title: "Growth",
-    value: 3,
+    title: "Infrastructure",
+    value: 1,
     borderColor: "border-l-blue-500",
     valueColor: "text-blue-500",
   },
   {
-    title: "Enterprise",
+    title: "Customer Experience",
     value: 2,
     borderColor: "border-l-red-500",
     valueColor: "text-red-500",
   },
   {
-    title: "Innovation",
-    value: 5,
+    title: "Enterprise Systems",
+    value: 3,
     borderColor: "border-l-yellow-400",
     valueColor: "text-yellow-400",
   },
   {
-    title: "In Progress",
-    value: 4,
+    title: "Patient Experience",
+    value: 2,
     borderColor: "border-l-green-500",
     valueColor: "text-green-500",
   },
   {
-    title: "Done",
+    title: "Clinical Systems",
     value: 3,
     borderColor: "border-l-teal-500",
     valueColor: "text-teal-500",
   },
 ];
 const chartData = [
-  { name: "Q1 2025", planned: 720000, actual: 711000, forecast: 735000 }, // baseline
-  { name: "Q2 2025", planned: 690000, actual: 700000, forecast: 705000 }, // down from Q1
-  { name: "Q3 2025", planned: 870000, actual: 790000, forecast: 860000 }, // up from Q2
+  { name: "Q1 2025", planned: 16410000, actual: 16770000, forecast: 17655000 },
+  { name: "Q2 2025", planned: 1641000, actual: 1677000, forecast: 1765500 },
+  { name: "Q3 2025", planned: 2051250, actual: 2096250, forecast: 2206875 },
 ];
 
+
 const projectsData = [
-  { id: 'C-665', portfolio: 'Growth', project: 'Project B', status: 'Yellow', updateDate: '6/9/2024', hourSpend: 75, burnoutRisk: 40, milestone: 'Completed' },
-  { id: 'C-563', portfolio: 'Enterprise', project: 'Project A', status: 'Red', updateDate: '6/10/2024', hourSpend: 60, burnoutRisk: 20, milestone: 'Completed' },
-  { id: 'C-170', portfolio: 'Growth', project: 'Project D', status: 'Green', updateDate: '6/11/2024', hourSpend: 55, burnoutRisk: 20, milestone: 'Completed' },
-  { id: 'C-759', portfolio: 'Growth', project: 'Project B', status: 'Yellow', updateDate: '6/12/2024', hourSpend: 80, burnoutRisk: 40, milestone: 'On Track' },
-  { id: 'C-767', portfolio: 'Enterprise', project: 'Project B', status: 'Yellow', updateDate: '6/13/2024', hourSpend: 90, burnoutRisk: 60, milestone: 'Delayed' },
-  { id: 'C-638', portfolio: 'Innovation', project: 'Project A', status: 'Green', updateDate: '6/14/2024', hourSpend: 50, burnoutRisk: 40, milestone: 'On Track' },
-  { id: 'C-211', portfolio: 'Innovation', project: 'Project C', status: 'Green', updateDate: '6/15/2024', hourSpend: 65, burnoutRisk: 40, milestone: 'On Track' },
-  { id: 'C-470', portfolio: 'Innovation', project: 'Project D', status: 'Green', updateDate: '6/16/2024', hourSpend: 70, burnoutRisk: 60, milestone: 'Delayed' },
-  { id: 'C-721', portfolio: 'Innovation', project: 'Project D', status: 'Red', updateDate: '6/17/2024', hourSpend: 85, burnoutRisk: 60, milestone: 'Delayed' },
-  { id: 'C-726', portfolio: 'Innovation', project: 'Project C', status: 'Red', updateDate: '6/18/2024', hourSpend: 45, burnoutRisk: 40, milestone: 'On Track' }
+  { id: 'EHR-2024-101', portfolio: 'Clinical Systems', project: 'EHR Implementation', status: 'Red', updateDate: '6/9/2024', hourSpend: 72, burnoutRisk: 65, milestone: 'Delayed' },
+  { id: 'PAC-2024-102', portfolio: 'Clinical Systems', project: 'PACS Upgrade', status: 'Amber', updateDate: '6/10/2024', hourSpend: 55, burnoutRisk: 50, milestone: 'On Track' },
+  { id: 'PHM-2024-103', portfolio: 'Clinical Systems', project: 'Pharmacy Management', status: 'Green', updateDate: '6/11/2024', hourSpend: 48, burnoutRisk: 30, milestone: 'Completed' },
+  { id: 'PPE-2024-104', portfolio: 'Patient Experience', project: 'Patient Portal Enhancement', status: 'Green', updateDate: '6/12/2024', hourSpend: 67, burnoutRisk: 35, milestone: 'Completed' },
+  { id: 'TEL-2024-105', portfolio: 'Patient Experience', project: 'Telehealth Platform', status: 'Amber', updateDate: '6/13/2024', hourSpend: 80, burnoutRisk: 55, milestone: 'On Track' },
+  { id: 'ERP-2024-001', portfolio: 'Enterprise Systems', project: 'ERP Implementation', status: 'Red', updateDate: '6/14/2024', hourSpend: 92, burnoutRisk: 70, milestone: 'Delayed' },
+  { id: 'CRM-2024-002', portfolio: 'Enterprise Systems', project: 'CRM Modernization', status: 'Green', updateDate: '6/15/2024', hourSpend: 64, burnoutRisk: 25, milestone: 'Completed' },
+  { id: 'DAP-2024-003', portfolio: 'Enterprise Systems', project: 'Data Analytics Platform', status: 'Amber', updateDate: '6/16/2024', hourSpend: 77, burnoutRisk: 45, milestone: 'On Track' },
+  { id: 'MOB-2024-004', portfolio: 'Customer Experience', project: 'Mobile App Development', status: 'Green', updateDate: '6/17/2024', hourSpend: 59, burnoutRisk: 35, milestone: 'Completed' },
+  { id: 'WEB-2024-005', portfolio: 'Customer Experience', project: 'Website Redesign', status: 'Green', updateDate: '6/18/2024', hourSpend: 44, burnoutRisk: 20, milestone: 'Completed' },
+  { id: 'CLM-2024-006', portfolio: 'Infrastructure', project: 'Cloud Migration', status: 'Amber', updateDate: '6/19/2024', hourSpend: 85, burnoutRisk: 50, milestone: 'On Track' }
 ];
+
 
 
 const StatCard = React.memo(({ title, value, borderColor, valueColor }) => (
@@ -80,8 +83,8 @@ const ProgressBar = React.memo(({ value }) => {
     switch (status) {
       case "Red":
         return { color: "bg-red-500", width: "30%" };
-      case "Yellow":
-        return { color: "bg-yellow-500", width: "60%" };
+      case "Amber":
+        return { color: "bg-amber-500", width: "60%" };
       case "Green":
         return { color: "bg-green-500", width: "100%" };
       default:
